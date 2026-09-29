@@ -60,7 +60,7 @@ html[data-theme="light"] .brand-logo-light{display:block;height:36px;max-width:2
 .hero-proof b{color:var(--lime);margin-right:6px}
 
 /* Interactive console */
-.intel-console{--px:50%;--py:45%;position:relative;border:1px solid rgba(69,140,92,.4);border-radius:20px;background:linear-gradient(180deg,rgba(7,25,15,.96),rgba(3,13,8,.97));box-shadow:0 28px 80px rgba(0,0,0,.44),0 0 58px rgba(23,210,76,.052),inset 0 1px rgba(255,255,255,.025);overflow:hidden;min-height:470px;transform:translateY(0);transition:border-color .24s,box-shadow .3s}
+.intel-console{--px:50%;--py:45%;--tilt-x:0deg;--tilt-y:0deg;position:relative;border:1px solid rgba(69,140,92,.4);border-radius:20px;background:linear-gradient(180deg,rgba(7,25,15,.96),rgba(3,13,8,.97));box-shadow:0 28px 80px rgba(0,0,0,.44),0 0 58px rgba(23,210,76,.052),inset 0 1px rgba(255,255,255,.025);overflow:hidden;min-height:470px;transform:perspective(900px) rotateX(var(--tilt-y)) rotateY(var(--tilt-x));transition:border-color .24s,box-shadow .3s,transform .18s ease-out}
 .intel-console:hover{border-color:rgba(77,225,116,.54);box-shadow:0 30px 86px rgba(0,0,0,.46),0 0 68px rgba(23,210,76,.09),inset 0 1px rgba(153,255,178,.09)}
 .console-head{height:58px;padding:0 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #183526;color:#cbd9d1;font-size:10px;font-weight:900;letter-spacing:.14em}
 .console-live{display:flex;align-items:center;gap:7px;color:#86a895}.pulse{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 14px var(--lime);animation:pulse 1.6s ease-in-out infinite}
@@ -104,7 +104,7 @@ footer{border-top:1px solid #13281d;color:#657a70;padding:28px 0 44px;font-size:
 
 @keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{50%{opacity:.45;transform:scale(.8)}}
 @keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
-.hero-copy>*{animation:rise .8s both}.hero-copy .eyebrow{animation-delay:.05s}.hero-copy h1{animation-delay:.14s}.hero-copy p{animation-delay:.24s}.hero-actions{animation-delay:.34s}.hero-proof{animation-delay:.42s}.intel-console{animation:rise .95s .18s both}
+.hero-copy>*{animation:rise .8s both}.hero-copy .eyebrow{animation-delay:.05s}.hero-copy h1{animation-delay:.14s}.hero-copy p{animation-delay:.24s}.hero-actions{animation-delay:.34s}.hero-proof{animation-delay:.42s}.intel-console{animation:rise .95s .18s backwards}
 
 
 /* ---------- User-selectable site theme ---------- */
@@ -416,6 +416,12 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
 .pricing{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.price{border:1px solid var(--line);background:linear-gradient(180deg,#07170e,#041009);border-radius:17px;padding:24px;position:relative}.price.featured{border-color:#3b8f58;box-shadow:0 0 0 1px rgba(42,238,97,.06),0 20px 70px rgba(0,0,0,.32),0 0 45px rgba(42,238,97,.045)}.price .badge{position:absolute;right:18px;top:18px;color:#021007;background:var(--lime);border-radius:999px;padding:4px 8px;font-size:9px;letter-spacing:.08em;font-weight:950}.price h3{font-size:20px}.money{font-size:42px;font-weight:950;letter-spacing:-.05em}.money small{font-size:14px;color:var(--muted)}.price ul{padding-left:18px;color:#a9b9b1;min-height:155px}.price .btn{width:100%}.cta{position:relative;overflow:hidden;margin:40px 0 82px;padding:34px;border-radius:22px;background:linear-gradient(120deg,#34f267,#11d84a);color:#021006;display:flex;justify-content:space-between;align-items:center;gap:22px;box-shadow:0 24px 70px rgba(18,214,73,.1)}.cta:after{content:"";position:absolute;right:-60px;top:-100px;width:280px;height:280px;background:rgba(255,255,255,.12);filter:blur(70px);border-radius:50%}.cta>*{position:relative;z-index:1}.cta h2{font-size:36px;letter-spacing:-.04em;margin:0 0 8px}.cta p{margin:0;max-width:670px}.capture{display:flex;gap:8px;min-width:390px}.capture input{flex:1;padding:12px;border:1px solid rgba(0,0,0,.13);border-radius:9px;background:rgba(255,255,255,.86);color:#021006;outline:none}.capture button{border:0;background:#021006;color:white;border-radius:9px;padding:12px 14px;font-weight:900;cursor:pointer}
 @media(max-width:900px){.pricing{grid-template-columns:1fr 1fr}.cta{display:block}.capture{min-width:0;margin-top:18px}}
 @media(max-width:620px){.pricing{grid-template-columns:1fr}.cta{padding:24px}.cta h2{font-size:29px}.capture{display:block}.capture input,.capture button{width:100%}.capture button{margin-top:8px}}
+
+
+/* V91 — shared plan-card hover interaction. */
+#pricing .price{transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
+#pricing .price:hover{transform:translateY(-4px);border-color:#41b866}
+#pricing .price.featured:hover{box-shadow:0 24px 68px rgba(0,0,0,.22),0 0 36px rgba(42,238,97,.10)}
 
 </style>
 </head>
@@ -766,6 +772,9 @@ if(canParallax){
     const yp=Math.max(0,Math.min(100,((e.clientY-r.top)/r.height)*100));
     consoleEl.style.setProperty('--px',xp+'%');
     consoleEl.style.setProperty('--py',yp+'%');
+    const nx=xp/100-.5,ny=yp/100-.5;
+    consoleEl.style.setProperty('--tilt-x',(nx*2.2).toFixed(2)+'deg');
+    consoleEl.style.setProperty('--tilt-y',(-ny*1.7).toFixed(2)+'deg');
     if(competitorRadarCenter){
       competitorRadarCenter.style.transform=`translate(calc(-50% + ${(xp-50)*.075}px),calc(-50% + ${(yp-50)*.075}px))`;
     }
@@ -773,6 +782,8 @@ if(canParallax){
   consoleEl.addEventListener('pointerleave',()=>{
     consoleEl.style.setProperty('--px','50%');
     consoleEl.style.setProperty('--py','45%');
+    consoleEl.style.setProperty('--tilt-x','0deg');
+    consoleEl.style.setProperty('--tilt-y','0deg');
     if(competitorRadarCenter)competitorRadarCenter.style.transform='translate(-50%,-50%)';
   });
 }else{

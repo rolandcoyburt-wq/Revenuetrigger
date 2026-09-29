@@ -763,6 +763,76 @@ html[data-theme="light"] .company-toggle-btn.active{
   }
 }
 
+
+/* V91 — Sources pricing lock: black section, black Scout/Territory, white Hunter. */
+.sources-page-price,
+html[data-theme="light"] .sources-page-price,
+html[data-theme="dark"] .sources-page-price{
+  background:linear-gradient(180deg,#030a06 0%,#010503 100%) !important;
+  color:#f5f8f6 !important;
+  border-color:#153722 !important;
+}
+.sources-page-price .eyebrow,
+html[data-theme="light"] .sources-page-price .eyebrow,
+html[data-theme="dark"] .sources-page-price .eyebrow{
+  background:#ffffff !important;
+  border-color:#ffffff !important;
+  color:#050b07 !important;
+  box-shadow:0 8px 24px rgba(255,255,255,.06) !important;
+}
+.sources-page-price .price:not(.featured),
+html[data-theme="light"] .sources-page-price .price:not(.featured),
+html[data-theme="dark"] .sources-page-price .price:not(.featured){
+  background:linear-gradient(180deg,#07170e 0%,#031008 100%) !important;
+  border-color:#1c402a !important;
+  color:#f5f8f6 !important;
+  box-shadow:0 18px 50px rgba(0,0,0,.28) !important;
+}
+.sources-page-price .price:not(.featured) ul,
+html[data-theme="light"] .sources-page-price .price:not(.featured) ul,
+html[data-theme="dark"] .sources-page-price .price:not(.featured) ul{color:#a9b9b1 !important}
+.sources-page-price .price:not(.featured) .money small,
+html[data-theme="light"] .sources-page-price .price:not(.featured) .money small,
+html[data-theme="dark"] .sources-page-price .price:not(.featured) .money small{color:#899b92 !important}
+.sources-page-price .price:not(.featured) .btn-secondary,
+html[data-theme="light"] .sources-page-price .price:not(.featured) .btn-secondary,
+html[data-theme="dark"] .sources-page-price .price:not(.featured) .btn-secondary{
+  background:#0a1b11 !important;
+  border-color:#28513a !important;
+  color:#f5f8f6 !important;
+}
+.sources-page-price .price.featured,
+html[data-theme="light"] .sources-page-price .price.featured,
+html[data-theme="dark"] .sources-page-price .price.featured{
+  background:#ffffff !important;
+  border-color:#d7e3db !important;
+  color:#061009 !important;
+  box-shadow:0 22px 65px rgba(0,0,0,.30),0 0 0 1px rgba(42,238,97,.08) !important;
+}
+.sources-page-price .price.featured ul,
+html[data-theme="light"] .sources-page-price .price.featured ul,
+html[data-theme="dark"] .sources-page-price .price.featured ul{color:#526158 !important}
+.sources-page-price .price.featured .money small,
+html[data-theme="light"] .sources-page-price .price.featured .money small,
+html[data-theme="dark"] .sources-page-price .price.featured .money small{color:#708078 !important}
+.sources-page-price .price.featured .badge,
+html[data-theme="light"] .sources-page-price .price.featured .badge,
+html[data-theme="dark"] .sources-page-price .price.featured .badge{
+  background:var(--lime) !important;
+  color:#031108 !important;
+}
+.sources-page-price .price.featured .btn-primary,
+html[data-theme="light"] .sources-page-price .price.featured .btn-primary,
+html[data-theme="dark"] .sources-page-price .price.featured .btn-primary{
+  background:var(--lime) !important;
+  border-color:var(--lime) !important;
+  color:#031108 !important;
+  box-shadow:0 10px 28px rgba(42,238,97,.18) !important;
+}
+.sources-page-price .price{transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease !important}
+.sources-page-price .price:hover{transform:translateY(-4px);border-color:#41b866 !important}
+.sources-page-price .price.featured:hover{box-shadow:0 26px 72px rgba(0,0,0,.34),0 0 34px rgba(42,238,97,.10) !important}
+
 </style>
 
 <style>
