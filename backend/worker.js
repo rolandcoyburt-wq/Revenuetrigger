@@ -1203,16 +1203,26 @@ async function persist(env,leads){
 async function refresh(env,days=7){
   const settled=await Promise.allSettled(LIVE_MARKETS.map(m=>fetchMarket(m,days,700,env)));
   const leads=[],markets={};
+  let chandlerFresh=null;
   settled.forEach((r,i)=>{
     const market=LIVE_MARKETS[i];
     if(r.status==='fulfilled'){
       markets[market]={ok:true,count:r.value.length};
       if(market==='Tucson'&&r.value?._meta)markets[market].scan=r.value._meta;
-      if(market==='Chandler'&&r.value?._meta)markets[market].stages=r.value._meta.stageStats;
+      if(market==='Chandler')chandlerFresh=r.value;
       leads.push(...r.value);
     }else markets[market]={ok:false,error:String(r.reason?.message||r.reason)};
   });
   leads.sort((a,b)=>b.score-a.score||new Date(b.date)-new Date(a.date));
+
+  // Chandler previously used DSActiveProjects while the live permit adapter was
+  // being validated. Those rows can remain inside the 7-day D1 window and make
+  // the public feed look like every live permit is "Not listed" even though the
+  // official Accela snapshot is fully participant-enriched. Once a fresh Accela
+  // pull succeeds, replace the Chandler live snapshot instead of mixing adapters.
+  if(env.DB&&Array.isArray(chandlerFresh)&&chandlerFresh.length){
+    await env.DB.prepare(`DELETE FROM leads WHERE market='Chandler'`).run();
+  }
   await persist(env,leads);
   return {leads,markets};
 }
@@ -2337,6 +2347,26 @@ export default {
         const limit=clamp(Number(url.searchParams.get('limit')||120),1,500);
         const requested=(url.searchParams.get('markets')||'').split(',').map(x=>x.trim()).filter(Boolean);
         const markets=requested.length?requested.filter(x=>MARKETS.includes(x)):LIVE_MARKETS;
+
+        // During Chandler's live-source cutover, a single-market request should be
+        // authoritative to the official Accela layer rather than an older D1 snapshot.
+        // The scheduled refresh below also replaces Chandler's stored snapshot, so this
+        // direct path is both immediately correct and self-healing after the next cron.
+        if(requested.length===1&&requested[0]==='Chandler'){
+          try{
+            const fresh=clusterLeads(await fetchChandlerAccelaPermits(days,Math.max(limit*4,500)));
+            return json({
+              leads:fresh.slice(0,limit),
+              markets:['Chandler'],
+              source:'City of Chandler Accela permit layer — official ArcGIS',
+              liveDirect:true,
+              generatedAt:nowIso()
+            },200,env);
+          }catch(e){
+            // Fall through to the stored snapshot only if the official source is unavailable.
+          }
+        }
+
         let leads=await stored(env,limit*4,days);
         if(!leads||!leads.length){const fresh=await refresh(env,days);leads=clusterLeads(fresh.leads);}
         let filtered=leads.filter(x=>markets.includes(x.market||marketFromSource(x.source)));
