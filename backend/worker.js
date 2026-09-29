@@ -246,11 +246,26 @@ function applyActionIntelligence(lead){
 function normalizeAddressKey(v=''){
   return String(v||'').toUpperCase().replace(/[.,#]/g,' ').replace(/\b(?:SUITE|STE|UNIT)\s+\w+/g,'').replace(/\s+/g,' ').trim();
 }
+function usableClusterAddress(lead={}){
+  const addr=normalizeAddressKey(lead.address);
+  if(!addr)return '';
+  const market=normalizeAddressKey(lead.market||'');
+  // Municipality-only placeholders such as "Chandler, AZ" are not project
+  // addresses. Clustering them would collapse an entire city's feed into one card.
+  const generic=new Set([
+    market,
+    market?`${market} AZ`:'',
+    market?`${market} ARIZONA`:'',
+    'ARIZONA','AZ'
+  ].filter(Boolean));
+  return generic.has(addr)?'':addr;
+}
 function clusterLeads(leads=[]){
   const groups=new Map();
   for(const lead of leads){
-    const key=`${lead.market||''}|${normalizeAddressKey(lead.address)}`;
-    if(!normalizeAddressKey(lead.address)){groups.set(`id:${lead.id}`,[lead]);continue}
+    const addrKey=usableClusterAddress(lead);
+    if(!addrKey){groups.set(`id:${lead.id}`,[lead]);continue}
+    const key=`${lead.market||''}|${addrKey}`;
     const arr=groups.get(key)||[];arr.push(lead);groups.set(key,arr);
   }
   const out=[];
@@ -2114,10 +2129,23 @@ export default {
         const days=clamp(Number(url.searchParams.get('days')||7),1,90);
         if(market==='Chandler'){
           const d=await chandlerAccelaDebug(days);
+          const permitSignals=await fetchChandlerAccelaPermits(days,500);
+          const clustered=clusterLeads(permitSignals);
+          const genericAddressSignals=permitSignals.filter(x=>!usableClusterAddress(x)).length;
+          const listedSignals=permitSignals.filter(x=>cleanCompanyName(x.company)).length;
+          const listedOpportunities=clustered.filter(x=>cleanCompanyName(x.company)).length;
           return json({
             ok:true,market:'Chandler',status:SOURCE_STATUS.Chandler.status,days,
             source:'City of Chandler Accela permit layer — official ArcGIS',
             fetched:d.fetched,recent:d.recent,newest:d.newest,oldestFetched:d.oldestFetched,coverage:d.coverage,
+            opportunityView:{
+              permitSignals:permitSignals.length,
+              genericAddressSignals,
+              clusteredOpportunities:clustered.length,
+              listedSignals,
+              listedOpportunities,
+              notListedOpportunities:Math.max(0,clustered.length-listedOpportunities)
+            },
             generatedAt:nowIso()
           },200,env);
         }
