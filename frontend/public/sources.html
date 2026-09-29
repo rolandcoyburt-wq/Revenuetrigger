@@ -1046,6 +1046,42 @@ html[data-theme="light"] .sources-page-price .price.featured .btn-primary{
 .sources-page-price .price{transition:transform .22s,box-shadow .22s,border-color .22s}
 .sources-page-price .price:hover{transform:translateY(-4px)}
 </style>
+
+<style>
+/* V94 — Sources mobile console reflow + final plan treatment. */
+.sources-page-price .price:not(.featured),
+html[data-theme="light"] .sources-page-price .price:not(.featured),
+html[data-theme="dark"] .sources-page-price .price:not(.featured){
+  background:#020604 !important;
+  background-image:none !important;
+  border-color:#183d28 !important;
+  box-shadow:none !important;
+}
+@media(hover:hover) and (pointer:fine){
+  .sources-page-price .price:not(.featured):hover{
+    border-color:#2aee61 !important;
+    box-shadow:0 0 0 2px rgba(42,238,97,.48),0 22px 58px rgba(0,0,0,.36),0 0 34px rgba(42,238,97,.16) !important;
+  }
+}
+@media(max-width:620px){
+  .source-flow-stage{display:flex !important;flex-direction:column !important;min-height:0 !important;gap:14px !important;padding:16px 13px 18px !important}
+  .flow-sources{display:grid !important;grid-template-columns:1fr 1fr !important;gap:8px !important;width:100% !important}
+  .flow-source{min-width:0 !important;width:100% !important;padding:9px 8px !important;transform:none !important}
+  .flow-source span:first-child{font-size:8px !important;letter-spacing:.08em !important;overflow-wrap:anywhere}
+  .flow-source small{font-size:6px !important}
+  .flow-processor{position:relative !important;left:auto !important;top:auto !important;transform:none !important;width:100% !important;height:96px !important;min-height:96px !important;opacity:.42 !important;overflow:hidden !important}
+  .flow-core{transform:scale(.72) !important}
+  .flow-output{width:100% !important;grid-column:auto !important;padding:13px 14px !important}
+  .flow-output strong{font-size:15px !important;max-width:none !important}
+  .flow-output p{font-size:10px !important;line-height:1.5 !important;overflow-wrap:anywhere !important;word-break:normal !important}
+  .flow-output-score{margin-top:10px !important}
+  .flow-output-score b{font-size:22px !important}
+  .source-flow-console{overflow:hidden !important}
+  .pricing .price{will-change:transform;transition:transform .28s cubic-bezier(.2,.75,.25,1),border-color .28s,box-shadow .28s}
+  .pricing .price.scroll-active{transform:translateY(-6px) scale(1.015);border-color:#2aee61 !important;box-shadow:0 0 0 2px rgba(42,238,97,.35),0 20px 52px rgba(0,0,0,.34),0 0 26px rgba(42,238,97,.10) !important}
+  .pricing .price.featured.scroll-active{border-color:#b9c9bf !important;box-shadow:0 20px 52px rgba(0,0,0,.34) !important}
+}
+</style>
 </head>
 <body>
 <header class="topbar"><div class="wrap"><nav><a class="brand" href="/" aria-label="RevenueTrigger home">
@@ -1171,5 +1207,9 @@ $('#signinForm').addEventListener('submit',async e=>{e.preventDefault();const em
 $('#capture').addEventListener('submit',async e=>{e.preventDefault();const email=$('#email').value;try{await requestSignin(email);$('#signinEmail').value=email;openSignin();$('#signinNotice').style.display='block';$('#signinNotice').textContent='Check your email. The link expires in 15 minutes.'}catch(err){alert(err.message)}});
 $$('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id)}));
 (async()=>{const q=new URLSearchParams(location.search);const magic=q.get('token')||q.get('magic');if(magic){try{await verifyMagic(magic)}catch(e){openSignin();$('#signinNotice').style.display='block';$('#signinNotice').textContent=e.message}}else await loadMe()})();
+</script>
+
+<script>
+(()=>{const cards=[...document.querySelectorAll('.pricing .price')];if(!cards.length)return;let raf=0;const paint=()=>{raf=0;if(!matchMedia('(max-width:620px)').matches){cards.forEach(c=>c.classList.remove('scroll-active'));return}const mid=innerHeight/2;let best=null,d0=Infinity;cards.forEach(c=>{const r=c.getBoundingClientRect();if(r.bottom<=0||r.top>=innerHeight)return;const d=Math.abs((r.top+r.bottom)/2-mid);if(d<d0){d0=d;best=c}});cards.forEach(c=>c.classList.toggle('scroll-active',c===best&&d0<innerHeight*.46))};const q=()=>{if(!raf)raf=requestAnimationFrame(paint)};addEventListener('scroll',q,{passive:true});addEventListener('resize',q,{passive:true});paint()})();
 </script>
 </body></html>
