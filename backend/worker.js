@@ -318,6 +318,84 @@ function opportunityScorePipelineCandidateV112({text='',status='',date=null,offi
   };
 }
 
+
+
+// V113 refined Early Pipeline shadow scorer. Diagnostic only.
+// Keep the existing lifecycle + first-mover weights intact because they represent
+// distinct concepts, but stop treating an unknown event date as "today". A record
+// observed in the current authoritative active-project snapshot receives 15 timing
+// points (equivalent to an active/recent source observation), while Data Confidence
+// separately reflects that the exact event date is missing.
+function opportunityScorePipelineCandidateV113({text='',status='',date=null,officialValue=null,address='',company='',sourceFresh=true}={}){
+  const t=String(text||'').toLowerCase();
+  const s=String(status||'').toLowerCase();
+  const fits=sellerFitScores(t);
+
+  let projectStage=12;
+  if(/\b(?:pre[- ]?tech|planning|zoning|development review|site plan|concept review)\b/i.test(`${t} ${s}`))projectStage=25;
+  else if(/\b(?:submitted|applied|application|in review|under review|plan review|pending)\b/i.test(s))projectStage=22;
+  else if(/\b(?:approved|ready to issue)\b/i.test(s))projectStage=18;
+  else if(/\b(?:issued|permit issued)\b/i.test(s))projectStage=14;
+  else if(/\b(?:inspection|construction)\b/i.test(s))projectStage=7;
+  else if(/\b(?:final|completed|complete|closed)\b/i.test(s))projectStage=2;
+  else if(/\b(?:cancel|expired|withdrawn|void|denied)\b/i.test(s))projectStage=0;
+
+  let prePermit=0;
+  if(/\b(?:pre[- ]?tech|planning|zoning|development review|site plan|concept review)\b/i.test(`${t} ${s}`))prePermit=10;
+  else if(/\b(?:submitted|applied|application|in review|under review|plan review|pending)\b/i.test(s))prePermit=6;
+  else if(/\b(?:approved|ready to issue)\b/i.test(s))prePermit=4;
+  else if(/\b(?:issued)\b/i.test(s))prePermit=1;
+
+  const ts=strictScoreDateMs(date);
+  let recency=0;
+  let recencyBasis='event-date';
+  if(ts!==null){
+    const delta=Date.now()-ts;
+    if(delta>=-2*86400000){
+      const ageDays=Math.max(0,delta/86400000);
+      recency=ageDays<=1?20:ageDays<=3?18:ageDays<=7?15:ageDays<=14?11:ageDays<=30?7:ageDays<=90?3:0;
+    }
+  }else if(sourceFresh){
+    recency=15;
+    recencyBasis='active-source-snapshot';
+  }else{
+    recencyBasis='unknown';
+  }
+
+  const ov=Number(officialValue);
+  let projectValue=5;
+  if(Number.isFinite(ov)&&ov>0){
+    if(ov>=2000000)projectValue=15;
+    else if(ov>=750000)projectValue=13;
+    else if(ov>=250000)projectValue=11;
+    else if(ov>=100000)projectValue=9;
+    else if(ov>=25000)projectValue=7;
+    else projectValue=4;
+  }else if(/\b(?:ground.?up|new construction|shell building|multifamily|industrial|hotel)\b/i.test(t))projectValue=10;
+  else if(/\b(?:tenant improvement|restaurant|medical|commercial remodel|build.?out)\b/i.test(t))projectValue=8;
+
+  const specificFits=Object.entries(fits).filter(([k])=>k!=='Commercial services').map(([,v])=>Number(v)||0);
+  const bestFit=specificFits.length?Math.max(...specificFits):Number(fits['Commercial services']||0);
+  const tradeRelevance=clamp(Math.round(bestFit*.15),0,15);
+
+  let projectType=4;
+  if(/\b(?:restaurant|retail|multifamily|industrial|medical|hospital|hotel|hospitality|warehouse|office|commercial)\b/i.test(t))projectType=10;
+  else if(/\b(?:tenant improvement|remodel|renovation|addition|alteration|build.?out)\b/i.test(t))projectType=8;
+  else if(/\b(?:hvac|mechanical|electrical|plumbing|roofing|signage|security|fire alarm)\b/i.test(t))projectType=6;
+  else if(/\b(?:residential|sfr|single[- ]family|pool|spa|garage)\b/i.test(t))projectType=2;
+
+  const c=String(company||'').trim();
+  const companyBehavior=c && !/^(not listed|unknown|n\/a|none|-+)$/i.test(c)?2:0;
+  const score=clamp(Math.round(projectStage+recency+projectValue+tradeRelevance+projectType+prePermit+companyBehavior),0,100);
+  return {
+    score,
+    temperature:temperatureForScore(score),
+    breakdown:{projectStage,recency,projectValue,tradeRelevance,projectType,prePermit,companyBehavior},
+    diagnostics:{hasValidDate:ts!==null,recencyBasis},
+    sellerFit:fits
+  };
+}
+
 function dataConfidenceCandidate({company='',officialValue=null,address='',permit='',status='',scope='',source='',date=null}={}){
   let score=0;
   const reasons=[];
@@ -2716,6 +2794,49 @@ export default {
         delete v112Movement.totalDelta;
         const v112BiggestDrops=[...v112Comparisons].sort((a,b)=>a.delta-b.delta).slice(0,12);
 
+
+        // V113 refined shadow: preserve distinct lifecycle + first-mover weighting,
+        // but use 15 points for a record seen in the current authoritative snapshot
+        // when the exact event date is unavailable. Diagnostic only.
+        const v113Buckets={HOT:0,WARM:0,WATCH:0,LOW:0};
+        const v113Movement={scoreUp:0,scoreDown:0,scoreSame:0,temperatureUp:0,temperatureDown:0,temperatureSame:0,missingDateRecords:0,sourceFreshnessFallbackRecords:0,totalDelta:0};
+        const v113Comparisons=[];
+        const v113ByStage={};
+        for(const x of rows){
+          const prodScore=Number(x.score||0);
+          const prodTemp=bucket(prodScore);
+          const cand=opportunityScorePipelineCandidateV113({
+            text:x.scope||x.name||'',
+            status:x.permitStatus||x.stage||'',
+            date:x.date||null,
+            officialValue:null,
+            address:x.address||'',
+            company:x.company||'',
+            sourceFresh:true
+          });
+          const candScore=Number(cand.score||0);
+          const candTemp=bucket(candScore);
+          v113Buckets[candTemp]=(v113Buckets[candTemp]||0)+1;
+          if(candScore>prodScore)v113Movement.scoreUp++; else if(candScore<prodScore)v113Movement.scoreDown++; else v113Movement.scoreSame++;
+          if(rank[candTemp]>rank[prodTemp])v113Movement.temperatureUp++; else if(rank[candTemp]<rank[prodTemp])v113Movement.temperatureDown++; else v113Movement.temperatureSame++;
+          if(!cand.diagnostics?.hasValidDate)v113Movement.missingDateRecords++;
+          if(cand.diagnostics?.recencyBasis==='active-source-snapshot')v113Movement.sourceFreshnessFallbackRecords++;
+          v113Movement.totalDelta+=candScore-prodScore;
+          const stage=x.stage||'UNKNOWN';
+          v113ByStage[stage] ||= {count:0,productionAvg:0,candidateAvg:0,productionBuckets:{HOT:0,WARM:0,WATCH:0,LOW:0},candidateBuckets:{HOT:0,WARM:0,WATCH:0,LOW:0},_prod:0,_cand:0};
+          const st=v113ByStage[stage];
+          st.count++; st._prod+=prodScore; st._cand+=candScore; st.productionBuckets[prodTemp]++; st.candidateBuckets[candTemp]++;
+          v113Comparisons.push({permit:x.permit,name:x.name,stage,hasDate:!!x.date,productionScore:prodScore,productionTemperature:prodTemp,candidateScore:candScore,candidateTemperature:candTemp,delta:candScore-prodScore,candidateBreakdown:cand.breakdown,diagnostics:cand.diagnostics});
+        }
+        for(const st of Object.values(v113ByStage)){
+          st.productionAvg=st.count?Number((st._prod/st.count).toFixed(1)):0;
+          st.candidateAvg=st.count?Number((st._cand/st.count).toFixed(1)):0;
+          delete st._prod; delete st._cand;
+        }
+        v113Movement.avgDelta=rows.length?Number((v113Movement.totalDelta/rows.length).toFixed(2)):0;
+        delete v113Movement.totalDelta;
+        const v113BiggestDrops=[...v113Comparisons].sort((a,b)=>a.delta-b.delta).slice(0,12);
+
         return json({
           ok:true,
           market:'Chandler',
@@ -2755,6 +2876,21 @@ export default {
             movement:v112Movement,
             byStage:v112ByStage,
             biggestDrops:v112BiggestDrops
+          },
+          scoringShadowV113:{
+            productionUnchanged:true,
+            rationale:'Preserve early-stage/first-mover signal strength while correcting the specific missing-date bug. Missing event date lowers timing credit and Data Confidence, but a project observed in the current authoritative active-project source is still a current commercial signal.',
+            candidateRules:[
+              'Known event dates use the existing recency curve.',
+              'Missing event dates observed in the current authoritative Early Pipeline snapshot receive 15 timing/source-freshness points instead of production\'s implicit 20.',
+              'Project-stage and pre-permit/first-mover weights remain separate and unchanged for this candidate.',
+              'Missing event date should be surfaced separately through Data Confidence.'
+            ],
+            productionBuckets,
+            candidateBuckets:v113Buckets,
+            movement:v113Movement,
+            byStage:v113ByStage,
+            biggestDrops:v113BiggestDrops
           },
           contractorSource:{
             ok:contractorResult.ok,
