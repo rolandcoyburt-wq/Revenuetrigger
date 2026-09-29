@@ -141,7 +141,7 @@ function opportunityScore({text='',status='',date=Date.now(),officialValue=null,
   // 5% — company context / historical behavior foundation.
   // Full repeat-behavior weighting is added in company intelligence, where history is available.
   const c=String(company||'').trim();
-  const companyBehavior=c && !/^(not listed|unknown|n\/a|none|-+)$/i.test(c)?2:0;
+  const companyBehavior=isMeaningfulCompanyName(c)?2:0;
 
   const score=clamp(Math.round(projectStage+recency+projectValue+tradeRelevance+projectType+prePermit+companyBehavior),0,100);
   return {
@@ -227,7 +227,7 @@ function opportunityScoreCandidate({text='',status='',date=null,officialValue=nu
   else if(/\b(?:residential|sfr|single[- ]family|pool|spa|garage)\b/i.test(t))projectType=2;
 
   const c=String(company||'').trim();
-  const companyBehavior=c && !/^(not listed|unknown|n\/a|none|-+)$/i.test(c)?2:0;
+  const companyBehavior=isMeaningfulCompanyName(c)?2:0;
   const score=clamp(Math.round(projectStage+recency+projectValue+tradeRelevance+projectType+prePermit+companyBehavior),0,100);
   return {
     score,
@@ -307,7 +307,7 @@ function opportunityScorePipelineCandidateV112({text='',status='',date=null,offi
   else if(/\b(?:residential|sfr|single[- ]family|pool|spa|garage)\b/i.test(t))projectType=2;
 
   const c=String(company||'').trim();
-  const companyBehavior=c && !/^(not listed|unknown|n\/a|none|-+)$/i.test(c)?2:0;
+  const companyBehavior=isMeaningfulCompanyName(c)?2:0;
   const score=clamp(Math.round(projectStage+recency+projectValue+tradeRelevance+projectType+prePermit+companyBehavior),0,100);
   return {
     score,
@@ -385,7 +385,7 @@ function opportunityScorePipelineCandidateV113({text='',status='',date=null,offi
   else if(/\b(?:residential|sfr|single[- ]family|pool|spa|garage)\b/i.test(t))projectType=2;
 
   const c=String(company||'').trim();
-  const companyBehavior=c && !/^(not listed|unknown|n\/a|none|-+)$/i.test(c)?2:0;
+  const companyBehavior=isMeaningfulCompanyName(c)?2:0;
   const score=clamp(Math.round(projectStage+recency+projectValue+tradeRelevance+projectType+prePermit+companyBehavior),0,100);
   return {
     score,
@@ -411,7 +411,7 @@ function dataConfidenceCandidate({company='',officialValue=null,address='',permi
   if(strictScoreDateMs(date)!==null){score+=15;reasons.push('Valid event date')}
   if(String(address||'').trim()){score+=15;reasons.push('Address present')}
   const c=String(company||'').trim();
-  if(c && !/^(not listed|unknown|n\/a|none|-+)$/i.test(c)){score+=20;reasons.push('Company identified')}
+  if(isMeaningfulCompanyName(c)){score+=20;reasons.push('Company identified')}
   const ov=Number(officialValue);
   if(Number.isFinite(ov)&&ov>0){score+=15;reasons.push('Reported value present')}
   if(String(status||'').trim() && String(status)!=='—'){score+=5;reasons.push('Stage/status present')}
@@ -423,7 +423,7 @@ function dataConfidence({company='',officialValue=null,address='',permit='',stat
   let score=25; // known source record exists
   const reasons=[];
   const c=String(company||'').trim();
-  if(c && !/^(not listed|unknown|n\/a|none|-+)$/i.test(c)){score+=15;reasons.push('Company identified')}
+  if(isMeaningfulCompanyName(c)){score+=15;reasons.push('Company identified')}
   const ov=Number(officialValue);
   if(Number.isFinite(ov)&&ov>0){score+=15;reasons.push('Reported value present')}
   if(String(address||'').trim()){score+=15;reasons.push('Address present')}
@@ -451,7 +451,7 @@ function actionIntelligence(lead={}){
   const life=lead.lifecycle||lifecycleFrom({text:`${lead.name||''} ${lead.scope||''}`,status:lead.permitStatus||lead.permit_status||''});
   const ageDays=Math.max(0,(Date.now()-new Date(lead.date||lead.event_date||Date.now()).getTime())/86400000);
   const related=Math.max(1,Number(lead.relatedPermitCount||1));
-  const hasCompany=String(lead.company||'').trim() && !/^(not listed|unknown|n\/a|none|-+)$/i.test(String(lead.company||'').trim());
+  const hasCompany=isMeaningfulCompanyName(lead.company);
 
   const baseByStage=[92,86,72,48,22,5];
   let firstMover=baseByStage[life.index]??60;
@@ -1015,11 +1015,14 @@ async function fetchMesa(days=7,limit=500){
 
 
 
+function isMeaningfulCompanyName(v=''){
+  const s=String(v||'').replace(/\s+/g,' ').trim();
+  if(!s)return false;
+  return !/^(not listed|unknown|n\/a|none|null|-+|owner|to be bid|tbd|to be determined|not provided|unassigned)$/i.test(s);
+}
 function cleanCompanyName(v){
   const s=String(v||'').replace(/\s+/g,' ').trim();
-  if(!s)return null;
-  if(/^(not listed|unknown|n\/a|none|null|-+)$/i.test(s))return null;
-  return s;
+  return isMeaningfulCompanyName(s)?s:null;
 }
 function normalizeProjectName(v){
   return String(v||'')
@@ -2189,8 +2192,7 @@ async function runCompetitorWatchAlerts(env,scheduledDate=new Date()){
 
 
 function isListedCompanyName(v=''){
-  const c=String(v||'').trim();
-  return !!c && !/^(not listed|unknown|n\/a|none|-+)$/i.test(c);
+  return isMeaningfulCompanyName(v);
 }
 function safeEventMs(v){
   const ms=Date.parse(v||'');
@@ -2214,7 +2216,7 @@ async function buildRelationshipIntelligence(env,rawCompany,{days=365,rowLimit=5
     FROM leads
     WHERE company IS NOT NULL
       AND TRIM(company)<>''
-      AND LOWER(TRIM(company)) NOT IN ('not listed','unknown','n/a','none')
+      AND LOWER(TRIM(company)) NOT IN ('not listed','unknown','n/a','none','null','owner','to be bid','tbd','to be determined','not provided','unassigned')
       AND datetime(event_date)>=datetime('now',?)
     ORDER BY datetime(event_date) DESC
     LIMIT ?
@@ -2354,7 +2356,7 @@ async function discoverRelationshipCandidates(env,{days=365,rowLimit=7500,limit=
     FROM leads
     WHERE company IS NOT NULL
       AND TRIM(company)<>''
-      AND LOWER(TRIM(company)) NOT IN ('not listed','unknown','n/a','none')
+      AND LOWER(TRIM(company)) NOT IN ('not listed','unknown','n/a','none','null','owner','to be bid','tbd','to be determined','not provided','unassigned')
       AND datetime(event_date)>=datetime('now',?)
     ORDER BY datetime(event_date) DESC
     LIMIT ?
@@ -2436,14 +2438,27 @@ async function discoverRelationshipCandidates(env,{days=365,rowLimit=7500,limit=
     .sort((a,b)=>b.qaDepth-a.qaDepth||b.repeatedAssociationCount-a.repeatedAssociationCount||b.projectCount-a.projectCount||b.permitLinkedRecordCount-a.permitLinkedRecordCount)
     .slice(0,limit);
 
+  const relationshipCandidate=candidates.find(x=>x.repeatedAssociationCount>0)||candidates[0]||null;
+  const crossMarketCandidate=candidates.find(x=>x.marketCount>=2)||null;
+  const momentumCandidate=candidates.find(x=>x.hasMomentumBaseline)||null;
   return {
     ok:true,days,rowsExamined:prepared.length,candidateCount:candidates.length,
-    recommended:candidates[0]||null,
+    recommended:relationshipCandidate,
+    recommendedUseCases:{
+      repeatedRelationships:relationshipCandidate,
+      crossMarketIdentity:crossMarketCandidate,
+      momentumBaseline:momentumCandidate
+    },
+    historyCoverage:{
+      candidatesWithPrevious30DayBaseline:candidates.filter(x=>x.hasMomentumBaseline).length,
+      note:momentumCandidate?'At least one candidate has a comparable previous-30-day baseline.':'The stored lead window currently has no candidate with previous-30-day activity, so Company Momentum trend validation should remain provisional until more historical snapshots accumulate.'
+    },
     candidates,
     methodology:{
-      purpose:'Find companies with enough stored history to QA Company Momentum and repeated historical associations before building the UI.',
+      purpose:'Find companies with enough stored history to QA Company Momentum, cross-market identity, and repeated historical associations before building the UI.',
       candidateMinimum:'At least 2 distinct normalized project addresses in the selected window.',
       repeatedAssociation:'At least 2 distinct shared project addresses with the same counterparty.',
+      companyHygiene:'Generic placeholders such as OWNER, TO BE BID, TBD, NOT PROVIDED, and UNASSIGNED are excluded from company identity and relationship analysis.',
       caution:'Candidate ordering is for QA depth only; it is not a commercial ranking or prediction.'
     }
   };
@@ -2522,7 +2537,7 @@ export default {
         const q=(url.searchParams.get('q')||'').trim().toLowerCase();
         const limit=Math.max(5,Math.min(100,Number(url.searchParams.get('limit')||30)));
 
-        const where=["company IS NOT NULL","TRIM(company)<>''","LOWER(TRIM(company)) NOT IN ('not listed','unknown','n/a','none')","datetime(event_date)>=datetime('now',?)"];
+        const where=["company IS NOT NULL","TRIM(company)<>''","LOWER(TRIM(company)) NOT IN ('not listed','unknown','n/a','none','null','owner','to be bid','tbd','to be determined','not provided','unassigned')","datetime(event_date)>=datetime('now',?)"];
         const binds=[`-${days} days`];
         if(market && market!=='all'){where.push("market=?");binds.push(market)}
         if(q){where.push("LOWER(company) LIKE ?");binds.push(`%${q}%`)}
