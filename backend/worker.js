@@ -770,6 +770,13 @@ function chandlerParticipantFromAttributes(a={}){
   }
   return null;
 }
+function chandlerAccelaDate(v){
+  if(v===null||v===undefined||v==='')return NaN;
+  const n=Number(v);
+  if(Number.isFinite(n)&&n>10000000000)return n;
+  const parsed=new Date(v).getTime();
+  return Number.isFinite(parsed)&&parsed>0?parsed:NaN;
+}
 function chandlerAccelaParticipant(a={}){
   const contractor=cleanCompanyName(a.PRI_CNTRCT_BUS_NM);
   if(contractor)return {company:contractor,role:'Contractor',field:'PRI_CNTRCT_BUS_NM',matchType:'accela-permit-exact',matchConfidence:1};
@@ -788,14 +795,14 @@ function chandlerAccelaLead(a={}){
   const sqft=Number(String(a.SQ_FOOT||'').replace(/[^0-9.]/g,''));
   const value=Number(String(a.JOB_VALUE||'').replace(/[$,\s]/g,''));
   const participant=chandlerAccelaParticipant(a);
-  const date=Number(a.CREATE_DT)||new Date(a.CREATE_DT||Date.now()).getTime();
+  const date=chandlerAccelaDate(a.CREATE_DT);
   const scope=[type,desc,Number.isFinite(sqft)&&sqft>0?`${Math.round(sqft).toLocaleString('en-US')} sq ft`:null].filter(Boolean).join(' — ');
   return leadFrom({
     market:'Chandler',
     id:permit||a.OBJECTID,
     name:project,
     address,
-    date:Number.isFinite(date)?date:Date.now(),
+    date:Number.isFinite(date)?date:null,
     company:participant?.company||'Not listed',
     scope,
     permit:permit||'—',
@@ -818,7 +825,7 @@ async function fetchChandlerAccelaPermits(days=7,limit=500){
   const rows=[];
   for(const f of features){
     const a=f.attributes||{};
-    const ts=Number(a.CREATE_DT)||new Date(a.CREATE_DT||0).getTime();
+    const ts=chandlerAccelaDate(a.CREATE_DT);
     if(!Number.isFinite(ts)||ts<cutoff)continue;
     rows.push(chandlerAccelaLead(a));
     if(rows.length>=limit)break;
@@ -963,7 +970,7 @@ async function chandlerAccelaDebug(days=30){
   let newest=null,oldest=null;
   for(const f of features){
     const a=f.attributes||{};
-    const ts=Number(a.CREATE_DT)||new Date(a.CREATE_DT||0).getTime();
+    const ts=chandlerAccelaDate(a.CREATE_DT);
     if(Number.isFinite(ts)){
       if(newest===null||ts>newest)newest=ts;
       if(oldest===null||ts<oldest)oldest=ts;
@@ -2101,6 +2108,29 @@ export default {
         if(!env.ADMIN_TOKEN||token!==env.ADMIN_TOKEN)return json({error:'unauthorized'},401,env);
         const data=await tucsonDebug(env);
         return json({ok:true,now:nowIso(),...data},200,env);
+      }
+      if(path==='/source-health'&&request.method==='GET'){
+        const market=(url.searchParams.get('market')||'').trim();
+        const days=clamp(Number(url.searchParams.get('days')||7),1,90);
+        if(market==='Chandler'){
+          const d=await chandlerAccelaDebug(days);
+          return json({
+            ok:true,market:'Chandler',status:SOURCE_STATUS.Chandler.status,days,
+            source:'City of Chandler Accela permit layer — official ArcGIS',
+            fetched:d.fetched,recent:d.recent,newest:d.newest,oldestFetched:d.oldestFetched,coverage:d.coverage,
+            generatedAt:nowIso()
+          },200,env);
+        }
+        if(market==='Scottsdale'){
+          const d=await scottsdaleDebug(days);
+          return json({
+            ok:true,market:'Scottsdale',status:SOURCE_STATUS.Scottsdale.status,days,
+            source:'City of Scottsdale Building Permit Reports — official CSV',
+            requested:d.requested,http:d.http,parsed:d.parsed,issueDates:d.issueDates,
+            generatedAt:nowIso()
+          },200,env);
+        }
+        return json({error:'source health market not supported',supported:['Chandler','Scottsdale']},400,env);
       }
       if(path==='/admin/scottsdale-debug'&&request.method==='GET'){
         const token=(request.headers.get('authorization')||'').replace(/^Bearer\s+/i,'');
