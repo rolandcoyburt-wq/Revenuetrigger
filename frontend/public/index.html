@@ -1175,6 +1175,62 @@ html[data-theme="light"] .company-toggle-btn.active{
   #pipelineList .pipeline-lead .pipeline-actions{grid-area:actions !important;justify-self:end !important;}
 }
 </style>
+
+<style>
+/* V100 — lock Opportunity Feed mobile hierarchy for both Listed and Not Listed results. */
+@media(max-width:620px){
+  #leadList .lead{
+    display:grid !important;
+    grid-template-columns:52px minmax(0,1fr) !important;
+    grid-template-areas:
+      "score main"
+      "temp main"
+      "company company"
+      "seller seller"
+      "bottom bottom" !important;
+    column-gap:14px !important;
+    row-gap:10px !important;
+    align-items:start !important;
+  }
+  #leadList .lead .score{
+    grid-area:score !important;
+    justify-self:center !important;
+    align-self:start !important;
+  }
+  #leadList .lead .lead-main{
+    grid-area:main !important;
+    align-self:start !important;
+  }
+  #leadList .lead .lead-temperature{
+    grid-area:temp !important;
+    justify-self:center !important;
+    align-self:start !important;
+    width:52px !important;
+    margin:0 !important;
+    padding:0 !important;
+    text-align:center !important;
+    font-size:16px !important;
+    line-height:1 !important;
+  }
+  #leadList .lead .permit-company{grid-area:company !important;}
+  #leadList .lead .lead-seller{grid-area:seller !important;}
+  #leadList .lead .lead-value{
+    grid-area:bottom !important;
+    justify-self:start !important;
+    align-self:end !important;
+    width:auto !important;
+    margin:0 !important;
+    z-index:1 !important;
+  }
+  #leadList .lead .lead-actions{
+    grid-area:bottom !important;
+    justify-self:end !important;
+    align-self:end !important;
+    margin:0 !important;
+    z-index:2 !important;
+  }
+}
+</style>
 </head>
 <body>
 <header class="topbar"><div class="wrap"><nav><a class="brand" href="#" aria-label="RevenueTrigger home">
