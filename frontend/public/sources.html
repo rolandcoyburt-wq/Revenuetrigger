@@ -1277,3 +1277,27 @@ html[data-theme="dark"] .sources-page-price .price:not(.featured) .btn-secondary
   }
 }
 </style>
+<style>
+/* V98 — Lock Scout/Territory card typography to white in every theme. */
+.sources-page-price .price:not(.featured),
+html[data-theme="light"] .sources-page-price .price:not(.featured),
+html[data-theme="dark"] .sources-page-price .price:not(.featured){
+  color:#fff !important;
+}
+.sources-page-price .price:not(.featured) h3,
+.sources-page-price .price:not(.featured) .money,
+.sources-page-price .price:not(.featured) li,
+html[data-theme="light"] .sources-page-price .price:not(.featured) h3,
+html[data-theme="light"] .sources-page-price .price:not(.featured) .money,
+html[data-theme="light"] .sources-page-price .price:not(.featured) li,
+html[data-theme="dark"] .sources-page-price .price:not(.featured) h3,
+html[data-theme="dark"] .sources-page-price .price:not(.featured) .money,
+html[data-theme="dark"] .sources-page-price .price:not(.featured) li{
+  color:#fff !important;
+}
+.sources-page-price .price:not(.featured) .money small,
+html[data-theme="light"] .sources-page-price .price:not(.featured) .money small,
+html[data-theme="dark"] .sources-page-price .price:not(.featured) .money small{
+  color:#d6ddd9 !important;
+}
+</style>
