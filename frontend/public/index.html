@@ -1132,6 +1132,49 @@ html[data-theme="light"] .company-toggle-btn.active{
   #pipelineList .pipeline-actions{grid-column:1 / -1 !important;grid-row:5 !important;justify-self:end !important;align-self:end !important}
 }
 </style>
+
+<style>
+/* V97 — lock Early Pipeline mobile hierarchy: temperature directly below score. */
+@media(max-width:620px){
+  #pipelineList .pipeline-lead{
+    display:grid !important;
+    grid-template-columns:52px minmax(0,1fr) !important;
+    grid-template-areas:
+      "score main"
+      "temp stage"
+      "company company"
+      "seller seller"
+      "actions actions" !important;
+    column-gap:14px !important;
+    row-gap:10px !important;
+  }
+  #pipelineList .pipeline-lead .score{
+    grid-area:score !important;
+    align-self:start !important;
+    justify-self:center !important;
+  }
+  #pipelineList .pipeline-lead .pipeline-main{grid-area:main !important;}
+  #pipelineList .pipeline-lead .pipeline-temperature{
+    grid-area:temp !important;
+    justify-self:center !important;
+    align-self:start !important;
+    width:52px !important;
+    margin:0 !important;
+    padding:0 !important;
+    text-align:center !important;
+    font-size:16px !important;
+    line-height:1 !important;
+  }
+  #pipelineList .pipeline-lead .pipeline-stage{
+    grid-area:stage !important;
+    align-self:center !important;
+    margin:0 !important;
+  }
+  #pipelineList .pipeline-lead .pipeline-company-cell{grid-area:company !important;}
+  #pipelineList .pipeline-lead .pipeline-seller{grid-area:seller !important;}
+  #pipelineList .pipeline-lead .pipeline-actions{grid-area:actions !important;justify-self:end !important;}
+}
+</style>
 </head>
 <body>
 <header class="topbar"><div class="wrap"><nav><a class="brand" href="#" aria-label="RevenueTrigger home">
