@@ -2186,6 +2186,140 @@ async function runCompetitorWatchAlerts(env,scheduledDate=new Date()){
 }
 
 
+
+
+function isListedCompanyName(v=''){
+  const c=String(v||'').trim();
+  return !!c && !/^(not listed|unknown|n\/a|none|-+)$/i.test(c);
+}
+function safeEventMs(v){
+  const ms=Date.parse(v||'');
+  return Number.isFinite(ms)?ms:null;
+}
+function sumOfficialValue(rows=[]){
+  return rows.reduce((n,x)=>n+(Number.isFinite(Number(x.official_value))?Number(x.official_value):0),0);
+}
+function avgNumeric(rows=[],key){
+  const vals=rows.map(x=>Number(x?.[key])).filter(Number.isFinite);
+  return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;
+}
+async function buildRelationshipIntelligence(env,rawCompany,{days=365,rowLimit=5000}={}){
+  const company=canonicalCompanyName(rawCompany||'');
+  if(!company)return {ok:false,error:'company required'};
+  days=Math.max(90,Math.min(730,Number(days)||365));
+  rowLimit=Math.max(500,Math.min(10000,Number(rowLimit)||5000));
+
+  const rows=(await env.DB.prepare(`
+    SELECT id,name,address,event_date,market,permit,permit_status,official_value,score,temperature,scope,source,company,updated_at
+    FROM leads
+    WHERE company IS NOT NULL
+      AND TRIM(company)<>''
+      AND LOWER(TRIM(company)) NOT IN ('not listed','unknown','n/a','none')
+      AND datetime(event_date)>=datetime('now',?)
+    ORDER BY datetime(event_date) DESC
+    LIMIT ?
+  `).bind(`-${days} days`,rowLimit).all()).results||[];
+
+  const prepared=rows.map(x=>{
+    const canonical=canonicalCompanyName(x.company||'');
+    const addr=usableClusterAddress({address:x.address,market:x.market});
+    return {...x,_canonical:canonical,_projectKey:addr?`${x.market||''}|${addr}`:'',_type:classifyProjectType(`${x.name||''} ${x.scope||''}`),_ms:safeEventMs(x.event_date)};
+  }).filter(x=>isListedCompanyName(x._canonical));
+
+  const target=prepared.filter(x=>x._canonical===company);
+  if(!target.length)return {ok:true,company,days,historyFound:false,projectCount:0,note:'No stored permit-linked history found for this company in the selected window.'};
+
+  const aliases=[...new Set(target.map(x=>String(x.company||'').trim()).filter(Boolean))];
+  const targetKeys=new Set(target.map(x=>x._projectKey).filter(Boolean));
+  const projectMap=new Map();
+  for(const x of prepared){
+    if(!x._projectKey)continue;
+    if(!projectMap.has(x._projectKey))projectMap.set(x._projectKey,[]);
+    projectMap.get(x._projectKey).push(x);
+  }
+
+  const co=new Map();
+  for(const key of targetKeys){
+    const group=projectMap.get(key)||[];
+    const targetAtProject=group.filter(x=>x._canonical===company);
+    if(!targetAtProject.length)continue;
+    const otherCompanies=new Map();
+    for(const x of group){
+      if(!x._canonical||x._canonical===company)continue;
+      if(!otherCompanies.has(x._canonical))otherCompanies.set(x._canonical,[]);
+      otherCompanies.get(x._canonical).push(x);
+    }
+    for(const [other,items] of otherCompanies){
+      let r=co.get(other);
+      if(!r){r={company:other,projects:new Set(),markets:new Set(),types:new Map(),latestActivity:null,examples:[]};co.set(other,r)}
+      r.projects.add(key);
+      for(const x of items){
+        if(x.market)r.markets.add(x.market);
+        const t=x._type||'Other';r.types.set(t,(r.types.get(t)||0)+1);
+        if(!r.latestActivity||String(x.event_date||'')>String(r.latestActivity))r.latestActivity=x.event_date;
+      }
+      const exemplar=(items[0]||targetAtProject[0]);
+      if(exemplar && r.examples.length<3)r.examples.push({market:exemplar.market,address:exemplar.address,project:exemplar.name,permit:exemplar.permit,date:exemplar.event_date});
+    }
+  }
+
+  const frequentlyAppearsWith=[...co.values()].map(r=>({
+    company:r.company,
+    sharedProjectCount:r.projects.size,
+    markets:[...r.markets],
+    projectTypes:[...r.types.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5).map(([name,count])=>({name,count})),
+    latestActivity:r.latestActivity,
+    evidence:'Documented co-occurrence at the same normalized project address. This does not establish a contractual relationship.',
+    examples:r.examples
+  })).sort((a,b)=>b.sharedProjectCount-a.sharedProjectCount||String(b.latestActivity||'').localeCompare(String(a.latestActivity||''))).slice(0,20);
+
+  const now=Date.now(),d30=30*86400000,d90=90*86400000;
+  const recent30=target.filter(x=>x._ms&&now-x._ms<=d30);
+  const prior30=target.filter(x=>x._ms&&now-x._ms>d30&&now-x._ms<=2*d30);
+  const recent90=target.filter(x=>x._ms&&now-x._ms<=d90);
+  const priorHistory=target.filter(x=>x._ms&&now-x._ms>d90);
+
+  const recentMarkets=new Set(recent90.map(x=>x.market).filter(Boolean));
+  const priorMarkets=new Set(priorHistory.map(x=>x.market).filter(Boolean));
+  const newMarkets=[...recentMarkets].filter(x=>!priorMarkets.has(x));
+  const recentTypes=new Set(recent90.map(x=>x._type).filter(Boolean));
+  const priorTypes=new Set(priorHistory.map(x=>x._type).filter(Boolean));
+  const newProjectTypes=[...recentTypes].filter(x=>!priorTypes.has(x));
+
+  const typeCounts={};for(const x of target)typeCounts[x._type]=(typeCounts[x._type]||0)+1;
+  const marketCounts={};for(const x of target)marketCounts[x.market]=(marketCounts[x.market]||0)+1;
+
+  const currentValue=sumOfficialValue(recent30),priorValue=sumOfficialValue(prior30);
+  const currentCount=recent30.length,priorCount=prior30.length;
+  const currentAvg=avgNumeric(recent30,'score'),priorAvg=avgNumeric(prior30,'score');
+  const countChange=pctChange(currentCount,priorCount),valueChange=pctChange(currentValue,priorValue);
+
+  return {
+    ok:true,company,aliases,days,historyFound:true,
+    projectCount:new Set(target.map(x=>x._projectKey||`id:${x.id}`)).size,
+    permitLinkedRecordCount:target.length,
+    latestActivity:target[0]?.event_date||null,
+    companyMomentum:{
+      current30Days:{records:currentCount,reportedValue:currentValue,avgOpportunityScore:Math.round(currentAvg*10)/10},
+      previous30Days:{records:priorCount,reportedValue:priorValue,avgOpportunityScore:Math.round(priorAvg*10)/10},
+      change:{recordCountPct:countChange,reportedValuePct:valueChange,avgScoreDelta:Math.round((currentAvg-priorAvg)*10)/10}
+    },
+    territoryHistory:Object.entries(marketCounts).sort((a,b)=>b[1]-a[1]).map(([market,count])=>({market,count})),
+    projectTypeHistory:Object.entries(typeCounts).sort((a,b)=>b[1]-a[1]).map(([projectType,count])=>({projectType,count})),
+    expansionSignals:{
+      comparison:'Last 90 days versus earlier history in the selected window',
+      newMarkets,
+      newProjectTypes
+    },
+    frequentlyAppearsWith,
+    methodology:{
+      association:'Same normalized project address in stored public permit-linked records.',
+      caution:'Co-occurrence is historical association evidence only and does not prove a prime/subcontractor, award, payment, or contractual relationship.',
+      expansion:'A market or project type is considered new only when it appears in the last 90 days and not in the earlier selected history.'
+    }
+  };
+}
+
 export default {
   async fetch(request,env){
     if(request.method==='OPTIONS')return new Response(null,{headers:cors(env)});
@@ -2211,6 +2345,37 @@ export default {
         const data=await rocSearch(env,{q,city,classCode,status,limit});
         return json({ok:true,count:data.results.length,meta:data.meta,results:data.results},200,env);
       }
+
+      if(path==='/relationship-health'&&request.method==='GET'){
+        const company=(url.searchParams.get('company')||'').trim();
+        const days=Math.max(90,Math.min(730,Number(url.searchParams.get('days')||365)));
+        if(!company)return json({error:'company required'},400,env);
+        const data=await buildRelationshipIntelligence(env,company,{days,rowLimit:5000});
+        if(!data.ok)return json(data,400,env);
+        return json({
+          ok:true,
+          company:data.company,
+          days:data.days,
+          historyFound:data.historyFound,
+          projectCount:data.projectCount||0,
+          permitLinkedRecordCount:data.permitLinkedRecordCount||0,
+          latestActivity:data.latestActivity||null,
+          companyMomentum:data.companyMomentum||null,
+          expansionSignals:data.expansionSignals||null,
+          frequentlyAppearsWith:(data.frequentlyAppearsWith||[]).slice(0,10),
+          methodology:data.methodology||null
+        },200,env);
+      }
+      if(path==='/relationships'&&request.method==='GET'){
+        const session=await authUser(request,env);
+        if(!session)return json({error:'sign in required'},401,env);
+        const company=(url.searchParams.get('company')||'').trim();
+        const days=Math.max(90,Math.min(730,Number(url.searchParams.get('days')||365)));
+        if(!company)return json({error:'company required'},400,env);
+        const data=await buildRelationshipIntelligence(env,company,{days,rowLimit:7500});
+        return json(data,data.ok?200:400,env);
+      }
+
       if(path==='/competitors'&&request.method==='GET'){
         const session=await authUser(request,env);
         if(!session)return json({error:'sign in required'},401,env);
