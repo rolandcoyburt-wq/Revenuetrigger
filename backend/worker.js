@@ -2682,14 +2682,24 @@ export default {
             for(const x of chandlerProjects){const type=classifyProjectType(`${x.name} ${x.scope}`);projectMix[type]=(projectMix[type]||0)+1;clusterKeys.add(`Chandler|${normalizeProjectName(x.name)}`)}
           }
 
-          const permitTrend=pctChange(Number(row.permit_count||0),Number(prior.n||0));
-          const valueTrend=pctChange(Number(row.reported_value||0),Number(prior.value||0));
+          // V120: do not manufacture +100% growth when the prior comparison period has no records.
+          // A zero baseline is "newly observed", not measurable percentage growth.
+          const priorPermitCount=Number(prior.n||0);
+          const priorReportedValue=Number(prior.value||0);
+          const currentPermitCount=Number(row.permit_count||0);
+          const currentReportedValue=Number(row.reported_value||0);
+          const hasPermitTrendBaseline=priorPermitCount>0;
+          const hasValueTrendBaseline=priorReportedValue>0;
+          const permitTrend=hasPermitTrendBaseline?pctChange(currentPermitCount,priorPermitCount):null;
+          const valueTrend=hasValueTrendBaseline?pctChange(currentReportedValue,priorReportedValue):null;
+          const trendStatus=hasPermitTrendBaseline?'comparable':(currentPermitCount>0?'newly_observed':'no_activity');
           const sortedTerritories=Object.entries(territories).sort((a,b)=>b[1]-a[1]);
           const sortedMix=Object.entries(projectMix).sort((a,b)=>b[1]-a[1]);
           let competitiveSignal='Activity is stable in the selected period.';
-          if(permitTrend>=25)competitiveSignal=`Activity increased ${permitTrend}% versus the previous ${days}-day period.`;
+          if(trendStatus==='newly_observed')competitiveSignal=`Newly observed activity in the selected ${days}-day period; no prior-period baseline is available yet.`;
+          else if(permitTrend>=25)competitiveSignal=`Activity increased ${permitTrend}% versus the previous ${days}-day period.`;
           else if(permitTrend<=-25)competitiveSignal=`Activity decreased ${Math.abs(permitTrend)}% versus the previous ${days}-day period.`;
-          if(sortedTerritories.length>1 && sortedTerritories[0][1]===1)competitiveSignal=`New or limited activity detected across ${sortedTerritories.length} markets.`;
+          if(hasPermitTrendBaseline && sortedTerritories.length>1 && sortedTerritories[0][1]===1)competitiveSignal=`New or limited activity detected across ${sortedTerritories.length} markets.`;
 
           const combinedRecent=[...history.slice(0,5),...chandlerProjects.slice(0,5)].slice(0,5);
           const roc=await rocMatchesForCompany(env,row.company,8);
@@ -2712,6 +2722,9 @@ export default {
             latestActivity:row.latest_activity,
             permitTrend,
             valueTrend,
+            trendStatus,
+            priorPeriodPermitCount,
+            priorPeriodReportedValue,
             competitiveSignal,
             recentProjects:combinedRecent.map(x=>{
               const confidence=dataConfidence({company:x.company||row.company,officialValue:x.official_value??x.officialValue,address:x.address,permit:x.permit,status:x.permit_status||x.permitStatus,scope:x.scope,source:x.source,market:x.market});

@@ -675,8 +675,10 @@ function openCompetitorProfile(i){
   $('#cpTitle').textContent=c.company;
   $('#cpAliases').textContent=(c.aliases||[]).length>1?`Resolved aliases: ${(c.aliases||[]).join(' • ')} · Entity match ${c.entityMatchConfidence||'—'}%`:`Entity match ${c.entityMatchConfidence||'—'}%`;
 
-  const trendClass=c.permitTrend>0?'trend-up':c.permitTrend<0?'trend-down':'';
-  const trendArrow=c.permitTrend>0?'↑':c.permitTrend<0?'↓':'';
+  const hasTrendBaseline=c.trendStatus!=='newly_observed' && c.permitTrend!=null;
+  const trendClass=!hasTrendBaseline?'trend-up':c.permitTrend>0?'trend-up':c.permitTrend<0?'trend-down':'';
+  const trendArrow=!hasTrendBaseline?'':c.permitTrend>0?'↑':c.permitTrend<0?'↓':'';
+  const trendDisplay=!hasTrendBaseline?'NEW':`${trendArrow} ${Math.abs(c.permitTrend||0)}%`;
   const territoryBars=(c.territories||[]).slice(0,6).map(x=>`<div class="bar-row"><span>${esc(x.name)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(3,x.share)}%"></div></div><b>${x.share}%</b></div>`).join('')||'<div class="freshness">No territory distribution available.</div>';
   const mixBars=(c.projectMix||[]).slice(0,6).map(x=>`<div class="bar-row"><span>${esc(x.name)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(3,x.share)}%"></div></div><b>${x.share}%</b></div>`).join('')||'<div class="freshness">No project-mix data available.</div>';
   const recent=(c.recentProjects||[]).map(p=>`<div class="profile-project"><div class="profile-project-head"><b>${esc(p.name||'Project activity')}</b><span>${p.officialValue?moneyCompact(p.officialValue):'Value not reported'}</span></div><small>${esc(p.market||'')} · ${p.date?new Date(p.date).toLocaleDateString():'Date not published'} · ${esc(p.lifecycle?.stage||'Stage unknown')}</small><div style="margin-top:7px"><span class="mini-badge">Confidence ${p.confidence||'—'}%</span><span class="mini-badge">${esc(p.source||'Public source')}</span></div></div>`).join('')||'<div class="freshness">No recent projects available.</div>';
@@ -699,9 +701,9 @@ function openCompetitorProfile(i){
       <div class="profile-kpi"><small>Permit activity</small><strong>${c.permitCount||0}</strong></div>
       <div class="profile-kpi"><small>Active projects</small><strong>${c.activeProjects||0}</strong></div>
       <div class="profile-kpi"><small>Reported value</small><strong>${moneyCompact(c.reportedValue)}</strong></div>
-      <div class="profile-kpi"><small>Activity trend</small><strong class="${trendClass}">${trendArrow} ${Math.abs(c.permitTrend||0)}%</strong></div>
+      <div class="profile-kpi"><small>Activity trend</small><strong class="${trendClass}">${trendDisplay}</strong></div>
     </div>
-    <div class="signal-card"><strong>Competitive signal</strong><br>${esc(c.competitiveSignal||'No meaningful change detected in the current period.')}</div>
+    <div class="signal-card"><strong>Activity signal</strong><br>${esc(c.competitiveSignal||'No meaningful change detected in the current period.')}</div>
     <div id="cpRelationship" class="relationship-shell"><div class="relationship-loading">Building Company Intelligence from permit-linked history…</div></div>
     ${rocPanel}
     <button class="btn ${isWatching(c.company)?'watch-btn watching':'btn-primary watch-btn'}" onclick="toggleWatch('${String(c.company).replace(/'/g,"\'")}')">${isWatching(c.company)?'✓ Watching competitor':'Watch competitor'}</button>
