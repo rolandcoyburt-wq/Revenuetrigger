@@ -396,6 +396,13 @@ function opportunityScorePipelineCandidateV113({text='',status='',date=null,offi
   };
 }
 
+// V114 production Early Pipeline scorer.
+// This promotes the validated V113 shadow model for Early Pipeline only.
+// Live permit scoring remains on the existing production model.
+function opportunityScorePipelineV2(args={}){
+  return opportunityScorePipelineCandidateV113(args);
+}
+
 function dataConfidenceCandidate({company='',officialValue=null,address='',permit='',status='',scope='',source='',date=null}={}){
   let score=0;
   const reasons=[];
@@ -2643,12 +2650,14 @@ export default {
               matchType:matchedContractor.matchType||'project',
               matchConfidence:matchedContractor.matchConfidence||null
             }:null);
-            const model=opportunityScore({
+            const model=opportunityScorePipelineV2({
               text,
               status,
-              date:date||Date.now(),
+              date:date||null,
               officialValue:null,
-              address:'Chandler, AZ'
+              address:'Chandler, AZ',
+              company:participant?.company||'',
+              sourceFresh:true
             });
 
             pipeline.push({
@@ -2672,6 +2681,8 @@ export default {
               sellerFit:model.sellerFit,
               categories:classify(text),
               temperature:model.temperature,
+              scoreVersion:'pipeline-v2',
+              timingBasis:model.diagnostics?.recencyBasis||'event-date',
               source:`City of Chandler DSActiveProjects — ${stage}`
             });
           }
@@ -2850,6 +2861,16 @@ export default {
             error:accelaResult.error||null
           },
           participantCoverage:participantStats,
+          scoringModel:{
+            version:'pipeline-v2',
+            production:true,
+            rules:[
+              'Known event dates use the existing recency curve.',
+              'Missing event dates observed in the current authoritative Early Pipeline snapshot receive 15 timing/source-freshness points instead of 20.',
+              'Project-stage and pre-permit/first-mover weights remain separate.',
+              'Live permit scoring is unchanged.'
+            ]
+          },
           scoringShadowV111:{
             productionUnchanged:true,
             candidateRules:[
