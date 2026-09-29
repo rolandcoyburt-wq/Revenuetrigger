@@ -152,6 +152,108 @@ function opportunityScore({text='',status='',date=Date.now(),officialValue=null,
   };
 }
 
+
+// V110 shadow scorer. This is diagnostic only: production opportunity scores are
+// intentionally unchanged until the comparison data is reviewed.
+function strictScoreDateMs(date){
+  if(date===null||date===undefined||date==='')return null;
+  let ts=null;
+  if(typeof date==='number' || /^\d+(?:\.\d+)?$/.test(String(date).trim())){
+    const n=Number(date);
+    if(Number.isFinite(n))ts=n>10000000000?n:n*1000;
+  }else{
+    const parsed=new Date(date).getTime();
+    if(Number.isFinite(parsed))ts=parsed;
+  }
+  return Number.isFinite(ts)?ts:null;
+}
+
+function opportunityScoreCandidate({text='',status='',date=null,officialValue=null,address='',company=''}={}){
+  const t=String(text||'').toLowerCase();
+  const s=String(status||'').toLowerCase();
+  const fits=sellerFitScores(t);
+
+  // Preserve the production stage logic, but cap the combined lifecycle +
+  // early-signal contribution at 30 points so PRE-TECH is not rewarded twice
+  // at the full 25 + 10 weighting.
+  let projectStage=12;
+  if(/\b(?:pre[- ]?tech|planning|zoning|development review|site plan|concept review)\b/i.test(`${t} ${s}`))projectStage=25;
+  else if(/\b(?:submitted|applied|application|in review|under review|plan review|pending)\b/i.test(s))projectStage=22;
+  else if(/\b(?:approved|ready to issue)\b/i.test(s))projectStage=18;
+  else if(/\b(?:issued|permit issued)\b/i.test(s))projectStage=14;
+  else if(/\b(?:inspection|construction)\b/i.test(s))projectStage=7;
+  else if(/\b(?:final|completed|complete|closed)\b/i.test(s))projectStage=2;
+  else if(/\b(?:cancel|expired|withdrawn|void|denied)\b/i.test(s))projectStage=0;
+
+  let prePermitRaw=0;
+  if(/\b(?:pre[- ]?tech|planning|zoning|development review|site plan|concept review)\b/i.test(`${t} ${s}`))prePermitRaw=10;
+  else if(/\b(?:submitted|applied|application|in review|under review|plan review|pending)\b/i.test(s))prePermitRaw=6;
+  else if(/\b(?:approved|ready to issue)\b/i.test(s))prePermitRaw=4;
+  else if(/\b(?:issued)\b/i.test(s))prePermitRaw=1;
+  const prePermit=Math.min(prePermitRaw,Math.max(0,30-projectStage));
+
+  // Missing/invalid dates receive no recency points. A future date more than
+  // two days ahead is treated as unreliable rather than "brand new".
+  const ts=strictScoreDateMs(date);
+  let recency=0;
+  if(ts!==null){
+    const delta=Date.now()-ts;
+    if(delta>=-2*86400000){
+      const ageDays=Math.max(0,delta/86400000);
+      recency=ageDays<=1?20:ageDays<=3?18:ageDays<=7?15:ageDays<=14?11:ageDays<=30?7:ageDays<=90?3:0;
+    }
+  }
+
+  const ov=Number(officialValue);
+  let projectValue=5;
+  if(Number.isFinite(ov)&&ov>0){
+    if(ov>=2000000)projectValue=15;
+    else if(ov>=750000)projectValue=13;
+    else if(ov>=250000)projectValue=11;
+    else if(ov>=100000)projectValue=9;
+    else if(ov>=25000)projectValue=7;
+    else projectValue=4;
+  }else if(/\b(?:ground.?up|new construction|shell building|multifamily|industrial|hotel)\b/i.test(t))projectValue=10;
+  else if(/\b(?:tenant improvement|restaurant|medical|commercial remodel|build.?out)\b/i.test(t))projectValue=8;
+
+  const specificFits=Object.entries(fits).filter(([k])=>k!=='Commercial services').map(([,v])=>Number(v)||0);
+  const bestFit=specificFits.length?Math.max(...specificFits):Number(fits['Commercial services']||0);
+  const tradeRelevance=clamp(Math.round(bestFit*.15),0,15);
+
+  let projectType=4;
+  if(/\b(?:restaurant|retail|multifamily|industrial|medical|hospital|hotel|hospitality|warehouse|office|commercial)\b/i.test(t))projectType=10;
+  else if(/\b(?:tenant improvement|remodel|renovation|addition|alteration|build.?out)\b/i.test(t))projectType=8;
+  else if(/\b(?:hvac|mechanical|electrical|plumbing|roofing|signage|security|fire alarm)\b/i.test(t))projectType=6;
+  else if(/\b(?:residential|sfr|single[- ]family|pool|spa|garage)\b/i.test(t))projectType=2;
+
+  const c=String(company||'').trim();
+  const companyBehavior=c && !/^(not listed|unknown|n\/a|none|-+)$/i.test(c)?2:0;
+  const score=clamp(Math.round(projectStage+recency+projectValue+tradeRelevance+projectType+prePermit+companyBehavior),0,100);
+  return {
+    score,
+    temperature:temperatureForScore(score),
+    breakdown:{projectStage,recency,projectValue,tradeRelevance,projectType,prePermit,companyBehavior},
+    diagnostics:{prePermitRaw,lifecycleCapApplied:prePermitRaw-prePermit,hasValidDate:ts!==null},
+    sellerFit:fits
+  };
+}
+
+function dataConfidenceCandidate({company='',officialValue=null,address='',permit='',status='',scope='',source='',date=null}={}){
+  let score=0;
+  const reasons=[];
+  if(String(source||'').trim()){score+=10;reasons.push('Source attributed')}
+  if(String(permit||'').trim() && String(permit)!=='—'){score+=15;reasons.push('Permit / project ID present')}
+  if(strictScoreDateMs(date)!==null){score+=15;reasons.push('Valid event date')}
+  if(String(address||'').trim()){score+=15;reasons.push('Address present')}
+  const c=String(company||'').trim();
+  if(c && !/^(not listed|unknown|n\/a|none|-+)$/i.test(c)){score+=20;reasons.push('Company identified')}
+  const ov=Number(officialValue);
+  if(Number.isFinite(ov)&&ov>0){score+=15;reasons.push('Reported value present')}
+  if(String(status||'').trim() && String(status)!=='—'){score+=5;reasons.push('Stage/status present')}
+  if(String(scope||'').trim().length>=35){score+=10;reasons.push('Detailed description')}
+  return {score:clamp(score,0,100),reasons};
+}
+
 function dataConfidence({company='',officialValue=null,address='',permit='',status='',scope='',source='',market=''}={}){
   let score=25; // known source record exists
   const reasons=[];
@@ -1257,9 +1359,8 @@ async function scoringAudit(env,{days=30,limit=300}={}){
   days=clamp(Number(days||30),1,90);
   limit=clamp(Number(limit||300),25,500);
 
-  // Use persisted production leads for all established markets, but replace
-  // Chandler with the validated first-party live source so stale snapshots do
-  // not distort the audit while the scheduled D1 refresh catches up.
+  // Use persisted production leads for established markets, but replace
+  // Chandler with its validated first-party live source.
   const storedRows=(await stored(env,Math.min(500,limit*2),days))||[];
   let chandler=[];
   try{chandler=clusterLeads(await fetchChandlerAccelaPermits(Math.min(days,30),500));}catch{}
@@ -1273,6 +1374,13 @@ async function scoringAudit(env,{days=30,limit=300}={}){
   const quality={missingCompany:0,missingOfficialValue:0,missingAddress:0,missingPermit:0,lowDataConfidence:0};
   const markets={};
 
+  const candidateBuckets={HOT:0,WARM:0,WATCH:0,LOW:0};
+  const candidateMarkets={};
+  const confidenceBuckets={HIGH:0,MEDIUM:0,LOW:0};
+  const movements={scoreUp:0,scoreDown:0,scoreSame:0,temperatureUp:0,temperatureDown:0,temperatureSame:0,missingDateRecords:0,lifecycleCapRecords:0,totalDelta:0};
+  const movementRows=[];
+  const tempRank={LOW:0,WATCH:1,WARM:2,HOT:3};
+
   for(const x of combined){
     const market=x.market||marketFromSource(x.source)||'Unknown';
     if(!markets[market])markets[market]={count:0,scoreTotal:0,minScore:101,maxScore:-1,HOT:0,WARM:0,WATCH:0,LOW:0};
@@ -1285,9 +1393,28 @@ async function scoringAudit(env,{days=30,limit=300}={}){
     if(!String(x.address||'').trim())quality.missingAddress++;
     if(!String(x.permit||'').trim()||String(x.permit)==='—')quality.missingPermit++;
     if(Number(x.dataConfidence?.score||0)<60)quality.lowDataConfidence++;
+
+    const text=[x.name,x.scope,x.company].filter(Boolean).join(' ');
+    const cand=opportunityScoreCandidate({text,status:x.permitStatus||x.permit_status||'',date:x.date||x.event_date||null,officialValue:x.officialPermitValue??x.official_value,address:x.address,company:x.company});
+    const conf=dataConfidenceCandidate({company:x.company,officialValue:x.officialPermitValue??x.official_value,address:x.address,permit:x.permit,status:x.permitStatus||x.permit_status,scope:x.scope,source:x.source,date:x.date||x.event_date||null});
+    candidateBuckets[cand.temperature]=(candidateBuckets[cand.temperature]||0)+1;
+    if(!candidateMarkets[market])candidateMarkets[market]={count:0,scoreTotal:0,minScore:101,maxScore:-1,HOT:0,WARM:0,WATCH:0,LOW:0};
+    const cm=candidateMarkets[market];
+    cm.count++;cm.scoreTotal+=cand.score;cm.minScore=Math.min(cm.minScore,cand.score);cm.maxScore=Math.max(cm.maxScore,cand.score);cm[cand.temperature]=(cm[cand.temperature]||0)+1;
+    if(conf.score>=80)confidenceBuckets.HIGH++; else if(conf.score>=60)confidenceBuckets.MEDIUM++; else confidenceBuckets.LOW++;
+
+    const delta=cand.score-score;
+    movements.totalDelta+=delta;
+    if(delta>0)movements.scoreUp++; else if(delta<0)movements.scoreDown++; else movements.scoreSame++;
+    if((tempRank[cand.temperature]||0)>(tempRank[temp]||0))movements.temperatureUp++;
+    else if((tempRank[cand.temperature]||0)<(tempRank[temp]||0))movements.temperatureDown++;
+    else movements.temperatureSame++;
+    if(!cand.diagnostics.hasValidDate)movements.missingDateRecords++;
+    if(cand.diagnostics.lifecycleCapApplied>0)movements.lifecycleCapRecords++;
+    movementRows.push({market,name:x.name,currentScore:score,currentTemperature:temp,candidateScore:cand.score,candidateTemperature:cand.temperature,delta,candidateBreakdown:cand.breakdown,candidateConfidence:conf.score,diagnostics:cand.diagnostics});
   }
 
-  for(const m of Object.values(markets)){
+  for(const group of [markets,candidateMarkets])for(const m of Object.values(group)){
     m.avgScore=m.count?Number((m.scoreTotal/m.count).toFixed(1)):0;
     delete m.scoreTotal;
     if(m.minScore===101)m.minScore=0;
@@ -1301,19 +1428,38 @@ async function scoringAudit(env,{days=30,limit=300}={}){
   const missingDateProbe=opportunityScore({text:'commercial project',status:'PRE-TECH',date:null,officialValue:null,address:'',company:''});
   const issuedProbe=opportunityScore({text:'commercial project',status:'issued',date:Date.now(),officialValue:null,address:'',company:''});
   const preTechProbe=opportunityScore({text:'commercial project',status:'PRE-TECH',date:Date.now(),officialValue:null,address:'',company:''});
+  const candidateMissingDateProbe=opportunityScoreCandidate({text:'commercial project',status:'PRE-TECH',date:null,officialValue:null,address:'',company:''});
+  const candidateIssuedProbe=opportunityScoreCandidate({text:'commercial project',status:'issued',date:Date.now(),officialValue:null,address:'',company:''});
+  const candidatePreTechProbe=opportunityScoreCandidate({text:'commercial project',status:'PRE-TECH',date:Date.now(),officialValue:null,address:'',company:''});
+
+  const biggestDrops=[...movementRows].sort((a,b)=>a.delta-b.delta).slice(0,8);
+  const biggestRaises=[...movementRows].sort((a,b)=>b.delta-a.delta).slice(0,8);
+  movements.avgDelta=Number((movements.totalDelta/n).toFixed(2));
+  delete movements.totalDelta;
 
   return {
     sample:{days,requestedLimit:limit,count:combined.length,sourceMode:'D1 production leads for established markets + live City of Chandler Accela records'},
-    scoreBuckets:buckets,
-    byMarket:markets,
-    componentAverages,
-    quality,
+    production:{scoreBuckets:buckets,byMarket:markets,componentAverages,quality},
     scorerChecks:{
-      maxWeights,
-      maxPossible,
-      configuredTemperatureThresholds:{HOT:80,WARM:60,WATCH:40},
-      missingDateProbe:{score:missingDateProbe.score,recencyPoints:missingDateProbe.breakdown.recency,note:'A null date currently receives the same recency treatment as now.'},
-      stageOverlapProbe:{preTech:{score:preTechProbe.score,projectStage:preTechProbe.breakdown.projectStage,prePermit:preTechProbe.breakdown.prePermit},issued:{score:issuedProbe.score,projectStage:issuedProbe.breakdown.projectStage,prePermit:issuedProbe.breakdown.prePermit},note:'Project stage and pre-permit components both reward lifecycle timing; audit whether this intentional overlap is too strong.'}
+      maxWeights,maxPossible,configuredTemperatureThresholds:{HOT:80,WARM:60,WATCH:40},
+      missingDateProbe:{score:missingDateProbe.score,recencyPoints:missingDateProbe.breakdown.recency,note:'Production currently awards a null date full recency.'},
+      stageOverlapProbe:{preTech:{score:preTechProbe.score,projectStage:preTechProbe.breakdown.projectStage,prePermit:preTechProbe.breakdown.prePermit},issued:{score:issuedProbe.score,projectStage:issuedProbe.breakdown.projectStage,prePermit:issuedProbe.breakdown.prePermit}}
+    },
+    candidateV110:{
+      productionUnchanged:true,
+      changes:['Missing/invalid dates receive 0 recency points','PRE-TECH lifecycle + pre-permit contribution capped at 30 total points','Existing project value, trade relevance, project type, company context, and temperature thresholds preserved'],
+      maxPossible:92,
+      scoreBuckets:candidateBuckets,
+      byMarket:candidateMarkets,
+      confidenceBuckets,
+      movement:movements,
+      probes:{
+        missingDate:{score:candidateMissingDateProbe.score,recencyPoints:candidateMissingDateProbe.breakdown.recency},
+        preTech:{score:candidatePreTechProbe.score,projectStage:candidatePreTechProbe.breakdown.projectStage,prePermit:candidatePreTechProbe.breakdown.prePermit,rawPrePermit:candidatePreTechProbe.diagnostics.prePermitRaw},
+        issued:{score:candidateIssuedProbe.score,projectStage:candidateIssuedProbe.breakdown.projectStage,prePermit:candidateIssuedProbe.breakdown.prePermit}
+      },
+      biggestDrops,
+      biggestRaises
     },
     examples:{
       highest:combined.slice(0,8).map(x=>({market:x.market,name:x.name,score:x.score,temperature:x.temperature,breakdown:x.scoreBreakdown,dataConfidence:x.dataConfidence?.score??null})),
