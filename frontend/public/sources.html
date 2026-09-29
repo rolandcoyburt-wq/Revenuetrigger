@@ -1119,7 +1119,7 @@ html[data-theme="light"] .source-flow-console:before{background:radial-gradient(
 <header class="topbar"><div class="wrap"><nav><a class="brand" href="/" aria-label="RevenueTrigger home">
       <img class="brand-logo brand-logo-dark" src="/assets/revenuetrigger-icon.svg" alt="RevenueTrigger">
       <img class="brand-logo brand-logo-light" src="/assets/RT-Logo-WHT-BG.svg" alt="RevenueTrigger">
-    </a><div class="navlinks"><a href="/#signals">Opportunities</a><a href="/#pipeline">Early Pipeline</a><a href="/competitors.html">Competitors</a><a href="/sources.html" class="nav-sources">Sources</a><a href="#pricing">Pricing</a></div><details class="mobile-nav"><summary><span>Navigate</span><span class="mobile-nav-icon" aria-hidden="true">☰</span></summary><div class="mobile-nav-panel"><a href="/#signals">Opportunities</a><a href="/#pipeline">Early Pipeline</a><a href="/competitors.html">Competitors</a><a href="/sources.html">Sources</a><a href="/#pricing" class="mobile-nav-pricing">Pricing</a></div></details><button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light theme" title="Switch to light theme" onclick="toggleTheme()">
+    </a><div class="navlinks"><a href="/#signals">Opportunities</a><a href="/#pipeline">Early Pipeline</a><a href="/competitors.html">Competitors</a><a href="/sources.html" class="nav-sources">Sources</a><a href="/sources.html#pricing">Pricing</a></div><details class="mobile-nav"><summary><span>Navigate</span><span class="mobile-nav-icon" aria-hidden="true">☰</span></summary><div class="mobile-nav-panel"><a href="/#signals">Opportunities</a><a href="/#pipeline">Early Pipeline</a><a href="/competitors.html">Competitors</a><a href="/sources.html">Sources</a><a href="/sources.html#pricing" class="mobile-nav-pricing">Pricing</a></div></details><button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light theme" title="Switch to light theme" onclick="toggleTheme()">
         <span class="theme-toggle-icon" id="themeIcon">☀</span>
         <span class="theme-label theme-label-full" id="themeLabel">Light mode</span>
         <span class="theme-label theme-label-short" id="themeLabelShort">Light</span>
@@ -1244,6 +1244,18 @@ $$('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModa
 <script>
 (()=>{const cards=[...document.querySelectorAll('.pricing .price')];if(!cards.length)return;let raf=0;const paint=()=>{raf=0;if(!matchMedia('(max-width:620px)').matches){cards.forEach(c=>c.classList.remove('scroll-active'));return}const mid=innerHeight/2;let best=null,d0=Infinity;cards.forEach(c=>{const r=c.getBoundingClientRect();if(r.bottom<=0||r.top>=innerHeight)return;const d=Math.abs((r.top+r.bottom)/2-mid);if(d<d0){d0=d;best=c}});cards.forEach(c=>c.classList.toggle('scroll-active',c===best&&d0<innerHeight*.46))};const q=()=>{if(!raf)raf=requestAnimationFrame(paint)};addEventListener('scroll',q,{passive:true});addEventListener('resize',q,{passive:true});paint()})();
 </script>
+
+<style>
+/* V99 — Mobile plan focus + global pricing destination. */
+@media (max-width:620px){
+  .sources-page-price .price:not(.featured).scroll-active,
+  html[data-theme="light"] .sources-page-price .price:not(.featured).scroll-active,
+  html[data-theme="dark"] .sources-page-price .price:not(.featured).scroll-active{
+    border-color:#2aee61 !important;
+    box-shadow:0 0 0 3px #2aee61,0 0 34px rgba(42,238,97,.38) !important;
+  }
+}
+</style>
 </body></html>
 <style>
 /* V96 — Source pricing card/button refinement. */
