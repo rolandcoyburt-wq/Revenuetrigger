@@ -1245,35 +1245,3 @@ $$('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModa
 (()=>{const cards=[...document.querySelectorAll('.pricing .price')];if(!cards.length)return;let raf=0;const paint=()=>{raf=0;if(!matchMedia('(max-width:620px)').matches){cards.forEach(c=>c.classList.remove('scroll-active'));return}const mid=innerHeight/2;let best=null,d0=Infinity;cards.forEach(c=>{const r=c.getBoundingClientRect();if(r.bottom<=0||r.top>=innerHeight)return;const d=Math.abs((r.top+r.bottom)/2-mid);if(d<d0){d0=d;best=c}});cards.forEach(c=>c.classList.toggle('scroll-active',c===best&&d0<innerHeight*.46))};const q=()=>{if(!raf)raf=requestAnimationFrame(paint)};addEventListener('scroll',q,{passive:true});addEventListener('resize',q,{passive:true});paint()})();
 </script>
 </body></html>
-<style>
-/* V96 — Source pricing card/button refinement. */
-.sources-page-price .price:not(.featured),
-html[data-theme="light"] .sources-page-price .price:not(.featured),
-html[data-theme="dark"] .sources-page-price .price:not(.featured){
-  background:#000 !important;
-  background-image:none !important;
-  border-color:#1b2a22 !important;
-  box-shadow:none !important;
-}
-.sources-page-price .price:not(.featured) .btn-secondary,
-html[data-theme="light"] .sources-page-price .price:not(.featured) .btn-secondary,
-html[data-theme="dark"] .sources-page-price .price:not(.featured) .btn-secondary{
-  background:#fff !important;
-  border-color:#fff !important;
-  color:#050b07 !important;
-  box-shadow:none !important;
-}
-@media (hover:hover) and (pointer:fine){
-  .sources-page-price .price:not(.featured):hover,
-  html[data-theme="light"] .sources-page-price .price:not(.featured):hover,
-  html[data-theme="dark"] .sources-page-price .price:not(.featured):hover{
-    border-color:#2aee61 !important;
-    box-shadow:0 0 0 2px #2aee61,0 0 30px rgba(42,238,97,.32) !important;
-  }
-  .sources-page-price .price:not(.featured) .btn-secondary:hover{
-    background:#fff !important;
-    border-color:#fff !important;
-    color:#050b07 !important;
-  }
-}
-</style>
