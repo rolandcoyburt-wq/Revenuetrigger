@@ -2263,15 +2263,17 @@ async function buildRelationshipIntelligence(env,rawCompany,{days=365,rowLimit=5
     }
   }
 
-  const frequentlyAppearsWith=[...co.values()].map(r=>({
+  const historicalAssociations=[...co.values()].map(r=>({
     company:r.company,
     sharedProjectCount:r.projects.size,
+    evidenceStrength:r.projects.size>=3?'repeated':r.projects.size===2?'emerging':'single_observation',
     markets:[...r.markets],
     projectTypes:[...r.types.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5).map(([name,count])=>({name,count})),
     latestActivity:r.latestActivity,
     evidence:'Documented co-occurrence at the same normalized project address. This does not establish a contractual relationship.',
     examples:r.examples
   })).sort((a,b)=>b.sharedProjectCount-a.sharedProjectCount||String(b.latestActivity||'').localeCompare(String(a.latestActivity||''))).slice(0,20);
+  const frequentlyAppearsWith=historicalAssociations.filter(x=>x.sharedProjectCount>=2);
 
   const now=Date.now(),d30=30*86400000,d90=90*86400000;
   const recent30=target.filter(x=>x._ms&&now-x._ms<=d30);
@@ -2281,18 +2283,26 @@ async function buildRelationshipIntelligence(env,rawCompany,{days=365,rowLimit=5
 
   const recentMarkets=new Set(recent90.map(x=>x.market).filter(Boolean));
   const priorMarkets=new Set(priorHistory.map(x=>x.market).filter(Boolean));
-  const newMarkets=[...recentMarkets].filter(x=>!priorMarkets.has(x));
   const recentTypes=new Set(recent90.map(x=>x._type).filter(Boolean));
   const priorTypes=new Set(priorHistory.map(x=>x._type).filter(Boolean));
-  const newProjectTypes=[...recentTypes].filter(x=>!priorTypes.has(x));
+  const hasExpansionBaseline=priorHistory.length>0;
+  const newMarkets=hasExpansionBaseline?[...recentMarkets].filter(x=>!priorMarkets.has(x)):[];
+  const newProjectTypes=hasExpansionBaseline?[...recentTypes].filter(x=>!priorTypes.has(x)):[];
+  const firstObservedMarkets=!hasExpansionBaseline?[...recentMarkets]:[];
+  const firstObservedProjectTypes=!hasExpansionBaseline?[...recentTypes]:[];
 
   const typeCounts={};for(const x of target)typeCounts[x._type]=(typeCounts[x._type]||0)+1;
   const marketCounts={};for(const x of target)marketCounts[x.market]=(marketCounts[x.market]||0)+1;
 
   const currentValue=sumOfficialValue(recent30),priorValue=sumOfficialValue(prior30);
   const currentCount=recent30.length,priorCount=prior30.length;
+  const currentProjects=new Set(recent30.map(x=>x._projectKey||`id:${x.id}`)).size;
+  const priorProjects=new Set(prior30.map(x=>x._projectKey||`id:${x.id}`)).size;
   const currentAvg=avgNumeric(recent30,'score'),priorAvg=avgNumeric(prior30,'score');
-  const countChange=pctChange(currentCount,priorCount),valueChange=pctChange(currentValue,priorValue);
+  const hasMomentumBaseline=priorCount>0;
+  const countChange=hasMomentumBaseline?pctChange(currentCount,priorCount):null;
+  const projectChange=priorProjects>0?pctChange(currentProjects,priorProjects):null;
+  const valueChange=priorValue>0?pctChange(currentValue,priorValue):null;
 
   return {
     ok:true,company,aliases,days,historyFound:true,
@@ -2300,22 +2310,36 @@ async function buildRelationshipIntelligence(env,rawCompany,{days=365,rowLimit=5
     permitLinkedRecordCount:target.length,
     latestActivity:target[0]?.event_date||null,
     companyMomentum:{
-      current30Days:{records:currentCount,reportedValue:currentValue,avgOpportunityScore:Math.round(currentAvg*10)/10},
-      previous30Days:{records:priorCount,reportedValue:priorValue,avgOpportunityScore:Math.round(priorAvg*10)/10},
-      change:{recordCountPct:countChange,reportedValuePct:valueChange,avgScoreDelta:Math.round((currentAvg-priorAvg)*10)/10}
+      status:hasMomentumBaseline?'comparable':'newly_observed',
+      interpretation:hasMomentumBaseline?'Current 30 days compared with the previous 30 days.':'Activity is present in the current 30-day window, but there is no previous-30-day baseline. Percentage growth is intentionally not calculated.',
+      current30Days:{records:currentCount,projects:currentProjects,reportedValue:currentValue,avgOpportunityScore:Math.round(currentAvg*10)/10},
+      previous30Days:{records:priorCount,projects:priorProjects,reportedValue:priorValue,avgOpportunityScore:Math.round(priorAvg*10)/10},
+      change:{recordCountPct:countChange,projectCountPct:projectChange,reportedValuePct:valueChange,avgScoreDelta:hasMomentumBaseline?Math.round((currentAvg-priorAvg)*10)/10:null}
     },
     territoryHistory:Object.entries(marketCounts).sort((a,b)=>b[1]-a[1]).map(([market,count])=>({market,count})),
     projectTypeHistory:Object.entries(typeCounts).sort((a,b)=>b[1]-a[1]).map(([projectType,count])=>({projectType,count})),
     expansionSignals:{
+      status:hasExpansionBaseline?'comparable':'insufficient_history',
       comparison:'Last 90 days versus earlier history in the selected window',
+      priorHistoryRecords:priorHistory.length,
       newMarkets,
-      newProjectTypes
+      newProjectTypes,
+      firstObservedMarkets,
+      firstObservedProjectTypes,
+      interpretation:hasExpansionBaseline?'New means observed in the last 90 days and absent from earlier records in the selected history window.':'There is no earlier history in the selected window, so current markets/project types are labeled first observed rather than expansion.'
     },
+    historicalAssociations,
     frequentlyAppearsWith,
+    relationshipSummary:{
+      associationCount:historicalAssociations.length,
+      repeatedAssociationCount:frequentlyAppearsWith.length,
+      strongestEvidence:historicalAssociations.some(x=>x.evidenceStrength==='repeated')?'repeated':historicalAssociations.some(x=>x.evidenceStrength==='emerging')?'emerging':historicalAssociations.length?'single_observation':'none'
+    },
     methodology:{
       association:'Same normalized project address in stored public permit-linked records.',
+      frequentThreshold:'Frequently Appears With requires at least 2 distinct shared project addresses. Single-project co-occurrence is retained separately as a historical association.',
       caution:'Co-occurrence is historical association evidence only and does not prove a prime/subcontractor, award, payment, or contractual relationship.',
-      expansion:'A market or project type is considered new only when it appears in the last 90 days and not in the earlier selected history.'
+      expansion:'A market or project type is considered expansion only when earlier history exists in the selected window. Otherwise it is labeled first observed.'
     }
   };
 }
@@ -2362,6 +2386,8 @@ export default {
           latestActivity:data.latestActivity||null,
           companyMomentum:data.companyMomentum||null,
           expansionSignals:data.expansionSignals||null,
+          relationshipSummary:data.relationshipSummary||null,
+          historicalAssociations:(data.historicalAssociations||[]).slice(0,10),
           frequentlyAppearsWith:(data.frequentlyAppearsWith||[]).slice(0,10),
           methodology:data.methodology||null
         },200,env);
