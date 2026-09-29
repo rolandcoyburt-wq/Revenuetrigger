@@ -511,10 +511,11 @@ async function tucsonDebug(env){
 
 function scottsdaleDate(v){
   const s=String(v||'').trim();
-  const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+\d{1,2}:\d{2}:\d{2}\s+[AP]M)?$/i);
+  if(!s)return null;
+  const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+\d{1,2}:\d{2}(?::\d{2})?\s*[AP]M)?$/i);
   if(m)return Date.UTC(Number(m[3]),Number(m[1])-1,Number(m[2]),12,0,0);
   const n=new Date(s).getTime();
-  return Number.isFinite(n)?n:Date.now();
+  return Number.isFinite(n)?n:null;
 }
 function scottsdaleMmddyyyy(d){
   const mm=String(d.getUTCMonth()+1).padStart(2,'0');
@@ -574,9 +575,15 @@ async function fetchScottsdale(days=7,limit=500){
 
   const rows=parseScottsdaleCsv(text);
   const seen=new Set(),out=[];
+  const startMs=Date.UTC(start.getUTCFullYear(),start.getUTCMonth(),start.getUTCDate(),0,0,0);
+  const endMs=Date.UTC(end.getUTCFullYear(),end.getUTCMonth(),end.getUTCDate(),23,59,59);
   for(const a of rows){
     const permit=String(a.Permit||'').trim();
     if(!permit||seen.has(permit))continue;
+    const issueDate=scottsdaleDate(a.IssueDate);
+    // Never manufacture recency for a Scottsdale row. If the city omits or returns
+    // an unparseable issue date, exclude it from a date-window opportunity feed.
+    if(!Number.isFinite(issueDate)||issueDate<startMs||issueDate>endMs)continue;
     seen.add(permit);
 
     const scope=[a.PermitType,a.Subdivision,a.Builder].filter(Boolean).join(' — ');
@@ -586,7 +593,7 @@ async function fetchScottsdale(days=7,limit=500){
       id:permit,
       name:a.PermitType||'Scottsdale permit activity',
       address:a.Address||'Scottsdale, AZ',
-      date:scottsdaleDate(a.IssueDate),
+      date:issueDate,
       company:a.Builder||a.Owner||'Not listed',
       scope,
       permit,
@@ -626,7 +633,8 @@ async function scottsdaleDebug(days=7){
   const rows=parseScottsdaleCsv(text);
   const headersFound=rows.length?Object.keys(rows[0]):[];
   const issueDates={};
-  let withPermit=0,withBuilder=0,withOwner=0,withValuation=0;
+  let withPermit=0,withBuilder=0,withOwner=0,withValuation=0,invalidIssueDate=0;
+  let newestIssueDate=null,oldestIssueDate=null;
   for(const a of rows){
     if(String(a.Permit||'').trim())withPermit++;
     if(String(a.Builder||'').trim())withBuilder++;
@@ -634,11 +642,22 @@ async function scottsdaleDebug(days=7){
     if(Number(String(a.Valuation||'').replace(/[$,]/g,''))>0)withValuation++;
     const d=String(a.IssueDate||'').trim()||'(missing)';
     issueDates[d]=(issueDates[d]||0)+1;
+    const ts=scottsdaleDate(a.IssueDate);
+    if(!Number.isFinite(ts))invalidIssueDate++;
+    else{
+      if(newestIssueDate===null||ts>newestIssueDate)newestIssueDate=ts;
+      if(oldestIssueDate===null||ts<oldestIssueDate)oldestIssueDate=ts;
+    }
   }
   return {
     requested:{days,startDate:scottsdaleMmddyyyy(start),endDate:scottsdaleMmddyyyy(end)},
     http:{status:r.status,contentType:r.headers.get('content-type')||null,bytes:text.length},
-    parsed:{rows:rows.length,headers:headersFound,withPermit,withBuilder,withOwner,withValuation},
+    parsed:{
+      rows:rows.length,headers:headersFound,withPermit,withBuilder,withOwner,withValuation,
+      invalidIssueDate,
+      newestIssueDate:newestIssueDate?new Date(newestIssueDate).toISOString():null,
+      oldestIssueDate:oldestIssueDate?new Date(oldestIssueDate).toISOString():null
+    },
     issueDates:Object.entries(issueDates).sort((a,b)=>String(b[0]).localeCompare(String(a[0]))).slice(0,20),
     sample:rows.slice(0,5).map(a=>({Permit:a.Permit||null,IssueDate:a.IssueDate||null,PermitType:a.PermitType||null,Address:a.Address||null,Valuation:a.Valuation||null,Builder:a.Builder||null,Owner:a.Owner||null}))
   };
@@ -2219,6 +2238,18 @@ export default {
           .sort((a,b)=>(b.score-a.score)||String(b.date||'').localeCompare(String(a.date||'')))
           .slice(0,300);
 
+        const uniqueRequestedPermits=new Set(permitNumbers.map(x=>String(x||'').trim()).filter(Boolean)).size;
+        const participantStats={listed:0,notListed:0,accela:0,direct:0,projectFallback:0};
+        for(const x of rows){
+          if(x.company){
+            participantStats.listed++;
+            if(String(x.companyProvenance||'').includes('Accela permit record'))participantStats.accela++;
+            else if(String(x.companyProvenance||'').includes('DSActiveProjects'))participantStats.direct++;
+            else if(String(x.companyProvenance||'').includes('GPS Construction Projects'))participantStats.projectFallback++;
+          }else participantStats.notListed++;
+        }
+        participantStats.listedShare=rows.length?Number((participantStats.listed/rows.length).toFixed(3)):0;
+
         return json({
           ok:true,
           market:'Chandler',
@@ -2226,10 +2257,12 @@ export default {
           stages,
           accelaPermitSource:{
             ok:accelaResult.ok,
-            requestedPermits:permitNumbers.length,
+            requestedStageReferences:permitNumbers.length,
+            uniqueRequestedPermits,
             matchedRecords:(accelaResult.rows||[]).length,
             error:accelaResult.error||null
           },
+          participantCoverage:participantStats,
           contractorSource:{
             ok:contractorResult.ok,
             count:(contractorResult.rows||[]).length,
