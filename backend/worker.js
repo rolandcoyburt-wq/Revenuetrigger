@@ -2344,6 +2344,111 @@ async function buildRelationshipIntelligence(env,rawCompany,{days=365,rowLimit=5
   };
 }
 
+
+async function discoverRelationshipCandidates(env,{days=365,rowLimit=7500,limit=12}={}){
+  days=Math.max(90,Math.min(730,Number(days)||365));
+  rowLimit=Math.max(1000,Math.min(12000,Number(rowLimit)||7500));
+  limit=Math.max(3,Math.min(25,Number(limit)||12));
+  const rows=(await env.DB.prepare(`
+    SELECT id,name,address,event_date,market,permit,official_value,score,scope,company
+    FROM leads
+    WHERE company IS NOT NULL
+      AND TRIM(company)<>''
+      AND LOWER(TRIM(company)) NOT IN ('not listed','unknown','n/a','none')
+      AND datetime(event_date)>=datetime('now',?)
+    ORDER BY datetime(event_date) DESC
+    LIMIT ?
+  `).bind(`-${days} days`,rowLimit).all()).results||[];
+
+  const prepared=rows.map(x=>{
+    const canonical=canonicalCompanyName(x.company||'');
+    const addr=usableClusterAddress({address:x.address,market:x.market});
+    return {...x,_canonical:canonical,_projectKey:addr?`${x.market||''}|${addr}`:'',_type:classifyProjectType(`${x.name||''} ${x.scope||''}`),_ms:safeEventMs(x.event_date)};
+  }).filter(x=>isListedCompanyName(x._canonical));
+
+  const now=Date.now(),d30=30*86400000;
+  const companyStats=new Map();
+  const projectCompanies=new Map();
+  for(const x of prepared){
+    let st=companyStats.get(x._canonical);
+    if(!st){st={company:x._canonical,records:0,projects:new Set(),markets:new Set(),types:new Set(),latestActivity:null,current30:0,previous30:0};companyStats.set(x._canonical,st)}
+    st.records++;
+    if(x._projectKey)st.projects.add(x._projectKey);
+    if(x.market)st.markets.add(x.market);
+    if(x._type)st.types.add(x._type);
+    if(!st.latestActivity||String(x.event_date||'')>String(st.latestActivity))st.latestActivity=x.event_date;
+    if(x._ms){
+      const age=now-x._ms;
+      if(age<=d30)st.current30++;
+      else if(age<=2*d30)st.previous30++;
+    }
+    if(x._projectKey){
+      if(!projectCompanies.has(x._projectKey))projectCompanies.set(x._projectKey,new Set());
+      projectCompanies.get(x._projectKey).add(x._canonical);
+    }
+  }
+
+  const pairCounts=new Map();
+  for(const companies of projectCompanies.values()){
+    const arr=[...companies].sort();
+    if(arr.length<2)continue;
+    for(let i=0;i<arr.length;i++)for(let j=i+1;j<arr.length;j++){
+      const key=`${arr[i]}|||${arr[j]}`;
+      pairCounts.set(key,(pairCounts.get(key)||0)+1);
+    }
+  }
+
+  const associationStats=new Map();
+  for(const [key,count] of pairCounts){
+    const [a,b]=key.split('|||');
+    for(const [company,other] of [[a,b],[b,a]]){
+      let st=associationStats.get(company);
+      if(!st){st={associationCount:0,repeatedAssociationCount:0,strongestSharedProjectCount:0,topCounterparties:[]};associationStats.set(company,st)}
+      st.associationCount++;
+      if(count>=2)st.repeatedAssociationCount++;
+      st.strongestSharedProjectCount=Math.max(st.strongestSharedProjectCount,count);
+      st.topCounterparties.push({company:other,sharedProjectCount:count});
+    }
+  }
+
+  const candidates=[...companyStats.values()].map(st=>{
+    const assoc=associationStats.get(st.company)||{associationCount:0,repeatedAssociationCount:0,strongestSharedProjectCount:0,topCounterparties:[]};
+    const comparable=st.previous30>0;
+    const qaDepth=(st.projects.size>=3?1:0)+(assoc.repeatedAssociationCount>0?2:0)+(comparable?1:0)+(st.markets.size>=2?1:0);
+    return {
+      company:st.company,
+      projectCount:st.projects.size,
+      permitLinkedRecordCount:st.records,
+      marketCount:st.markets.size,
+      markets:[...st.markets],
+      projectTypeCount:st.types.size,
+      latestActivity:st.latestActivity,
+      current30Records:st.current30,
+      previous30Records:st.previous30,
+      hasMomentumBaseline:comparable,
+      associationCount:assoc.associationCount,
+      repeatedAssociationCount:assoc.repeatedAssociationCount,
+      strongestSharedProjectCount:assoc.strongestSharedProjectCount,
+      topCounterparties:assoc.topCounterparties.sort((a,b)=>b.sharedProjectCount-a.sharedProjectCount||a.company.localeCompare(b.company)).slice(0,3),
+      qaDepth
+    };
+  }).filter(x=>x.projectCount>=2)
+    .sort((a,b)=>b.qaDepth-a.qaDepth||b.repeatedAssociationCount-a.repeatedAssociationCount||b.projectCount-a.projectCount||b.permitLinkedRecordCount-a.permitLinkedRecordCount)
+    .slice(0,limit);
+
+  return {
+    ok:true,days,rowsExamined:prepared.length,candidateCount:candidates.length,
+    recommended:candidates[0]||null,
+    candidates,
+    methodology:{
+      purpose:'Find companies with enough stored history to QA Company Momentum and repeated historical associations before building the UI.',
+      candidateMinimum:'At least 2 distinct normalized project addresses in the selected window.',
+      repeatedAssociation:'At least 2 distinct shared project addresses with the same counterparty.',
+      caution:'Candidate ordering is for QA depth only; it is not a commercial ranking or prediction.'
+    }
+  };
+}
+
 export default {
   async fetch(request,env){
     if(request.method==='OPTIONS')return new Response(null,{headers:cors(env)});
@@ -2370,6 +2475,12 @@ export default {
         return json({ok:true,count:data.results.length,meta:data.meta,results:data.results},200,env);
       }
 
+      if(path==='/relationship-candidates'&&request.method==='GET'){
+        const days=Math.max(90,Math.min(730,Number(url.searchParams.get('days')||365)));
+        const limit=Math.max(3,Math.min(25,Number(url.searchParams.get('limit')||12)));
+        const data=await discoverRelationshipCandidates(env,{days,rowLimit:7500,limit});
+        return json(data,200,env);
+      }
       if(path==='/relationship-health'&&request.method==='GET'){
         const company=(url.searchParams.get('company')||'').trim();
         const days=Math.max(90,Math.min(730,Number(url.searchParams.get('days')||365)));
