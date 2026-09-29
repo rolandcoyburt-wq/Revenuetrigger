@@ -107,6 +107,13 @@ html[data-theme="light"] .relationship-shell{background:#f8fbf9;border-color:#cf
 @media(max-width:620px){.relationship-head{display:block}.relationship-status{display:inline-flex;margin-top:9px}.relationship-grid{grid-template-columns:1fr 1fr}.relationship-cards,.relationship-expansion{grid-template-columns:1fr}.relationship-card-top{display:block}.evidence-badge{display:inline-flex;margin-top:7px}}
 
 
+
+/* V122 — Relationship Gaps */
+.relationship-gap-card{border-color:#2b6e46;box-shadow:inset 3px 0 0 var(--lime)}
+.relationship-gap-note{display:inline-block;margin-top:5px;color:#8ca297;font-size:8px;line-height:1.45}
+html[data-theme="light"] .relationship-gap-card{border-color:#b7d9c3;box-shadow:inset 3px 0 0 #19c957}
+html[data-theme="light"] .relationship-gap-note{color:#61766a}
+
 /* Modal */
 .modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:18px}.modal.show{display:flex}
 .modal-card{width:min(520px,100%);border:1px solid #244735;border-radius:18px;background:#06140c;box-shadow:0 34px 100px rgba(0,0,0,.66);padding:22px}.modal-top{display:flex;justify-content:space-between;gap:16px}.close{border:1px solid #284e38;background:#07160e;color:#e7efea;border-radius:9px;width:34px;height:34px;cursor:pointer}.formrow{margin-top:16px}.formrow label{display:block;color:#84988d;font-size:11px;font-weight:850;margin-bottom:7px}.formrow input{width:100%;border:1px solid #294f39;background:#06160e;color:#edf5f0;border-radius:10px;padding:12px}.notice{margin-top:12px;color:#95aa9f;font-size:12px}
@@ -774,6 +781,7 @@ function renderRelationshipIntelligence(d){
   const m=d.companyMomentum||{};
   const ex=d.expansionSignals||{};
   const frequent=(d.frequentlyAppearsWith||[]).slice(0,6);
+  const gaps=(d.relationshipGaps||[]).slice(0,6);
   const oneOff=(d.historicalAssociations||[]).filter(x=>Number(x.sharedProjectCount||0)<2).slice(0,6);
   const territories=(d.territoryHistory||[]);
   const types=(d.projectTypeHistory||[]);
@@ -788,6 +796,7 @@ function renderRelationshipIntelligence(d){
   if(!expansionItems.length)expansionItems.push(`<div class="relationship-callout"><b>Expansion status</b><br>${esc(ex.interpretation||'No expansion signal is established in the selected history window.')}</div>`);
   const frequentHtml=frequent.length?frequent.map(x=>`<div class="relationship-card"><div class="relationship-card-top"><b>${esc(x.company)}</b><span class="evidence-badge ${esc(x.evidenceStrength||'')}">${evidenceLabel(x.evidenceStrength)}</span></div><div class="relationship-card-meta"><strong>${Number(x.sharedProjectCount||0)}</strong> shared project addresses${(x.markets||[]).length?` · ${(x.markets||[]).map(esc).join(' / ')}`:''}<br>Latest co-occurrence: ${x.latestActivity?new Date(x.latestActivity).toLocaleDateString():'—'}</div></div>`).join(''):`<div class="relationship-empty">No counterparty has yet appeared with this company on 2+ distinct project addresses.</div>`;
   const oneOffHtml=oneOff.length?`<div class="relationship-chips">${oneOff.map(x=>`<span class="relationship-chip">${esc(x.company)} <strong>1 shared project</strong></span>`).join('')}</div>`:`<div class="relationship-note">No additional single-project associations in the selected window.</div>`;
+  const gapHtml=gaps.length?gaps.map(x=>`<div class="relationship-card relationship-gap-card"><div class="relationship-card-top"><b>${esc(x.counterparty)}</b><span class="evidence-badge ${esc(x.evidenceStrength||'')}">Pattern gap</span></div><div class="relationship-card-meta"><strong>${Number(x.historicalSharedProjectCount||0)}</strong> prior shared project addresses<br>Newer project: ${esc(x.newerProject?.project||'Project')}${x.newerProject?.market?` · ${esc(x.newerProject.market)}`:''}${x.newerProject?.date?` · ${new Date(x.newerProject.date).toLocaleDateString()}`:''}<br><span class="relationship-gap-note">Not present in stored public records for this newer project. This does not mean the work is unawarded or available.</span></div></div>`).join(''):`<div class="relationship-empty">No supported historical-pattern gaps are established in the selected history window.</div>`;
   el.innerHTML=`
     <div class="relationship-head"><div><h3>Company Intelligence</h3><p>Relationship history is based on documented co-occurrence at the same normalized project address. It does not imply a contract, award, payment relationship, or prime/subcontractor role.</p></div><span class="relationship-status">${status}</span></div>
     <div class="relationship-grid">
@@ -799,6 +808,7 @@ function renderRelationshipIntelligence(d){
     <div class="relationship-section"><div class="relationship-section-title"><span>Company momentum</span><span>${territories.length} market${territories.length===1?'':'s'}</span></div><div class="relationship-expansion">${momentum}${expansionItems.join('')}</div></div>
     <div class="relationship-section"><div class="relationship-section-title"><span>Territory & project history</span></div><div class="relationship-chips">${territories.map(x=>`<span class="relationship-chip">${esc(x.market)} <strong>${x.count}</strong></span>`).join('')||'<span class="relationship-note">No territory history available.</span>'}${types.map(x=>`<span class="relationship-chip">${esc(x.projectType)} <strong>${x.count}</strong></span>`).join('')}</div></div>
     <div class="relationship-section"><div class="relationship-section-title"><span>Frequently appears with</span><span>2+ shared projects</span></div><div class="relationship-cards">${frequentHtml}</div></div>
+    <div class="relationship-section"><div class="relationship-section-title"><span>Relationship gaps</span><span>Historical pattern</span></div><div class="relationship-cards">${gapHtml}</div></div>
     <div class="relationship-section"><div class="relationship-section-title"><span>Historical associations</span><span>Single observations</span></div>${oneOffHtml}</div>
     <div class="relationship-caution">Evidence standard: repeated association requires at least two distinct shared project addresses. Single-project co-occurrence is shown separately and should not be interpreted as a contractual relationship.</div>`;
 }

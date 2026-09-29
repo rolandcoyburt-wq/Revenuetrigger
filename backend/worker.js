@@ -2280,6 +2280,52 @@ async function buildRelationshipIntelligence(env,rawCompany,{days=365,rowLimit=5
   })).sort((a,b)=>b.sharedProjectCount-a.sharedProjectCount||String(b.latestActivity||'').localeCompare(String(a.latestActivity||''))).slice(0,20);
   const frequentlyAppearsWith=historicalAssociations.filter(x=>x.sharedProjectCount>=2);
 
+  // V122 — Relationship Gaps
+  // A gap is only surfaced when a counterparty has repeated documented co-occurrence
+  // with the target company on 2+ distinct normalized project addresses AND the target
+  // later appears on a newer dated project address where that counterparty is not present
+  // in the stored public permit-linked records. This is pattern evidence only.
+  const targetProjectsByKey=new Map();
+  for(const x of target){
+    if(!x._projectKey)continue;
+    const prior=targetProjectsByKey.get(x._projectKey);
+    if(!prior || Number(x._ms||0)>Number(prior._ms||0))targetProjectsByKey.set(x._projectKey,x);
+  }
+  const relationshipGaps=[];
+  for(const assoc of frequentlyAppearsWith){
+    const raw=co.get(assoc.company);
+    const sharedKeys=raw?.projects||new Set();
+    let latestShared=null;
+    for(const key of sharedKeys){
+      const p=targetProjectsByKey.get(key);
+      if(p && p._ms && (!latestShared || p._ms>latestShared._ms))latestShared=p;
+    }
+    if(!latestShared?._ms)continue;
+    const newer=[...targetProjectsByKey.entries()]
+      .filter(([key,p])=>!sharedKeys.has(key) && p?._ms && p._ms>latestShared._ms)
+      .map(([,p])=>p)
+      .sort((a,b)=>Number(b._ms||0)-Number(a._ms||0));
+    if(!newer.length)continue;
+    const p=newer[0];
+    relationshipGaps.push({
+      counterparty:assoc.company,
+      status:'historical_pattern_gap',
+      evidenceStrength:assoc.evidenceStrength,
+      historicalSharedProjectCount:Number(assoc.sharedProjectCount||0),
+      latestSharedActivity:latestShared.event_date||null,
+      newerProject:{
+        market:p.market||null,
+        address:p.address||null,
+        project:p.name||null,
+        permit:p.permit||null,
+        date:p.event_date||null,
+        projectType:p._type||'Other'
+      },
+      interpretation:`${assoc.company} appears with ${company} on ${Number(assoc.sharedProjectCount||0)} prior distinct project addresses, but is not present in stored public permit-linked records for a newer project. This is a historical-pattern gap only; it does not show that work is unawarded, available, or expected to involve that counterparty.`
+    });
+  }
+  relationshipGaps.sort((a,b)=>String(b.newerProject?.date||'').localeCompare(String(a.newerProject?.date||''))||Number(b.historicalSharedProjectCount||0)-Number(a.historicalSharedProjectCount||0));
+
   const now=Date.now(),d30=30*86400000,d90=90*86400000;
   const recent30=target.filter(x=>x._ms&&now-x._ms<=d30);
   const prior30=target.filter(x=>x._ms&&now-x._ms>d30&&now-x._ms<=2*d30);
@@ -2335,15 +2381,18 @@ async function buildRelationshipIntelligence(env,rawCompany,{days=365,rowLimit=5
     },
     historicalAssociations,
     frequentlyAppearsWith,
+    relationshipGaps:relationshipGaps.slice(0,10),
     relationshipSummary:{
       associationCount:historicalAssociations.length,
       repeatedAssociationCount:frequentlyAppearsWith.length,
+      relationshipGapCount:relationshipGaps.length,
       strongestEvidence:historicalAssociations.some(x=>x.evidenceStrength==='repeated')?'repeated':historicalAssociations.some(x=>x.evidenceStrength==='emerging')?'emerging':historicalAssociations.length?'single_observation':'none'
     },
     methodology:{
       association:'Same normalized project address in stored public permit-linked records.',
       frequentThreshold:'Frequently Appears With requires at least 2 distinct shared project addresses. Single-project co-occurrence is retained separately as a historical association.',
       caution:'Co-occurrence is historical association evidence only and does not prove a prime/subcontractor, award, payment, or contractual relationship.',
+      relationshipGap:'A historical-pattern gap requires a counterparty with at least 2 prior shared project addresses and a newer dated target-company project where that counterparty is absent from stored public permit-linked records. It does not mean work is unawarded, available, or expected to involve that counterparty.',
       expansion:'A market or project type is considered expansion only when earlier history exists in the selected window. Otherwise it is labeled first observed.'
     }
   };
