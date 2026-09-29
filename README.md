@@ -20,3 +20,6 @@ D1 migrations are intentionally NOT run automatically by either deploy command. 
 ## Safety
 
 Do not commit API secrets, Stripe secret keys, Resend keys, or authentication secrets. Runtime secrets remain in Cloudflare.
+## Deployment status
+
+GitHub → Cloudflare automated deployment pipeline enabled.
