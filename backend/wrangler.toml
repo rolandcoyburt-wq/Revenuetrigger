@@ -1,0 +1,25 @@
+name = "signalhound-api"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+
+# IMPORTANT: paste the SAME D1 database_id already used by your working V1 Worker.
+[[d1_databases]]
+binding = "DB"
+database_name = "signalhound"
+database_id = "5b0156dc-1646-4233-abf7-5d65ef30a317"
+
+[vars]
+ALLOWED_ORIGIN = "https://revenuetrigger.ai"
+FRONTEND_URL = "https://revenuetrigger.ai"
+DEV_AUTH_BYPASS = "false"
+
+# Use an address on a domain you verify with Resend.
+EMAIL_FROM = "RevenueTrigger <alerts@mail.revenuetrigger.ai>"
+
+# Stripe recurring Price IDs. These are not secret keys.
+STRIPE_PRICE_SCOUT = "price_1UIfIzQtkZRdtmROP8dRxslu"
+STRIPE_PRICE_HUNTER = "price_1UIfJiQtkZRdtmROREXUa7Ad"
+STRIPE_PRICE_TERRITORY = "price_1UIfKRQtkZRdtmROuFOtSulQ"
+
+[triggers]
+crons = ["17 * * * *"]

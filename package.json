@@ -1,0 +1,12 @@
+{
+  "name": "revenuetrigger",
+  "private": true,
+  "version": "84.0.0",
+  "scripts": {
+    "deploy:frontend": "wrangler deploy --config frontend/wrangler.toml",
+    "deploy:backend": "wrangler deploy --config backend/wrangler.toml"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
