@@ -1018,6 +1018,9 @@ async function fetchMesa(days=7,limit=500){
 function isMeaningfulCompanyName(v=''){
   const s=String(v||'').replace(/\s+/g,' ').trim();
   if(!s)return false;
+  // Single-letter alphabetic values in municipal participant fields are field noise,
+  // not durable company identities. Numeric/brand names such as 3M remain valid.
+  if(/^[a-z]$/i.test(s))return false;
   return !/^(not listed|unknown|n\/a|none|null|-+|owner|to be bid|tbd|to be determined|not provided|unassigned)$/i.test(s);
 }
 function cleanCompanyName(v){
@@ -2458,7 +2461,7 @@ async function discoverRelationshipCandidates(env,{days=365,rowLimit=7500,limit=
       purpose:'Find companies with enough stored history to QA Company Momentum, cross-market identity, and repeated historical associations before building the UI.',
       candidateMinimum:'At least 2 distinct normalized project addresses in the selected window.',
       repeatedAssociation:'At least 2 distinct shared project addresses with the same counterparty.',
-      companyHygiene:'Generic placeholders such as OWNER, TO BE BID, TBD, NOT PROVIDED, and UNASSIGNED are excluded from company identity and relationship analysis.',
+      companyHygiene:'Generic placeholders such as OWNER, TO BE BID, TBD, NOT PROVIDED, UNASSIGNED, and single-letter municipal field noise are excluded from company identity and relationship analysis.',
       caution:'Candidate ordering is for QA depth only; it is not a commercial ranking or prediction.'
     }
   };

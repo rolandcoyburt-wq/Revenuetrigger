@@ -98,6 +98,15 @@ footer{border-top:1px solid #13281d;color:#657a70;padding:28px 0 44px;font-size:
 .profile-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:18px 0}.profile-kpi{border:1px solid var(--line);background:#05150d;border-radius:12px;padding:13px}.profile-kpi small{display:block;color:#70857a;font-size:8px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.profile-kpi strong{display:block;margin-top:5px;font-size:21px}.trend-up{color:var(--lime)!important}.trend-down{color:#f0a27f!important}.profile-panel{border:1px solid var(--line);background:#05140c;border-radius:12px;padding:14px;margin-top:10px}.profile-panel h3{font-size:12px;margin:0 0 12px;text-transform:uppercase;letter-spacing:.11em}.bar-row{display:grid;grid-template-columns:120px 1fr 44px;gap:8px;align-items:center;margin:8px 0;color:#aebfb6;font-size:11px}.bar-track{height:7px;border-radius:999px;background:#11291c;overflow:hidden}.bar-fill{height:100%;border-radius:999px;background:var(--lime)}.signal-card{border-left:3px solid var(--lime);background:#092117;padding:14px;border-radius:10px;margin-top:12px;color:#c8dbd0}.profile-recent{display:grid;gap:8px}.profile-project{padding:11px;border:1px solid #173824;border-radius:10px;background:#06150d}.profile-project-head{display:flex;justify-content:space-between;gap:12px}.profile-project small{color:#73897d}.mini-badge{display:inline-flex;padding:3px 6px;border:1px solid #2a5139;border-radius:999px;color:#9fc1ad;font-size:8px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;margin-right:5px}
 @media(max-width:620px){.profile-grid{grid-template-columns:1fr 1fr}.bar-row{grid-template-columns:90px 1fr 36px}}
 
+/* V119 — Company Intelligence / Relationship Intelligence */
+.relationship-shell{margin-top:12px;border:1px solid #24563a;border-radius:14px;background:linear-gradient(180deg,#071b10,#04130b);overflow:hidden}
+.relationship-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:15px;border-bottom:1px solid #173824}
+.relationship-head h3{margin:0;font-size:13px;text-transform:uppercase;letter-spacing:.11em}.relationship-head p{margin:5px 0 0;color:#7e9388;font-size:10px;line-height:1.45;max-width:560px}.relationship-status{flex:0 0 auto;padding:5px 8px;border:1px solid #2a5b3d;border-radius:999px;color:var(--lime);font-size:8px;font-weight:950;letter-spacing:.1em;text-transform:uppercase;background:#092117}
+.relationship-loading{padding:18px;color:#82978c;font-size:11px}.relationship-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px}.relationship-kpi{border:1px solid #173824;background:#05150d;border-radius:11px;padding:11px}.relationship-kpi small{display:block;color:#70857a;font-size:8px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.relationship-kpi strong{display:block;margin-top:5px;font-size:18px;color:#edf5f0}.relationship-section{padding:0 14px 14px}.relationship-section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 9px;color:#dbe9e1;font-size:10px;font-weight:950;letter-spacing:.1em;text-transform:uppercase}.relationship-note{color:#74897e;font-size:10px;line-height:1.5}.relationship-chips{display:flex;gap:6px;flex-wrap:wrap}.relationship-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid #28523a;border-radius:999px;padding:5px 8px;background:#071a10;color:#bcd1c5;font-size:9px;font-weight:850}.relationship-chip strong{color:var(--lime)}.relationship-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.relationship-card{border:1px solid #1c422d;border-radius:11px;padding:11px;background:#05150d}.relationship-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.relationship-card b{font-size:11px;color:#eef6f1;line-height:1.35}.relationship-card small{color:#74897e;font-size:9px}.evidence-badge{flex:0 0 auto;border-radius:999px;padding:3px 6px;font-size:7px;font-weight:950;letter-spacing:.08em;text-transform:uppercase;border:1px solid #2a5b3d;color:#a8cdb7}.evidence-badge.repeated{color:var(--lime);border-color:rgba(42,238,97,.55)}.evidence-badge.emerging{color:#d6c16a;border-color:#6f642f}.relationship-card-meta{margin-top:7px;color:#82988c;font-size:9px;line-height:1.45}.relationship-expansion{display:grid;grid-template-columns:1fr 1fr;gap:8px}.relationship-callout{border-left:3px solid var(--lime);background:#092117;border-radius:9px;padding:10px;color:#bcd1c5;font-size:10px;line-height:1.5}.relationship-caution{padding:12px 14px;border-top:1px solid #173824;color:#71867a;font-size:9px;line-height:1.5;background:#04110a}.relationship-empty{padding:14px;border:1px dashed #2a4636;border-radius:10px;color:#7d9286;font-size:10px}.relationship-error{padding:14px;color:#d79d86;font-size:10px}
+html[data-theme="light"] .relationship-shell{background:#f8fbf9;border-color:#cfe0d5}html[data-theme="light"] .relationship-head{border-color:#dde8e1}html[data-theme="light"] .relationship-head h3,html[data-theme="light"] .relationship-section-title{color:#102017}html[data-theme="light"] .relationship-status{background:#eaf7ee;color:#0b8e39;border-color:#b9dec5}html[data-theme="light"] .relationship-kpi,html[data-theme="light"] .relationship-card{background:#fff;border-color:#d7e3db}html[data-theme="light"] .relationship-kpi strong,html[data-theme="light"] .relationship-card b{color:#102017}html[data-theme="light"] .relationship-chip{background:#f4faf6;border-color:#c8ddcf;color:#284132}html[data-theme="light"] .relationship-callout{background:#eaf7ee;color:#284132}html[data-theme="light"] .relationship-caution{background:#f4f8f5;border-color:#dde8e1;color:#64776c}
+@media(max-width:620px){.relationship-head{display:block}.relationship-status{display:inline-flex;margin-top:9px}.relationship-grid{grid-template-columns:1fr 1fr}.relationship-cards,.relationship-expansion{grid-template-columns:1fr}.relationship-card-top{display:block}.evidence-badge{display:inline-flex;margin-top:7px}}
+
+
 /* Modal */
 .modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:18px}.modal.show{display:flex}
 .modal-card{width:min(520px,100%);border:1px solid #244735;border-radius:18px;background:#06140c;box-shadow:0 34px 100px rgba(0,0,0,.66);padding:22px}.modal-top{display:flex;justify-content:space-between;gap:16px}.close{border:1px solid #284e38;background:#07160e;color:#e7efea;border-radius:9px;width:34px;height:34px;cursor:pointer}.formrow{margin-top:16px}.formrow label{display:block;color:#84988d;font-size:11px;font-weight:850;margin-bottom:7px}.formrow input{width:100%;border:1px solid #294f39;background:#06160e;color:#edf5f0;border-radius:10px;padding:12px}.notice{margin-top:12px;color:#95aa9f;font-size:12px}
@@ -693,6 +702,7 @@ function openCompetitorProfile(i){
       <div class="profile-kpi"><small>Activity trend</small><strong class="${trendClass}">${trendArrow} ${Math.abs(c.permitTrend||0)}%</strong></div>
     </div>
     <div class="signal-card"><strong>Competitive signal</strong><br>${esc(c.competitiveSignal||'No meaningful change detected in the current period.')}</div>
+    <div id="cpRelationship" class="relationship-shell"><div class="relationship-loading">Building Company Intelligence from permit-linked history…</div></div>
     ${rocPanel}
     <button class="btn ${isWatching(c.company)?'watch-btn watching':'btn-primary watch-btn'}" onclick="toggleWatch('${String(c.company).replace(/'/g,"\'")}')">${isWatching(c.company)?'✓ Watching competitor':'Watch competitor'}</button>
     <div class="territory-note">${user?.plan==='Territory'?'Meaningful competitor changes will be included in Territory alerts.':'Competitor watchlists and meaningful-change alerts are a Territory feature.'}</div>
@@ -701,6 +711,60 @@ function openCompetitorProfile(i){
     <div class="profile-panel"><h3>Recent projects</h3><div class="profile-recent">${recent}</div></div>
     <div class="profile-panel"><h3>Data quality</h3><div class="freshness">Average confidence: ${c.avgConfidence??'—'}% · Company entity match: ${c.entityMatchConfidence??'—'}% · Facts remain attributed to their public source.</div></div>`;
   openModal('competitorProfileModal');
+  loadRelationshipIntelligence(c.company);
+}
+
+function evidenceLabel(v){
+  if(v==='repeated')return 'Repeated';
+  if(v==='emerging')return 'Emerging';
+  return 'Single observation';
+}
+function renderRelationshipIntelligence(d){
+  const el=$('#cpRelationship');if(!el)return;
+  if(!d?.historyFound){
+    el.innerHTML=`<div class="relationship-head"><div><h3>Company Intelligence</h3><p>Historical permit-linked activity and documented co-occurrence.</p></div><span class="relationship-status">No history</span></div><div class="relationship-loading">No stored permit-linked history is available for this company in the selected 365-day window.</div>`;
+    return;
+  }
+  const m=d.companyMomentum||{};
+  const ex=d.expansionSignals||{};
+  const frequent=(d.frequentlyAppearsWith||[]).slice(0,6);
+  const oneOff=(d.historicalAssociations||[]).filter(x=>Number(x.sharedProjectCount||0)<2).slice(0,6);
+  const territories=(d.territoryHistory||[]);
+  const types=(d.projectTypeHistory||[]);
+  const status=m.status==='comparable'?'Comparable history':'Newly observed';
+  const momentum=m.status==='comparable'
+    ? `<div class="relationship-callout"><b>30-day momentum</b><br>${m.current30Days?.projects||0} current projects vs ${m.previous30Days?.projects||0} previous · ${m.change?.projectCountPct==null?'Project change unavailable':`${m.change.projectCountPct>0?'+':''}${m.change.projectCountPct}% project change`} · ${m.change?.reportedValuePct==null?'Reported-value change unavailable':`${m.change.reportedValuePct>0?'+':''}${m.change.reportedValuePct}% reported-value change`}</div>`
+    : `<div class="relationship-callout"><b>Newly observed activity</b><br>${esc(m.interpretation||'There is not yet enough earlier history for a valid growth comparison.')}</div>`;
+  const expansionItems=[];
+  if((ex.newMarkets||[]).length)expansionItems.push(`<div class="relationship-callout"><b>Territory expansion</b><br>${(ex.newMarkets||[]).map(esc).join(' · ')}</div>`);
+  if((ex.newProjectTypes||[]).length)expansionItems.push(`<div class="relationship-callout"><b>Project-type expansion</b><br>${(ex.newProjectTypes||[]).map(esc).join(' · ')}</div>`);
+  if(!expansionItems.length && (ex.firstObservedMarkets||[]).length)expansionItems.push(`<div class="relationship-callout"><b>First observed markets</b><br>${(ex.firstObservedMarkets||[]).map(esc).join(' · ')}</div>`);
+  if(!expansionItems.length)expansionItems.push(`<div class="relationship-callout"><b>Expansion status</b><br>${esc(ex.interpretation||'No expansion signal is established in the selected history window.')}</div>`);
+  const frequentHtml=frequent.length?frequent.map(x=>`<div class="relationship-card"><div class="relationship-card-top"><b>${esc(x.company)}</b><span class="evidence-badge ${esc(x.evidenceStrength||'')}">${evidenceLabel(x.evidenceStrength)}</span></div><div class="relationship-card-meta"><strong>${Number(x.sharedProjectCount||0)}</strong> shared project addresses${(x.markets||[]).length?` · ${(x.markets||[]).map(esc).join(' / ')}`:''}<br>Latest co-occurrence: ${x.latestActivity?new Date(x.latestActivity).toLocaleDateString():'—'}</div></div>`).join(''):`<div class="relationship-empty">No counterparty has yet appeared with this company on 2+ distinct project addresses.</div>`;
+  const oneOffHtml=oneOff.length?`<div class="relationship-chips">${oneOff.map(x=>`<span class="relationship-chip">${esc(x.company)} <strong>1 shared project</strong></span>`).join('')}</div>`:`<div class="relationship-note">No additional single-project associations in the selected window.</div>`;
+  el.innerHTML=`
+    <div class="relationship-head"><div><h3>Company Intelligence</h3><p>Relationship history is based on documented co-occurrence at the same normalized project address. It does not imply a contract, award, payment relationship, or prime/subcontractor role.</p></div><span class="relationship-status">${status}</span></div>
+    <div class="relationship-grid">
+      <div class="relationship-kpi"><small>Distinct projects</small><strong>${d.projectCount||0}</strong></div>
+      <div class="relationship-kpi"><small>Permit-linked records</small><strong>${d.permitLinkedRecordCount||0}</strong></div>
+      <div class="relationship-kpi"><small>Repeated associations</small><strong>${d.relationshipSummary?.repeatedAssociationCount||0}</strong></div>
+      <div class="relationship-kpi"><small>Latest activity</small><strong style="font-size:13px">${d.latestActivity?new Date(d.latestActivity).toLocaleDateString():'—'}</strong></div>
+    </div>
+    <div class="relationship-section"><div class="relationship-section-title"><span>Company momentum</span><span>${territories.length} market${territories.length===1?'':'s'}</span></div><div class="relationship-expansion">${momentum}${expansionItems.join('')}</div></div>
+    <div class="relationship-section"><div class="relationship-section-title"><span>Territory & project history</span></div><div class="relationship-chips">${territories.map(x=>`<span class="relationship-chip">${esc(x.market)} <strong>${x.count}</strong></span>`).join('')||'<span class="relationship-note">No territory history available.</span>'}${types.map(x=>`<span class="relationship-chip">${esc(x.projectType)} <strong>${x.count}</strong></span>`).join('')}</div></div>
+    <div class="relationship-section"><div class="relationship-section-title"><span>Frequently appears with</span><span>2+ shared projects</span></div><div class="relationship-cards">${frequentHtml}</div></div>
+    <div class="relationship-section"><div class="relationship-section-title"><span>Historical associations</span><span>Single observations</span></div>${oneOffHtml}</div>
+    <div class="relationship-caution">Evidence standard: repeated association requires at least two distinct shared project addresses. Single-project co-occurrence is shown separately and should not be interpreted as a contractual relationship.</div>`;
+}
+async function loadRelationshipIntelligence(company){
+  const el=$('#cpRelationship');if(!el||!company)return;
+  try{
+    const r=await fetch(`${CONFIG.apiBase}/relationships?company=${encodeURIComponent(company)}&days=365`,{headers:authHeaders()});
+    const d=await r.json().catch(()=>({}));
+    if(r.status===401){el.innerHTML='<div class="relationship-error">Sign in to load Company Intelligence.</div>';return}
+    if(!r.ok)throw new Error(d.error||'Could not load Company Intelligence.');
+    renderRelationshipIntelligence(d);
+  }catch(e){el.innerHTML=`<div class="relationship-error">${esc(e.message||'Could not load Company Intelligence.')}</div>`}
 }
 function renderCompetitors(){
   const el=$('#competitorList'); if(!el)return;
