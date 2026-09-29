@@ -401,6 +401,22 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
   background:transparent !important;
 }
 
+
+/* V88 — shared pricing section */
+.light-band{background:#f3f6f3;color:#07120d;border-top:1px solid #dce5df;border-bottom:1px solid #dce5df}
+.light-band .section-head h2{color:#07120d}
+.light-band .section-head p{color:#5d6b63}
+.light-band .eyebrow{background:#07120d;border-color:#153b27;color:var(--lime)}
+.light-band .source,.light-band .price{background:#fff;border-color:#d8e2dc;color:#07120d;box-shadow:0 14px 38px rgba(22,48,32,.07)}
+.light-band .source p{color:#647269}.light-band .source .tag{color:#078b35}
+.light-band .price ul{color:#526158}.light-band .money small{color:#708078}
+.light-band .price .btn-secondary{background:#07120d;border-color:#07120d;color:#f5f8f6}
+.light-band .price.featured{background:linear-gradient(180deg,#07170e,#041009);color:#f5f8f6;border-color:#2e7c4b;box-shadow:0 18px 55px rgba(8,41,22,.18)}
+.light-band .price.featured ul{color:#a9b9b1}.light-band .price.featured .money small{color:#899b92}
+.pricing{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.price{border:1px solid var(--line);background:linear-gradient(180deg,#07170e,#041009);border-radius:17px;padding:24px;position:relative}.price.featured{border-color:#3b8f58;box-shadow:0 0 0 1px rgba(42,238,97,.06),0 20px 70px rgba(0,0,0,.32),0 0 45px rgba(42,238,97,.045)}.price .badge{position:absolute;right:18px;top:18px;color:#021007;background:var(--lime);border-radius:999px;padding:4px 8px;font-size:9px;letter-spacing:.08em;font-weight:950}.price h3{font-size:20px}.money{font-size:42px;font-weight:950;letter-spacing:-.05em}.money small{font-size:14px;color:var(--muted)}.price ul{padding-left:18px;color:#a9b9b1;min-height:155px}.price .btn{width:100%}.cta{position:relative;overflow:hidden;margin:40px 0 82px;padding:34px;border-radius:22px;background:linear-gradient(120deg,#34f267,#11d84a);color:#021006;display:flex;justify-content:space-between;align-items:center;gap:22px;box-shadow:0 24px 70px rgba(18,214,73,.1)}.cta:after{content:"";position:absolute;right:-60px;top:-100px;width:280px;height:280px;background:rgba(255,255,255,.12);filter:blur(70px);border-radius:50%}.cta>*{position:relative;z-index:1}.cta h2{font-size:36px;letter-spacing:-.04em;margin:0 0 8px}.cta p{margin:0;max-width:670px}.capture{display:flex;gap:8px;min-width:390px}.capture input{flex:1;padding:12px;border:1px solid rgba(0,0,0,.13);border-radius:9px;background:rgba(255,255,255,.86);color:#021006;outline:none}.capture button{border:0;background:#021006;color:white;border-radius:9px;padding:12px 14px;font-weight:900;cursor:pointer}
+@media(max-width:900px){.pricing{grid-template-columns:1fr 1fr}.cta{display:block}.capture{min-width:0;margin-top:18px}}
+@media(max-width:620px){.pricing{grid-template-columns:1fr}.cta{padding:24px}.cta h2{font-size:29px}.capture{display:block}.capture input,.capture button{width:100%}.capture button{margin-top:8px}}
+
 </style>
 </head>
 <body>
@@ -415,8 +431,8 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
         <a href="/#signals">Opportunities</a>
         <a href="/#pipeline">Early Pipeline</a>
         <a class="active" href="/competitors.html">Competitors</a>
-        <a class="nav-sources" href="/#sources">Sources</a>
-        <a href="/#pricing">Pricing</a>
+        <a class="nav-sources" href="/sources.html">Sources</a>
+        <a href="#pricing">Pricing</a>
       </div>
       <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light theme" title="Switch to light theme" onclick="toggleTheme()">
         <span class="theme-toggle-icon" id="themeIcon">☀</span>
@@ -510,6 +526,7 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
     <div class="competitor-disclaimer">Company attribution reflects information published by the source jurisdiction and may represent the contractor, builder, owner, developer, applicant, architect, or engineer. It does not necessarily indicate who won a competitive bid.</div>
   </div>
 </section>
+<section class="section light-band" id="pricing"><div class="wrap"><div class="section-head"><div><span class="eyebrow">Plans</span><h2>Pay for speed and relevance.</h2></div><p>Choose a plan based on how quickly you want opportunities delivered and how much history you need.</p></div><div class="pricing"><div class="price"><h3>Scout</h3><div class="money">$49 <small>/mo</small></div><ul><li>1 industry · 1 market</li><li>Weekly opportunity digest</li><li>7-day history</li><li>Saved opportunities</li></ul><button class="btn btn-secondary" onclick="buyPlan('Scout')">Choose Scout</button></div><div class="price featured"><span class="badge">BEST VALUE</span><h3>Hunter</h3><div class="money">$149 <small>/mo</small></div><ul><li>Up to 3 industries · 3 markets</li><li>Daily email digest</li><li>30-day history</li><li>Saved opportunities</li><li>CSV export</li></ul><button class="btn btn-primary" onclick="buyPlan('Hunter')">Choose Hunter</button></div><div class="price"><h3>Territory</h3><div class="money">$499 <small>/mo</small></div><ul><li>All live industries · all markets</li><li>Near-real-time high-intent alerts</li><li>90-day history</li><li>CSV export</li><li>Priority expansion features</li></ul><button class="btn btn-secondary" onclick="buyPlan('Territory')">Choose Territory</button></div></div><div class="cta"><div><h2>Start with a free account.</h2><p>Use passwordless sign-in, personalize your industry, save opportunities, then upgrade when you want automated delivery and deeper history.</p></div><form class="capture" id="capture"><input required type="email" id="email" placeholder="you@company.com"/><button>Send sign-in link</button></form></div></div></section>
 </main>
 
 <footer><div class="wrap" style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap"><span>RevenueTrigger</span><span>Public-data opportunity intelligence</span></div></footer>
@@ -582,7 +599,7 @@ function accountAction(){if(user){location.href='/';return}openSignin()}
 function updateUserUI(){const b=$('#accountBtn');if(!b)return;if(user){b.textContent=user.email.split('@')[0];b.classList.add('live')}else{b.textContent='Sign in';b.classList.remove('live')}}
 async function loadMe(){if(!token()){user=null;updateUserUI();return false}try{const r=await fetch(`${CONFIG.apiBase}/me`,{headers:authHeaders()});if(!r.ok)throw 0;user=(await r.json()).user;updateUserUI();return true}catch{localStorage.removeItem('revenuetrigger_session');localStorage.removeItem('signalhound_session');user=null;updateUserUI();return false}}
 async function requestSignin(email){const r=await fetch(`${CONFIG.apiBase}/auth/request`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Could not send link');return d}
-async function verifyMagic(raw){const r=await fetch(`${CONFIG.apiBase}/auth/verify`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token:raw})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Sign-in link failed');localStorage.setItem('revenuetrigger_session',d.session);localStorage.removeItem('signalhound_session');user=d.user;history.replaceState({},'',location.pathname);updateUserUI();await loadWatchlist();await loadCompetitors()}
+async function verifyMagic(raw){const r=await fetch(`${CONFIG.apiBase}/auth/verify`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token:raw})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Sign-in link failed');localStorage.setItem('revenuetrigger_session',d.session);localStorage.removeItem('signalhound_session');user=d.user;history.replaceState({},'',location.pathname);updateUserUI();await loadWatchlist();await loadCompetitors();const pending=localStorage.getItem('revenuetrigger_pending_plan');if(pending){localStorage.removeItem('revenuetrigger_pending_plan');setTimeout(()=>buyPlan(pending),300)}}
 function moneyCompact(n){n=Number(n||0);if(!n)return '—';if(n>=1e6)return '$'+(n/1e6).toFixed(n>=1e7?0:1)+'M';if(n>=1e3)return '$'+Math.round(n/1e3)+'K';return '$'+Math.round(n).toLocaleString()}
 
 function isWatching(company){return watchlist.some(x=>String(x.company).toLowerCase()===String(company).toLowerCase())}
@@ -803,6 +820,30 @@ setInterval(()=>{
 },1900);
 
 (async()=>{const hp=new URLSearchParams(location.hash.replace(/^#/,''));const magic=hp.get('magic');if(magic){try{await verifyMagic(magic)}catch(e){$('#competitorNote').textContent=e.message}}else{const signed=await loadMe();if(signed){await loadWatchlist();resetCompetitorPagination();loadCompetitors()}else renderWatchlist()}})();
+
+
+/* V88 — shared pricing checkout */
+async function buyPlan(plan){
+  if(!user){
+    localStorage.setItem('revenuetrigger_pending_plan',plan);
+    openSignin();
+    return;
+  }
+  try{
+    const r=await fetch(`${CONFIG.apiBase}/billing/checkout`,{method:'POST',headers:authHeaders({'content-type':'application/json'}),body:JSON.stringify({plan})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.error||'Checkout unavailable');
+    location.href=d.url;
+  }catch(err){alert(err.message)}
+}
+const captureForm=$('#capture');
+if(captureForm)captureForm.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const email=$('#email').value;
+  try{await requestSignin(email);$('#signinEmail').value=email;openSignin();$('#signinNotice').style.display='block';$('#signinNotice').textContent='Check your email. The link expires in 15 minutes.'}
+  catch(err){alert(err.message)}
+});
+
 </script>
 </body>
 </html>
