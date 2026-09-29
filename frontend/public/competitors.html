@@ -459,6 +459,50 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
   .pricing .price.scroll-active{transform:translateY(-6px) scale(1.015);border-color:rgba(42,238,97,.72);box-shadow:0 20px 52px rgba(0,0,0,.28),0 0 0 1px rgba(42,238,97,.14),0 0 26px rgba(42,238,97,.08)}
 }
 </style>
+
+<style>
+/* V121 — Competitor Intelligence mobile cleanup */
+@media(max-width:620px){
+  .topbar .wrap{width:calc(100% - 24px)}
+  nav{grid-template-columns:minmax(0,1fr) auto auto;gap:8px;padding:10px 0 12px}
+  .brand{min-width:0;overflow:hidden}.brand-logo{height:31px;max-width:178px}.account-btn{height:38px;padding:0 11px}.theme-toggle{height:38px}
+  .mobile-nav{margin-top:2px}.mobile-nav summary{min-height:50px;padding:0 16px;border-radius:14px}
+
+  #competitor-tool .wrap{width:calc(100% - 24px)}
+  #competitor-tool{padding-top:30px}
+  #competitor-tool .section-head{margin-bottom:14px}
+  #competitor-tool .section-head h2{font-size:29px;line-height:1.05}
+  #competitor-tool .section-head p{font-size:13px;line-height:1.5}
+
+  .watchbar{padding:16px;margin-bottom:12px;border-radius:16px;gap:11px}
+  .watchbar h3{font-size:18px}.watchbar p{font-size:12px;line-height:1.5}
+  .watchchips{width:100%}.watchchip{font-size:11px;padding:7px 10px}
+
+  .competitor-shell{border-radius:18px;overflow:hidden}
+  .competitor-toolbar{display:grid;grid-template-columns:1fr 1fr;padding:14px;gap:9px}
+  .competitor-toolbar input{grid-column:1/-1;height:48px;font-size:16px}
+  .competitor-toolbar select{height:48px;font-size:15px;padding:0 10px}
+  .competitor-toolbar .btn{grid-column:1/-1;height:50px;font-size:15px}
+  .competitor-note{padding:12px 15px;font-size:12px;line-height:1.4;word-break:break-word}
+  .competitor-empty{padding:34px 18px;font-size:15px;line-height:1.5}
+  .competitor-disclaimer{padding:0 4px;margin-top:16px;font-size:11px;line-height:1.55}
+
+  .competitor-row{grid-template-columns:minmax(0,1fr) auto;padding:16px 14px;gap:12px;align-items:center}
+  .competitor-name{font-size:16px;line-height:1.25}.competitor-sub{font-size:11px;line-height:1.45}
+  .competitor-row .view{min-width:66px;min-height:42px}
+  .competitor-projects{padding-top:12px}
+  .competitor-project{padding:11px;gap:8px}
+
+  .modal{padding:0;align-items:flex-end}
+  .modal-card{width:100%!important;max-height:92vh!important;border-radius:20px 20px 0 0;padding:18px 14px 24px}
+  .modal-top{position:sticky;top:-18px;z-index:3;margin:-18px -14px 10px;padding:18px 14px 12px;background:#06140c;border-bottom:1px solid #183125}
+  html[data-theme="light"] .modal-top{background:#fff;border-color:#d9e4dd}
+  .profile-grid{gap:7px}.profile-kpi{padding:11px}.profile-kpi strong{font-size:18px}
+  .relationship-grid{gap:7px;padding:12px}.relationship-kpi{padding:10px}
+  .relationship-section{padding:0 12px 12px}.relationship-card{padding:10px}
+}
+</style>
+
 </head>
 <body>
 <header class="topbar">

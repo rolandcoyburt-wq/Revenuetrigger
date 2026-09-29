@@ -2723,8 +2723,8 @@ export default {
             permitTrend,
             valueTrend,
             trendStatus,
-            priorPeriodPermitCount,
-            priorPeriodReportedValue,
+            priorPeriodPermitCount:priorPermitCount,
+            priorPeriodReportedValue:priorReportedValue,
             competitiveSignal,
             recentProjects:combinedRecent.map(x=>{
               const confidence=dataConfidence({company:x.company||row.company,officialValue:x.official_value??x.officialValue,address:x.address,permit:x.permit,status:x.permit_status||x.permitStatus,scope:x.scope,source:x.source,market:x.market});
