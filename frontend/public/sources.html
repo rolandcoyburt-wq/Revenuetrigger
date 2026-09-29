@@ -1131,7 +1131,7 @@ html[data-theme="light"] .source-flow-console:before{background:radial-gradient(
       <span class="eyebrow"><span class="dot"></span>Data engine</span>
       <h1>Every signal starts with a <em>source.</em></h1>
       <p>RevenueTrigger turns fragmented municipal permit and project data into one ranked opportunity stream while preserving each market's source and refresh cadence.</p>
-      <div class="source-meta"><span><b>05</b> live permit markets</span><span><b>01</b> early-pipeline market</span><span><b>AZ</b> current coverage</span></div>
+      <div class="source-meta"><span><b>06</b> live permit markets</span><span><b>01</b> early-pipeline market</span><span><b>AZ</b> current coverage</span></div>
     </div>
     <div class="source-flow-console" id="sourceFlowConsole" aria-label="Interactive RevenueTrigger source ingestion visualization">
       <div class="flow-head">
@@ -1145,7 +1145,7 @@ html[data-theme="light"] .source-flow-console:before{background:radial-gradient(
           <button class="flow-source" type="button" data-city="TUCSON" data-feed="Commercial permits"><span>TUCSON</span><small>PRO</small><i class="flow-source-dot"></i></button>
           <button class="flow-source" type="button" data-city="SCOTTSDALE" data-feed="Building permits"><span>SCOTTSDALE</span><small>CSV</small><i class="flow-source-dot"></i></button>
           <button class="flow-source" type="button" data-city="MESA" data-feed="Commercial permits"><span>MESA</span><small>API</small><i class="flow-source-dot"></i></button>
-          <button class="flow-source" type="button" data-city="CHANDLER" data-feed="Early pipeline"><span>CHANDLER</span><small>PRE-TECH</small><i class="flow-source-dot"></i></button>
+          <button class="flow-source" type="button" data-city="CHANDLER" data-feed="Live permits + early pipeline"><span>CHANDLER</span><small>PERMITS</small><i class="flow-source-dot"></i></button>
         </div>
         <div class="flow-processor">
           <span class="flow-bus"></span>
@@ -1172,7 +1172,7 @@ html[data-theme="light"] .source-flow-console:before{background:radial-gradient(
       <div class="source"><span class="tag">Live</span><h3>Tucson permits</h3><p>Current City of Tucson commercial permit activity discovered through Property Research Online (PRO) and normalized into the same scoring model.</p><div class="source-detail"><strong>Signal type:</strong> Commercial permits</div></div>
       <div class="source"><span class="tag">Live</span><h3>Scottsdale permits</h3><p>City of Scottsdale Building Permit Reports are ingested from the official CSV feed and normalized into RevenueTrigger.</p><div class="source-detail"><strong>Signal type:</strong> Building permits</div></div>
       <div class="source"><span class="tag">Live</span><h3>Mesa permits</h3><p>Current commercial permit activity is ingested from the City of Mesa Data Hub Building Permits API and normalized into RevenueTrigger.</p><div class="source-detail"><strong>Signal type:</strong> Commercial permits</div></div>
-      <div class="source"><span class="tag">Early Pipeline</span><h3>Chandler projects</h3><p>Chandler PRE-TECH and approved projects are surfaced separately as Early Pipeline intelligence instead of being mixed into the live 7-day permit feed.</p><div class="source-detail"><strong>Signal type:</strong> Pre-permit project activity</div></div>
+      <div class="source"><span class="tag">Live · Early Pipeline</span><h3>Chandler permits + projects</h3><p>Official Chandler Accela permit records now power the live opportunity feed, while PRE-TECH and approved projects remain available separately as Early Pipeline intelligence.</p><div class="source-detail"><strong>Signal type:</strong> Permit activity + pre-permit project activity</div></div>
     </div>
     <div class="source-growth"><strong>Built to expand.</strong> New municipalities and source types can be added here as RevenueTrigger rolls into additional Arizona and national markets without overcrowding the opportunity feed.</div>
   </div>
@@ -1214,13 +1214,13 @@ const flowCopy={
   TUCSON:'Commercial permit activity from PRO is normalized into ranked signals.',
   SCOTTSDALE:'Official building-permit CSV data is normalized for opportunity scoring.',
   MESA:'Data Hub building-permit records flow into the commercial opportunity feed.',
-  CHANDLER:'PRE-TECH and approved-project activity is routed into Early Pipeline intelligence.'
+  CHANDLER:'Official Accela permit activity powers the live feed while PRE-TECH and approved projects remain available in Early Pipeline.'
 };
 $$('.flow-source').forEach(btn=>btn.addEventListener('click',()=>{
   $$('.flow-source').forEach(x=>x.classList.remove('active'));btn.classList.add('active');
   const city=btn.dataset.city||'SOURCE';
   const focus=$('#flowFocus'),mode=$('#flowMode');
-  if(focus)focus.textContent=city+(city==='CHANDLER'?' EARLY PIPELINE':' PERMIT SIGNAL');
+  if(focus)focus.textContent=city+(city==='CHANDLER'?' PERMIT + PIPELINE':' PERMIT SIGNAL');
   if(mode)mode.textContent=flowCopy[city]||btn.dataset.feed||'Source connected.';
 }));
 

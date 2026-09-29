@@ -1,18 +1,10 @@
-RevenueTrigger V103 — Chandler Official Accela Source
+RevenueTrigger V106 — Chandler Live + Scottsdale QA
 
-What changed
-- Keeps all V102 Scottsdale diagnostics and Chandler fuzzy-match improvements.
-- Adds the City of Chandler official Accela permit layer (ArcGIS) as a validation/enrichment source.
-- Early Pipeline now attempts participant resolution in this order:
-  1. exact permit/project match to Chandler Accela permit record
-  2. participant fields already present in DSActiveProjects
-  3. conservative GPS Construction Projects project-name match
-- Adds companyProvenance and match-confidence metadata to pipeline rows.
-- Adds protected GET /admin/chandler-permits-debug?days=30 endpoint.
-- Does NOT promote Chandler into the live Opportunity Feed yet.
-- No SQL migrations or schema changes.
-
-Protected diagnostic endpoints after deployment
-- /admin/scottsdale-debug?days=7
-- /admin/chandler-permits-debug?days=30
-Both require the existing ADMIN_TOKEN as a Bearer token.
+Changes:
+- Promotes Chandler to a live permit market using the official City of Chandler Accela/ArcGIS permit layer.
+- Keeps Chandler PRE-TECH and Approved Projects as separate Early Pipeline intelligence.
+- Adds Chandler to the Opportunity Feed market selector and account market list.
+- Adds a market-specific live-source fallback when D1 has not yet received the next scheduled refresh.
+- Adds Scottsdale source-health comparison between raw recent permit signals and clustered opportunities.
+- Updates Sources page to show 6 live permit markets and Chandler Live + Early Pipeline.
+- No D1 migration or schema change.

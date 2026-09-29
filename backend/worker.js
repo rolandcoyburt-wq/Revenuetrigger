@@ -23,14 +23,14 @@ const CHANDLER_ACTIVE='https://gis.chandleraz.gov/appsanonymous/rest/services/De
 const CHANDLER_CONSTRUCTION='https://gis.chandleraz.gov/portalserver/rest/services/EM/DevelopmentServices/MapServer/56';
 const CHANDLER_ACCELA_PERMITS='https://gis.chandleraz.gov/appsanonymous/rest/services/Tolemi/Building_Blocks/MapServer/0/query';
 const MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler'];
-const LIVE_MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa'];
+const LIVE_MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler'];
 const SOURCE_STATUS={
   Phoenix:{status:'live',cadence:'City feed',source:'City of Phoenix Planning & Development'},
   Tempe:{status:'live',cadence:'Published weekly',source:'City of Tempe Building Safety'},
   Tucson:{status:'live',cadence:'Hourly RevenueTrigger discovery',source:'City of Tucson Property Research Online (PRO)'},
   Scottsdale:{status:'live',cadence:'Official CSV permit report',source:'City of Scottsdale Building Permit Reports'},
   Mesa:{status:'live',cadence:'City open-data API',source:'City of Mesa Data Hub — Building Permits'},
-  Chandler:{status:'validation',cadence:'Official Accela/ArcGIS permit feed + active-project pipeline',source:'City of Chandler Accela permit layer + DSActiveProjects'}
+  Chandler:{status:'live',cadence:'Official Accela/ArcGIS permit feed + Early Pipeline',source:'City of Chandler Accela permit layer + DSActiveProjects'}
 };
 const INDUSTRIES=['Commercial services','HVAC','Electrical','Plumbing','Roofing','Landscaping','Security','Signage'];
 const PLANS={
@@ -1174,7 +1174,7 @@ async function fetchMarket(market,days=7,limit=500,env=null){
   if(market==='Tucson')return fetchTucson(days,limit,env);
   if(market==='Scottsdale')return fetchScottsdale(days,limit);
   if(market==='Mesa')return fetchMesa(days,limit);
-  if(market==='Chandler')return fetchChandler(days,limit);
+  if(market==='Chandler')return fetchChandlerAccelaPermits(days,limit);
   return [];
 }
 async function persist(env,leads){
@@ -2123,10 +2123,13 @@ export default {
         }
         if(market==='Scottsdale'){
           const d=await scottsdaleDebug(days);
+          const permitSignals=await fetchScottsdale(days,500);
+          const clustered=clusterLeads(permitSignals);
           return json({
             ok:true,market:'Scottsdale',status:SOURCE_STATUS.Scottsdale.status,days,
             source:'City of Scottsdale Building Permit Reports — official CSV',
             requested:d.requested,http:d.http,parsed:d.parsed,issueDates:d.issueDates,
+            opportunityView:{permitSignals:permitSignals.length,clusteredOpportunities:clustered.length},
             generatedAt:nowIso()
           },200,env);
         }
@@ -2302,7 +2305,20 @@ export default {
         },200,env);
       }
       if(path==='/leads'&&request.method==='GET'){
-        const days=clamp(Number(url.searchParams.get('days')||7),1,30),limit=clamp(Number(url.searchParams.get('limit')||120),1,500),requested=(url.searchParams.get('markets')||'').split(',').map(x=>x.trim()).filter(Boolean),markets=requested.length?requested.filter(x=>MARKETS.includes(x)):LIVE_MARKETS;let leads=await stored(env,limit*4,days);if(!leads||!leads.length){const fresh=await refresh(env,days);leads=clusterLeads(fresh.leads);}leads=leads.filter(x=>markets.includes(x.market||marketFromSource(x.source))).slice(0,limit);return json({leads,markets,source:'Arizona municipal public permit data',generatedAt:nowIso()},200,env);
+        const days=clamp(Number(url.searchParams.get('days')||7),1,30);
+        const limit=clamp(Number(url.searchParams.get('limit')||120),1,500);
+        const requested=(url.searchParams.get('markets')||'').split(',').map(x=>x.trim()).filter(Boolean);
+        const markets=requested.length?requested.filter(x=>MARKETS.includes(x)):LIVE_MARKETS;
+        let leads=await stored(env,limit*4,days);
+        if(!leads||!leads.length){const fresh=await refresh(env,days);leads=clusterLeads(fresh.leads);}
+        let filtered=leads.filter(x=>markets.includes(x.market||marketFromSource(x.source)));
+        // A newly activated or temporarily empty market should not look dead merely because
+        // D1 has not reached the next scheduled refresh yet. For a single requested live market,
+        // fetch the official source directly when no stored rows are available.
+        if(requested.length===1&&LIVE_MARKETS.includes(requested[0])&&!filtered.length){
+          try{filtered=clusterLeads(await fetchMarket(requested[0],days,limit,env));}catch{}
+        }
+        return json({leads:filtered.slice(0,limit),markets,source:'Arizona municipal public permit data',generatedAt:nowIso()},200,env);
       }
       if(path==='/refresh'&&request.method==='POST'){
         const token=(request.headers.get('authorization')||'').replace(/^Bearer\s+/i,'');if(!env.ADMIN_TOKEN||token!==env.ADMIN_TOKEN)return json({error:'unauthorized'},401,env);const result=await refresh(env,7);return json({ok:true,count:result.leads.length,markets:result.markets},200,env);
