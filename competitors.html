@@ -1,0 +1,807 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#020806">
+<title>Competitor Intelligence | RevenueTrigger</title>
+<meta name="description" content="Search contractor and company activity tied to public permit data across RevenueTrigger markets.">
+<link rel="icon" type="image/png" href="/assets/FAVICON.png">
+<script>
+(function(){
+  try{
+    var saved=localStorage.getItem('revenuetrigger_theme');
+    document.documentElement.setAttribute('data-theme',saved==='light'?'light':'dark');
+  }catch(e){
+    document.documentElement.setAttribute('data-theme','dark');
+  }
+})();
+</script>
+<style>
+:root{
+  --bg:#020806;--bg2:#04100a;--panel:#07120d;--panel2:#0a1a11;--ink:#f5f8f6;--muted:#899b92;
+  --line:#183125;--line2:#244735;--lime:#2aee61;--lime2:#0bd948;--lime-soft:#8affaa;
+  --gold:#d9b45f;--warm:#f39a4a;--shadow:0 28px 80px rgba(0,0,0,.5)
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(circle at 72% -12%,rgba(42,238,97,.14),transparent 31%),radial-gradient(circle at -10% 48%,rgba(42,238,97,.045),transparent 28%),linear-gradient(180deg,#020806,#04100a 52%,#020806);color:var(--ink);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+button,input,select{font:inherit}a{color:inherit;text-decoration:none}.wrap{width:min(1180px,calc(100% - 32px));margin:auto}
+
+/* Header — same system as homepage */
+.topbar{position:sticky;top:0;z-index:40;border-bottom:1px solid rgba(255,255,255,.07);backdrop-filter:blur(20px);background:rgba(2,8,6,.88)}
+nav{height:76px;display:flex;align-items:center;gap:14px}
+.brand{display:flex;align-items:center;min-width:190px}
+.brand-logo{display:block;width:auto;height:38px;max-width:230px;filter:drop-shadow(0 0 16px rgba(42,238,97,.09))}
+.brand-logo-light{display:none}
+html[data-theme="light"] .brand-logo-dark{display:none}
+html[data-theme="light"] .brand-logo-light{display:block;height:36px;max-width:250px;filter:none}
+
+.navlinks{display:flex;align-items:center;gap:4px;padding:5px;margin-left:auto;border:1px solid rgba(74,132,91,.28);border-radius:14px;background:linear-gradient(180deg,rgba(10,29,19,.86),rgba(4,17,10,.78));color:#aebeb6;font-size:13px;font-weight:850}
+.navlinks a{display:flex;align-items:center;justify-content:center;gap:8px;min-width:92px;padding:9px 13px;border:1px solid transparent;border-radius:10px;transition:.2s}
+.navlinks a::before{content:"";width:5px;height:5px;border-radius:50%;background:#476153}
+.navlinks a:hover,.navlinks a.active{color:#f2f8f4;background:rgba(42,238,97,.055);border-color:rgba(42,238,97,.13)}
+.navlinks a.active::before,.navlinks a:hover::before{background:var(--lime);box-shadow:0 0 10px rgba(42,238,97,.5)}
+.account-btn{padding:10px 15px;border:1px solid #315841;border-radius:10px;background:#06130c;color:#f0f6f2;font-weight:850;cursor:pointer}.account-btn.live{border-color:var(--lime);color:var(--lime)}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;padding:7px 11px;border:1px solid #1e452f;border-radius:999px;background:rgba(5,20,12,.84);color:#d4e3db;font-size:11px;font-weight:850;letter-spacing:.17em;text-transform:uppercase}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 5px rgba(42,238,97,.08),0 0 18px rgba(42,238,97,.55)}
+.btn{border:none;border-radius:11px;padding:13px 18px;font-weight:900;cursor:pointer;transition:.2s transform,.2s box-shadow}.btn:hover{transform:translateY(-2px)}
+.btn-primary{background:linear-gradient(135deg,var(--lime),#55ff7c);color:#011006;box-shadow:0 12px 35px rgba(42,238,97,.12)}
+.btn-secondary{border:1px solid var(--line2);background:#07140d;color:var(--ink)}
+
+/* Hero */
+.hero{position:relative;overflow:hidden;padding:76px 0 48px;border-bottom:1px solid #10291b}
+.hero:after{content:"";position:absolute;right:max(7vw,44px);top:10px;width:min(430px,32vw);aspect-ratio:1;background:url('/assets/revenuetrigger-icon.svg') center/contain no-repeat;opacity:.065;filter:drop-shadow(0 0 62px rgba(42,238,97,.42));pointer-events:none}
+.hero-grid{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(390px,.95fr);gap:52px;align-items:center}
+.hero-copy h1{font-size:clamp(54px,6.6vw,86px);line-height:.94;letter-spacing:-.055em;margin:22px 0 20px;max-width:780px}
+.hero-copy h1 em{font-style:normal;color:var(--lime);text-shadow:0 0 34px rgba(42,238,97,.12)}
+.hero-copy p{font-size:18px;color:#a6b6ae;max-width:700px;margin:0}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}
+.hero-proof{display:flex;gap:24px;flex-wrap:wrap;margin-top:34px;color:#84968d;font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.hero-proof b{color:var(--lime);margin-right:6px}
+
+/* Interactive console */
+.intel-console{position:relative;border:1px solid #244735;border-radius:20px;background:linear-gradient(180deg,rgba(7,25,15,.96),rgba(3,13,8,.97));box-shadow:0 28px 80px rgba(0,0,0,.44),inset 0 1px rgba(255,255,255,.025);overflow:hidden;min-height:470px;transform:translateY(0);transition:.2s transform}
+.console-head{height:58px;padding:0 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #183526;color:#cbd9d1;font-size:10px;font-weight:900;letter-spacing:.14em}
+.console-live{display:flex;align-items:center;gap:7px;color:#86a895}.pulse{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 14px var(--lime);animation:pulse 1.6s ease-in-out infinite}
+.radar{position:relative;height:300px;overflow:hidden;background:radial-gradient(circle at center,rgba(42,238,97,.05),transparent 55%),linear-gradient(rgba(50,104,68,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(50,104,68,.06) 1px,transparent 1px);background-size:auto,34px 34px,34px 34px}
+.ring{position:absolute;left:50%;top:50%;border:1px solid rgba(62,126,82,.34);border-radius:50%;transform:translate(-50%,-50%)}.r1{width:240px;height:240px}.r2{width:170px;height:170px}.r3{width:94px;height:94px}
+.cross-h,.cross-v{position:absolute;background:rgba(62,126,82,.18)}.cross-h{left:8%;right:8%;height:1px;top:50%}.cross-v{top:8%;bottom:8%;width:1px;left:50%}
+.sweep{position:absolute;left:50%;top:50%;width:250px;height:250px;margin:-125px;animation:spin 5.8s linear infinite;border-radius:50%;background:conic-gradient(from 15deg,rgba(42,238,97,.18),transparent 23%,transparent)}
+.center-mark{position:absolute;left:50%;top:50%;width:68px;height:68px;transform:translate(-50%,-50%);border:1px solid #316347;border-radius:50%;display:grid;place-items:center;background:#06150d;box-shadow:0 0 30px rgba(42,238,97,.08)}
+.center-mark img{width:58px;height:auto;max-height:44px;object-fit:contain}
+.node{position:absolute;width:9px;height:9px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 5px rgba(42,238,97,.08),0 0 18px rgba(42,238,97,.7);transition:.35s left,.35s top}
+.node::after{content:attr(data-label);position:absolute;left:14px;top:-5px;color:#9db4a8;font-size:8px;font-weight:800;white-space:nowrap;letter-spacing:.07em}
+.n1{left:28%;top:29%}.n2{left:73%;top:37%}.n3{left:34%;top:72%}.n4{left:67%;top:69%}
+.console-metrics{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid #183526}
+.metric{padding:16px;border-right:1px solid #183526}.metric:last-child{border-right:0}.metric small{display:block;color:#6f857a;font-size:8px;letter-spacing:.13em;text-transform:uppercase;font-weight:900}.metric strong{display:block;margin-top:5px;font-size:22px}.metric strong.accent{color:var(--lime)}
+.console-foot{padding:11px 16px;border-top:1px solid #183526;display:flex;justify-content:space-between;color:#648073;font-size:8px;font-weight:850;letter-spacing:.1em;text-transform:uppercase}
+
+.watchbar{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px;padding:15px 17px;border:1px solid #1f4530;border-radius:14px;background:linear-gradient(180deg,#07190f,#041109)}.watchbar h3{margin:0 0 4px;font-size:16px}.watchbar p{margin:0;color:#7e9388;font-size:11px}.watchchips{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.watchchip{border:1px solid #2b5a3d;background:#092017;color:#d9e6df;border-radius:999px;padding:6px 9px;font-size:10px;font-weight:850}.watch-btn{margin-top:12px;width:100%}.watch-btn.watching{background:#0b2919;color:var(--lime);border:1px solid #2aee61}.territory-note{margin-top:8px;color:#72867b;font-size:10px}
+@media(max-width:620px){.watchbar{flex-direction:column}.watchchips{justify-content:flex-start}}
+/* Tool section */
+.section{padding:48px 0 82px}.section-head{display:flex;justify-content:space-between;gap:24px;align-items:end;margin-bottom:20px}.section-head h2{font-size:38px;letter-spacing:-.04em;margin:8px 0 0}.section-head p{margin:0;color:var(--muted);max-width:600px}
+.competitor-shell{border:1px solid var(--line);border-radius:20px;background:linear-gradient(180deg,#06170e,#031009);overflow:hidden;box-shadow:var(--shadow)}
+.competitor-toolbar{display:grid;grid-template-columns:1.5fr .8fr .7fr auto;gap:10px;padding:18px;border-bottom:1px solid var(--line)}
+.competitor-toolbar input,.competitor-toolbar select{width:100%;height:46px;border:1px solid #254934;background:#06160e;color:#e9f3ed;border-radius:11px;padding:0 13px;outline:none}
+.competitor-toolbar input:focus,.competitor-toolbar select:focus{border-color:var(--lime);box-shadow:0 0 0 3px rgba(42,238,97,.07)}
+.competitor-toolbar .btn{height:46px}.competitor-note{padding:12px 18px;color:#73877c;font-size:11px;border-bottom:1px solid #10291b}
+.competitor-list{display:grid}.competitor-row{display:grid;grid-template-columns:minmax(220px,1.4fr) .55fr .85fr .75fr .65fr auto;gap:16px;align-items:center;padding:18px;border-bottom:1px solid var(--line);transition:.2s background}.competitor-row:hover{background:#07180f}.competitor-row:last-child{border-bottom:0}
+.roc-badge{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:4px 7px;border:1px solid rgba(42,238,97,.38);border-radius:999px;background:rgba(42,238,97,.07);color:var(--lime);font-size:8px;font-weight:950;letter-spacing:.1em;text-transform:uppercase}.roc-badge:before{content:"✓";font-size:9px}.roc-panel{border:1px solid #24563a;background:linear-gradient(180deg,#071b10,#04130b);border-radius:12px;padding:15px;margin-top:10px}.roc-panel-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.roc-panel h3{font-size:12px;margin:0;text-transform:uppercase;letter-spacing:.11em}.roc-status{color:var(--lime);font-size:9px;font-weight:950;letter-spacing:.1em;text-transform:uppercase}.roc-license{margin-top:11px;padding-top:11px;border-top:1px solid #173824}.roc-license-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.roc-license-grid div{font-size:11px;color:#adc0b6}.roc-license-grid small{display:block;color:#6f8479;font-size:8px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;margin-bottom:3px}.roc-trades{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.roc-trade{padding:4px 7px;border-radius:999px;background:#0b2a19;border:1px solid #27573a;color:#b9ddc7;font-size:9px;font-weight:850}.roc-caveat{margin-top:10px;color:#789085;font-size:10px;line-height:1.45}.roc-no-match{border:1px dashed #2a4636;border-radius:12px;padding:13px;margin-top:10px;color:#82988c;font-size:11px}@media(max-width:620px){.roc-license-grid{grid-template-columns:1fr 1fr}}.competitor-name{font-weight:900;color:#f3f8f5}.competitor-sub{margin-top:4px;color:#788d82;font-size:11px}.competitor-stat small{display:block;color:#6f8378;font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;margin-bottom:5px}.competitor-stat strong{font-size:15px;color:#dfe9e4}.competitor-value{color:var(--gold)!important}
+.view{background:transparent;border:1px solid #294f39;color:#dce6e1;padding:8px 10px;border-radius:9px;cursor:pointer;font-weight:850}.view:hover{border-color:#43805a}
+.competitor-projects{display:none;grid-column:1 / -1;padding:14px 0 0;border-top:1px solid #10291b}.competitor-row.open .competitor-projects{display:grid;gap:8px}
+.competitor-project{display:grid;grid-template-columns:1.4fr .65fr .65fr;gap:12px;padding:10px 12px;border:1px solid #163823;border-radius:10px;background:#06150d}.competitor-project b{font-size:12px}.competitor-project span{color:#81958a;font-size:11px}
+.competitor-empty{padding:32px;text-align:center;color:#7f9288}.competitor-disclaimer{margin-top:12px;color:#6f8378;font-size:11px;line-height:1.5}.competitor-more{display:none;padding:16px 18px;border-top:1px solid var(--line);text-align:center;background:#04110a}.competitor-more.show{display:block}.competitor-more .btn{min-width:190px}.competitor-countline{color:#8da096;font-size:11px;margin-top:7px}
+footer{border-top:1px solid #13281d;color:#657a70;padding:28px 0 44px;font-size:13px}
+
+
+.profile-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:18px 0}.profile-kpi{border:1px solid var(--line);background:#05150d;border-radius:12px;padding:13px}.profile-kpi small{display:block;color:#70857a;font-size:8px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.profile-kpi strong{display:block;margin-top:5px;font-size:21px}.trend-up{color:var(--lime)!important}.trend-down{color:#f0a27f!important}.profile-panel{border:1px solid var(--line);background:#05140c;border-radius:12px;padding:14px;margin-top:10px}.profile-panel h3{font-size:12px;margin:0 0 12px;text-transform:uppercase;letter-spacing:.11em}.bar-row{display:grid;grid-template-columns:120px 1fr 44px;gap:8px;align-items:center;margin:8px 0;color:#aebfb6;font-size:11px}.bar-track{height:7px;border-radius:999px;background:#11291c;overflow:hidden}.bar-fill{height:100%;border-radius:999px;background:var(--lime)}.signal-card{border-left:3px solid var(--lime);background:#092117;padding:14px;border-radius:10px;margin-top:12px;color:#c8dbd0}.profile-recent{display:grid;gap:8px}.profile-project{padding:11px;border:1px solid #173824;border-radius:10px;background:#06150d}.profile-project-head{display:flex;justify-content:space-between;gap:12px}.profile-project small{color:#73897d}.mini-badge{display:inline-flex;padding:3px 6px;border:1px solid #2a5139;border-radius:999px;color:#9fc1ad;font-size:8px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;margin-right:5px}
+@media(max-width:620px){.profile-grid{grid-template-columns:1fr 1fr}.bar-row{grid-template-columns:90px 1fr 36px}}
+
+/* Modal */
+.modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:18px}.modal.show{display:flex}
+.modal-card{width:min(520px,100%);border:1px solid #244735;border-radius:18px;background:#06140c;box-shadow:0 34px 100px rgba(0,0,0,.66);padding:22px}.modal-top{display:flex;justify-content:space-between;gap:16px}.close{border:1px solid #284e38;background:#07160e;color:#e7efea;border-radius:9px;width:34px;height:34px;cursor:pointer}.formrow{margin-top:16px}.formrow label{display:block;color:#84988d;font-size:11px;font-weight:850;margin-bottom:7px}.formrow input{width:100%;border:1px solid #294f39;background:#06160e;color:#edf5f0;border-radius:10px;padding:12px}.notice{margin-top:12px;color:#95aa9f;font-size:12px}
+
+@keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{50%{opacity:.45;transform:scale(.8)}}
+@keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+.hero-copy>*{animation:rise .8s both}.hero-copy .eyebrow{animation-delay:.05s}.hero-copy h1{animation-delay:.14s}.hero-copy p{animation-delay:.24s}.hero-actions{animation-delay:.34s}.hero-proof{animation-delay:.42s}.intel-console{animation:rise .95s .18s both}
+
+
+/* ---------- User-selectable site theme ---------- */
+.theme-toggle{
+  min-width:112px;height:40px;display:inline-flex;align-items:center;justify-content:center;gap:8px;flex:0 0 auto;
+  padding:0 12px;border:1.5px solid var(--lime);border-radius:10px;background:#fff;color:#020806;
+  cursor:pointer;font-size:12px;font-weight:900;line-height:1;white-space:nowrap;
+  box-shadow:0 0 0 1px rgba(42,238,97,.08),0 6px 18px rgba(20,55,34,.08);
+  transition:.2s transform,.2s border-color,.2s background,.2s color,.2s box-shadow
+}
+.theme-toggle-icon{font-size:16px;line-height:1;color:inherit}
+.theme-label{font-size:11px;font-weight:900;letter-spacing:.02em;color:inherit;-webkit-text-stroke:0}
+.theme-label-short{display:none}
+.theme-toggle:hover{transform:translateY(-1px);border-color:var(--lime)}
+html[data-theme="light"] body{
+  background:
+    radial-gradient(240px circle at var(--mouse-x,72vw) var(--mouse-y,14vh),rgba(42,238,97,.15),rgba(42,238,97,.08) 24%,transparent 62%),
+    linear-gradient(180deg,#f7faf7,#edf3ef 52%,#f7faf7);
+  background-attachment:fixed,fixed;color:#0b1710
+}
+html[data-theme="light"] .topbar{background:rgba(250,252,250,.9);border-bottom-color:#d9e4dd}
+html[data-theme="light"] .navlinks{
+  background:linear-gradient(180deg,#fff,#f5f8f6);border-color:#d5e1da;color:#506158;box-shadow:0 8px 24px rgba(20,55,34,.06)
+}
+html[data-theme="light"] .navlinks a:hover,
+html[data-theme="light"] .navlinks a.active{color:#07120d;background:#e8f6ed;border-color:#bfe8cd}
+html[data-theme="light"] .account-btn{background:#fff;color:#142119;border-color:#cad9cf}
+html[data-theme="light"] .account-btn.live{color:#078b35;border-color:#2aee61}
+html[data-theme="light"] .theme-toggle{background:#07120d;color:var(--lime);border-color:#07120d;box-shadow:none}
+html[data-theme="light"] .hero:after{opacity:.045}
+html[data-theme="light"] .hero-copy h1{color:#07120d}
+html[data-theme="light"] .hero-copy p{color:#56675e}
+html[data-theme="light"] .hero-proof{color:#63746b}
+html[data-theme="light"] .hero .eyebrow{background:#fff;color:#24402f;border-color:#cfe0d5}
+html[data-theme="light"] .section-head h2{color:#07120d}
+html[data-theme="light"] .section-head p{color:#5d6d64}
+html[data-theme="light"] .watchbar{
+  background:#fff;border-color:#d6e1da;box-shadow:0 12px 34px rgba(18,49,30,.05)
+}
+html[data-theme="light"] .watchbar p{color:#687970}
+html[data-theme="light"] .watchchip{background:#f5faf7;border-color:#cbdcd1;color:#274335}
+html[data-theme="light"] .competitor-shell{
+  background:#fff;border-color:#d6e1da;box-shadow:0 18px 52px rgba(18,49,30,.08)
+}
+html[data-theme="light"] .competitor-toolbar{border-color:#e0e8e3}
+html[data-theme="light"] .competitor-toolbar input,
+html[data-theme="light"] .competitor-toolbar select{
+  background:#f8fbf9;color:#142119;border-color:#cddbd2
+}
+html[data-theme="light"] .competitor-note,
+html[data-theme="light"] .competitor-row{border-color:#e1e9e4}
+html[data-theme="light"] .competitor-row:hover{background:#f2f8f4}
+html[data-theme="light"] .competitor-name,
+html[data-theme="light"] .competitor-stat strong{color:#142119}
+html[data-theme="light"] .competitor-sub,
+html[data-theme="light"] .competitor-note,
+html[data-theme="light"] .competitor-disclaimer{color:#697a70}
+html[data-theme="light"] .view{background:#fff;color:#20342a;border-color:#c6d8cd}
+html[data-theme="light"] .competitor-more{background:#f8fbf9;border-color:#e1e9e4}
+html[data-theme="light"] footer{border-color:#d7e2db;color:#65756c}
+html[data-theme="light"] .modal{background:rgba(9,25,15,.42)}
+html[data-theme="light"] .modal-card{background:#fff;color:#0d1b13;border-color:#cad9d0}
+html[data-theme="light"] .profile-kpi,
+html[data-theme="light"] .profile-panel,
+html[data-theme="light"] .roc-panel{background:#f8fbf9;border-color:#d9e4dd}
+html[data-theme="light"] .profile-project{background:#fff;border-color:#d9e4dd}
+html[data-theme="light"] .signal-card{background:#eaf7ee;color:#23402f}
+html[data-theme="light"] .roc-no-match{border-color:#ccd9d1;color:#66776e}
+html[data-theme="light"] .formrow input{background:#f8fbf9;color:#142119;border-color:#cddbd2}
+html[data-theme="light"] .close{color:#142119;border-color:#cbd9d0}
+
+@media(max-width:900px){
+  .theme-toggle{grid-column:2;grid-row:1;justify-self:end;margin:0;min-width:106px}
+  .account-btn{grid-column:2;grid-row:1}
+}
+@media(max-width:620px){
+  .theme-toggle{height:36px;min-width:72px;margin:0;padding:0 9px;gap:6px}.theme-label-full{display:none}.theme-label-short{display:inline}.theme-toggle-icon{font-size:14px}
+}
+
+@media(max-width:900px){
+  nav{height:auto;min-height:76px;display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;padding:12px 0;gap:9px}.brand{min-width:0;grid-column:1;grid-row:1}.brand-logo{height:34px;max-width:205px}.theme-toggle{grid-column:2;grid-row:1;justify-self:end;margin:0}.account-btn{grid-column:3;grid-row:1;justify-self:end;margin:0}.navlinks{grid-column:1/-1;grid-row:2;margin-left:0;width:100%;display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}.navlinks a{min-width:0;font-size:12px;padding:8px}
+  .hero-grid{grid-template-columns:1fr;gap:28px}.intel-console{min-height:430px}
+  .competitor-toolbar{grid-template-columns:1fr 1fr}.competitor-toolbar input,.competitor-toolbar .btn{grid-column:1/-1}
+  .competitor-row{grid-template-columns:1.2fr .55fr .8fr auto}.competitor-row .hide-tablet{display:none}
+}
+@media(max-width:620px){
+  .wrap{width:min(100% - 20px,1180px)}
+  .brand-logo{height:29px;max-width:176px}.account-btn{padding:9px 9px;font-size:11px}.navlinks{grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;padding:3px}.navlinks a{font-size:10px;padding:7px 3px;white-space:nowrap}.navlinks a::before{display:none}.navlinks .nav-sources{display:none}
+  .hero{padding:38px 0 28px}.hero-copy h1{font-size:48px}.hero-copy p{font-size:15px;line-height:1.6}.hero-proof{gap:14px;font-size:10px}
+  .intel-console{min-height:390px}.radar{height:250px}.r1{width:205px;height:205px}.r2{width:145px;height:145px}.r3{width:80px;height:80px}.sweep{width:212px;height:212px;margin:-106px}.node::after{display:none}
+  .console-metrics{grid-template-columns:repeat(3,1fr)}.metric{padding:13px 10px}.metric strong{font-size:18px}
+  .section{padding:38px 0 64px}.section-head{display:block}.section-head h2{font-size:32px}.section-head p{margin-top:10px}
+  .competitor-toolbar{grid-template-columns:1fr 1fr;padding:14px;gap:8px}.competitor-toolbar input,.competitor-toolbar .btn{grid-column:1/-1}
+  .competitor-row{grid-template-columns:minmax(0,1fr) auto;padding:15px;gap:12px}.competitor-stat{display:none}.competitor-row .competitor-primary-stat{display:block;text-align:right}.competitor-project{grid-template-columns:1fr}.competitor-project span{text-align:left!important}
+}
+@media(max-width:620px){html[data-theme="light"] .brand-logo-light{height:27px;max-width:142px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* V73 — competitor mobile hero exact 3-line title */
+.competitor-hero-title .hero-line{display:inline}
+
+@media(max-width:620px){
+  .competitor-hero-title .hero-line{
+    display:block;
+    white-space:nowrap;
+  }
+}
+
+
+/* V74 — competitor mobile radar fix */
+@media(max-width:620px){
+  .intel-console{
+    min-height:0;
+    transform:none !important;
+    touch-action:pan-y;
+  }
+
+  .radar{
+    height:260px;
+    min-height:260px;
+    overflow:hidden;
+    isolation:isolate;
+  }
+
+  .radar .sweep{
+    width:218px;
+    height:218px;
+    margin:-109px;
+    animation:spin 5.8s linear infinite !important;
+    will-change:transform;
+    transform-origin:center;
+  }
+
+  .radar .ring,
+  .radar .cross-h,
+  .radar .cross-v,
+  .radar .center-mark,
+  .radar .node{
+    pointer-events:none;
+  }
+
+  .center-mark{
+    width:62px;
+    height:62px;
+  }
+
+  .center-mark img{
+    width:52px;
+    max-height:40px;
+  }
+}
+
+/* Respect reduced motion generally, but keep the radar visually alive as a product indicator. */
+@media(max-width:620px) and (prefers-reduced-motion:reduce){
+  .radar .sweep{
+    animation:spin 11.6s linear infinite !important;
+  }
+}
+
+
+/* V75 — restore animated radar location labels on mobile */
+@media(max-width:620px){
+  .radar .node::after{
+    display:block !important;
+    content:attr(data-label);
+    position:absolute;
+    left:14px;
+    top:-6px;
+    z-index:6;
+    color:#b7c9bf;
+    font-size:7px;
+    font-weight:900;
+    line-height:1;
+    white-space:nowrap;
+    letter-spacing:.07em;
+    text-shadow:0 1px 3px #00160a,0 0 7px rgba(0,20,10,.9);
+    pointer-events:none;
+  }
+
+  .radar .node{
+    z-index:5;
+  }
+}
+
+
+/* V77 — competitor hero background parity with index */
+.hero{
+  border-bottom:none !important;
+  background:radial-gradient(ellipse at 76% 46%,rgba(20,149,62,.11) 0%,transparent 43%);
+}
+.hero:after{display:none !important}
+
+
+/* V78 — keep radar stats readable in light mode */
+html[data-theme="light"] .intel-console .metric strong{color:#fff !important}
+html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
+
+
+/* V81 — competitor radar styling aligned with index radar */
+.intel-console:before{
+  content:"";
+  pointer-events:none;
+  position:absolute;
+  inset:0;
+  z-index:0;
+  background:radial-gradient(310px circle at var(--px,50%) var(--py,45%),rgba(51,235,101,.08),transparent 74%);
+}
+.console-head,.radar,.console-metrics,.console-foot{position:relative;z-index:1}
+.console-head-title{display:flex;align-items:center;gap:9px;min-width:0}
+.console-head-logo{
+  width:24px;
+  height:24px;
+  object-fit:contain;
+  flex:none;
+}
+.console-head-light{
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:var(--lime);
+  box-shadow:0 0 11px var(--lime);
+  flex:none;
+}
+.radar .node{
+  border:0;
+  padding:0;
+  cursor:pointer;
+  appearance:none;
+  -webkit-appearance:none;
+}
+.radar .node.selected{
+  box-shadow:0 0 0 7px rgba(42,238,97,.11),0 0 24px rgba(42,238,97,.9);
+}
+.radar .node.selected:after{color:#e6ffed;font-weight:950}
+.radar-topo{
+  position:absolute;
+  z-index:2;
+  color:rgba(137,178,143,.38);
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.15em;
+  line-height:1.8;
+  pointer-events:none;
+}
+.radar-topo-top{top:17px;left:19px}
+.radar-topo-bottom{right:18px;bottom:18px;text-align:right}
+.radar-bottom-light{
+  position:absolute;
+  left:20px;
+  bottom:20px;
+  z-index:3;
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:var(--lime);
+  box-shadow:0 0 0 5px rgba(42,238,97,.07),0 0 15px rgba(42,238,97,.65);
+}
+.radar-interact-hint{
+  position:absolute;
+  left:38px;
+  bottom:17px;
+  z-index:3;
+  color:#6f9b7e;
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.1em;
+  pointer-events:none;
+}
+.console-foot-left{display:flex;align-items:center;gap:8px;min-width:0}
+.console-foot-indicator{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--lime);
+  box-shadow:0 0 9px rgba(55,233,101,.64);
+  flex:none;
+}
+
+@media(max-width:620px){
+  .console-head{padding:0 13px}
+  .console-head-title{gap:6px;font-size:8px;letter-spacing:.10em}
+  .console-head-logo{width:20px;height:20px}
+  .console-head-light{width:4px;height:4px}
+  .radar-topo{font-size:6px}
+  .radar-interact-hint{font-size:6px;left:34px;bottom:13px}
+  .radar-bottom-light{left:18px;bottom:16px;width:6px;height:6px}
+}
+
+
+/* V82 — transparent center mark on Competitor radar */
+.center-mark{
+  background:transparent !important;
+  box-shadow:0 0 30px rgba(42,238,97,.10) !important;
+}
+.center-mark img{
+  background:transparent !important;
+}
+
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <nav>
+      <a class="brand" href="/" aria-label="RevenueTrigger home">
+        <img class="brand-logo brand-logo-dark" src="/assets/revenuetrigger-icon.svg" alt="RevenueTrigger">
+        <img class="brand-logo brand-logo-light" src="/assets/RT-Logo-WHT-BG.svg" alt="RevenueTrigger">
+      </a>
+      <div class="navlinks">
+        <a href="/#signals">Opportunities</a>
+        <a href="/#pipeline">Early Pipeline</a>
+        <a class="active" href="/competitors.html">Competitors</a>
+        <a class="nav-sources" href="/#sources">Sources</a>
+        <a href="/#pricing">Pricing</a>
+      </div>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light theme" title="Switch to light theme" onclick="toggleTheme()">
+        <span class="theme-toggle-icon" id="themeIcon">☀</span>
+        <span class="theme-label theme-label-full" id="themeLabel">Light mode</span>
+        <span class="theme-label theme-label-short" id="themeLabelShort">Light</span>
+      </button>
+      <button class="account-btn" id="accountBtn" onclick="accountAction()">Sign in</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow"><span class="dot"></span>Competitor intelligence</span>
+      <h1 class="competitor-hero-title">
+        <span class="hero-line hero-line-1">See who is</span>
+        <span class="hero-line hero-line-2"><em>active</em> in</span>
+        <span class="hero-line hero-line-3">your market.</span>
+      </h1>
+      <p>Search contractors and companies tied to public permit activity, compare recent project activity, and see where competitors are showing up across RevenueTrigger markets.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#competitor-tool">Explore competitor activity ↗</a>
+        <a class="btn btn-secondary" href="/">Back to opportunities</a>
+      </div>
+      <div class="hero-proof"><span><b>01</b> Search</span><span><b>02</b> Compare</span><span><b>03</b> Track activity</span></div>
+    </div>
+
+    <div class="intel-console" id="intelConsole">
+      <div class="console-head">
+        <div class="console-head-title">
+          <img class="console-head-logo" src="/assets/revenuetrigger-logo.svg" alt="">
+          <span>MARKET ACTIVITY RADAR</span>
+          <span class="console-head-light" aria-hidden="true"></span>
+        </div>
+        <span class="console-live"><span class="pulse"></span>LIVE DATA</span>
+      </div>
+      <div class="radar" id="radar">
+        <div class="cross-h"></div><div class="cross-v"></div>
+        <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
+        <div class="sweep"></div>
+        <div class="center-mark" id="competitorRadarCenter"><img src="/assets/revenuetrigger-logo.svg" alt="RevenueTrigger"></div>
+        <button class="node n1" type="button" data-market="Phoenix" data-label="PHOENIX" aria-label="Filter competitors to Phoenix"></button>
+        <button class="node n2" type="button" data-market="Tempe" data-label="TEMPE" aria-label="Filter competitors to Tempe"></button>
+        <button class="node n3" type="button" data-market="Chandler" data-label="CHANDLER" aria-label="Filter competitors to Chandler"></button>
+        <button class="node n4" type="button" data-market="Scottsdale" data-label="SCOTTSDALE" aria-label="Filter competitors to Scottsdale"></button>
+        <div class="radar-topo radar-topo-top" aria-hidden="true">33.4484° N<br>112.0740° W</div>
+        <div class="radar-topo radar-topo-bottom" aria-hidden="true">RT / ARIZONA<br>MARKET NET 04</div>
+        <span class="radar-bottom-light" aria-hidden="true"></span>
+        <span class="radar-interact-hint" id="competitorRadarHint">SELECT A MARKET TO FILTER</span>
+      </div>
+      <div class="console-metrics">
+        <div class="metric"><small>Companies found</small><strong class="accent" id="heroCompanies">—</strong></div>
+        <div class="metric"><small>Markets</small><strong id="heroMarkets">6</strong></div>
+        <div class="metric"><small>Window</small><strong id="heroWindow">90D</strong></div>
+      </div>
+      <div class="console-foot"><span class="console-foot-left"><span class="console-foot-indicator" aria-hidden="true"></span><span id="heroActivity">Awaiting search</span></span><span>CONTRACTOR / COMPANY INTELLIGENCE</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="competitor-tool">
+  <div class="wrap">
+    <div class="section-head">
+      <div><span class="eyebrow">Market activity</span><h2>Search competitor activity.</h2></div>
+      <p>See permit-linked companies, reported valuation where available, market presence, and recent project history.</p>
+    </div>
+    <div class="watchbar" id="watchbar">
+      <div><h3>Tracked competitors</h3><p>Territory users can follow companies and receive alerts only when meaningful behavior changes.</p></div>
+      <div class="watchchips" id="watchchips"><span class="watchchip">No competitors tracked yet</span></div>
+    </div>
+    <div class="competitor-shell">
+      <div class="competitor-toolbar">
+        <input id="competitorSearch" placeholder="Search contractor or company…">
+        <select id="competitorMarket">
+          <option value="all">All markets</option><option>Phoenix</option><option>Tempe</option><option>Tucson</option><option>Scottsdale</option><option>Mesa</option><option>Chandler</option>
+        </select>
+        <select id="competitorDays">
+          <option value="30">Last 30 days</option><option value="90" selected>Last 90 days</option><option value="180">Last 180 days</option><option value="365">Last 12 months</option>
+        </select>
+        <button class="btn btn-primary" id="competitorRun">Search competitors</button>
+      </div>
+      <div class="competitor-note" id="competitorNote">Sign in to explore contractor activity across RevenueTrigger markets.</div>
+      <div class="competitor-list" id="competitorList"><div class="competitor-empty">Competitor Intelligence is available to signed-in RevenueTrigger users.</div></div>
+      <div class="competitor-more" id="competitorMore">
+        <button class="btn btn-secondary" id="competitorLoadMore">Load more competitors</button>
+        <div class="competitor-countline" id="competitorCountline"></div>
+      </div>
+    </div>
+    <div class="competitor-disclaimer">Company attribution reflects information published by the source jurisdiction and may represent the contractor, builder, owner, developer, applicant, architect, or engineer. It does not necessarily indicate who won a competitive bid.</div>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap" style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap"><span>RevenueTrigger</span><span>Public-data opportunity intelligence</span></div></footer>
+
+<div class="modal" id="competitorProfileModal">
+  <div class="modal-card" style="width:min(860px,100%);max-height:92vh;overflow:auto">
+    <div class="modal-top">
+      <div><span class="eyebrow">Competitor profile</span><h2 id="cpTitle" style="margin:12px 0 0"></h2><div id="cpAliases" class="freshness"></div></div>
+      <button class="close" onclick="closeModal('competitorProfileModal')">×</button>
+    </div>
+    <div id="cpBody"></div>
+  </div>
+</div>
+
+<div class="modal" id="signinModal">
+  <div class="modal-card">
+    <div class="modal-top"><div><span class="eyebrow">Passwordless access</span><h2 style="margin:12px 0 0">Sign in to RevenueTrigger</h2></div><button class="close" onclick="closeModal('signinModal')">×</button></div>
+    <p style="color:#98aaa2">We’ll email you a secure one-time link. No password required.</p>
+    <form id="signinForm"><div class="formrow"><label>Email</label><input id="signinEmail" required type="email" placeholder="you@company.com"></div><button class="btn btn-primary" style="width:100%;margin-top:14px">Send sign-in link</button></form>
+    <div class="notice" id="signinNotice" style="display:none"></div>
+  </div>
+</div>
+
+<script>
+const CONFIG={apiBase:localStorage.getItem('revenuetrigger_api')||localStorage.getItem('signalhound_api')||'https://api.revenuetrigger.ai/api'};
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const THEME_KEY='revenuetrigger_theme';
+function currentTheme(){return document.documentElement.getAttribute('data-theme')==='light'?'light':'dark'}
+function syncThemeUI(){
+  const light=currentTheme()==='light';
+  const b=$('#themeToggle'),i=$('#themeIcon'),label=$('#themeLabel'),shortLabel=$('#themeLabelShort');
+  if(i)i.textContent=light?'☾':'☀';
+  if(label)label.textContent=light?'Dark mode':'Light mode';
+  if(shortLabel)shortLabel.textContent=light?'Dark':'Light';
+  if(b){
+    b.setAttribute('aria-label',light?'Switch to dark theme':'Switch to light theme');
+    b.title=light?'Switch to dark theme':'Switch to light theme';
+  }
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.setAttribute('content',light?'#f7faf7':'#020806');
+}
+function setTheme(theme){
+  const next=theme==='light'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  try{localStorage.setItem(THEME_KEY,next)}catch(e){}
+  syncThemeUI();
+}
+function toggleTheme(){setTheme(currentTheme()==='light'?'dark':'light')}
+
+function initLightMouseGlow(){
+  if(!window.matchMedia('(pointer:fine)').matches||window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  const setGlow=(x,y)=>{document.body.style.setProperty('--mouse-x',x);document.body.style.setProperty('--mouse-y',y)};
+  setGlow('72vw','14vh');
+  window.addEventListener('pointermove',e=>{
+    if(currentTheme()!=='light')return;
+    setGlow(e.clientX+'px',e.clientY+'px');
+  },{passive:true});
+  window.addEventListener('pointerleave',()=>setGlow('72vw','14vh'));
+}
+initLightMouseGlow();
+
+syncThemeUI();
+let user=null, competitorData=[],watchlist=[],competitorTotal=0,competitorLimit=50;
+function token(){return localStorage.getItem('revenuetrigger_session')||localStorage.getItem('signalhound_session')||''}
+function authHeaders(extra={}){const t=token();return {...extra,...(t?{Authorization:`Bearer ${t}`}:{})}}
+function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function openModal(id){$('#'+id)?.classList.add('show')} function closeModal(id){$('#'+id)?.classList.remove('show')}
+function openSignin(){openModal('signinModal');setTimeout(()=>$('#signinEmail')?.focus(),50)}
+function accountAction(){if(user){location.href='/';return}openSignin()}
+function updateUserUI(){const b=$('#accountBtn');if(!b)return;if(user){b.textContent=user.email.split('@')[0];b.classList.add('live')}else{b.textContent='Sign in';b.classList.remove('live')}}
+async function loadMe(){if(!token()){user=null;updateUserUI();return false}try{const r=await fetch(`${CONFIG.apiBase}/me`,{headers:authHeaders()});if(!r.ok)throw 0;user=(await r.json()).user;updateUserUI();return true}catch{localStorage.removeItem('revenuetrigger_session');localStorage.removeItem('signalhound_session');user=null;updateUserUI();return false}}
+async function requestSignin(email){const r=await fetch(`${CONFIG.apiBase}/auth/request`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Could not send link');return d}
+async function verifyMagic(raw){const r=await fetch(`${CONFIG.apiBase}/auth/verify`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token:raw})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Sign-in link failed');localStorage.setItem('revenuetrigger_session',d.session);localStorage.removeItem('signalhound_session');user=d.user;history.replaceState({},'',location.pathname);updateUserUI();await loadWatchlist();await loadCompetitors()}
+function moneyCompact(n){n=Number(n||0);if(!n)return '—';if(n>=1e6)return '$'+(n/1e6).toFixed(n>=1e7?0:1)+'M';if(n>=1e3)return '$'+Math.round(n/1e3)+'K';return '$'+Math.round(n).toLocaleString()}
+
+function isWatching(company){return watchlist.some(x=>String(x.company).toLowerCase()===String(company).toLowerCase())}
+function renderWatchlist(){
+  const el=$('#watchchips');if(!el)return;
+  if(!user){el.innerHTML='<span class="watchchip">Sign in to track competitors</span>';return}
+  if(!watchlist.length){el.innerHTML='<span class="watchchip">No competitors tracked yet</span>';return}
+  el.innerHTML=watchlist.map(x=>`<button class="watchchip" onclick="searchWatched('${String(x.company).replace(/'/g,"\\'")}')">${esc(x.company)}</button>`).join('');
+}
+function searchWatched(company){$('#competitorSearch').value=company;loadCompetitors();document.querySelector('#competitor-tool')?.scrollIntoView({behavior:'smooth'})}
+async function loadWatchlist(){
+  if(!user){watchlist=[];renderWatchlist();return}
+  try{
+    const r=await fetch(`${CONFIG.apiBase}/competitor-watchlist`,{headers:authHeaders()});
+    const d=await r.json().catch(()=>({}));
+    if(r.ok){watchlist=d.items||[];renderWatchlist()}
+  }catch(e){}
+}
+async function toggleWatch(company){
+  if(!user){openSignin();return}
+  if(user.plan!=='Territory'){alert('Competitor watchlists are available on the Territory plan.');return}
+  const watching=!isWatching(company);
+  const r=await fetch(`${CONFIG.apiBase}/competitor-watchlist`,{method:'POST',headers:authHeaders({'content-type':'application/json'}),body:JSON.stringify({company,watching})});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok){alert(d.error||'Could not update watchlist.');return}
+  watchlist=d.items||[];renderWatchlist();
+  const i=competitorData.findIndex(x=>x.company===company);if(i>=0)openCompetitorProfile(i);
+}
+function openCompetitorProfile(i){
+  const c=competitorData[i];if(!c)return;
+  $('#cpTitle').textContent=c.company;
+  $('#cpAliases').textContent=(c.aliases||[]).length>1?`Resolved aliases: ${(c.aliases||[]).join(' • ')} · Entity match ${c.entityMatchConfidence||'—'}%`:`Entity match ${c.entityMatchConfidence||'—'}%`;
+
+  const trendClass=c.permitTrend>0?'trend-up':c.permitTrend<0?'trend-down':'';
+  const trendArrow=c.permitTrend>0?'↑':c.permitTrend<0?'↓':'';
+  const territoryBars=(c.territories||[]).slice(0,6).map(x=>`<div class="bar-row"><span>${esc(x.name)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(3,x.share)}%"></div></div><b>${x.share}%</b></div>`).join('')||'<div class="freshness">No territory distribution available.</div>';
+  const mixBars=(c.projectMix||[]).slice(0,6).map(x=>`<div class="bar-row"><span>${esc(x.name)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(3,x.share)}%"></div></div><b>${x.share}%</b></div>`).join('')||'<div class="freshness">No project-mix data available.</div>';
+  const recent=(c.recentProjects||[]).map(p=>`<div class="profile-project"><div class="profile-project-head"><b>${esc(p.name||'Project activity')}</b><span>${p.officialValue?moneyCompact(p.officialValue):'Value not reported'}</span></div><small>${esc(p.market||'')} · ${p.date?new Date(p.date).toLocaleDateString():'Date not published'} · ${esc(p.lifecycle?.stage||'Stage unknown')}</small><div style="margin-top:7px"><span class="mini-badge">Confidence ${p.confidence||'—'}%</span><span class="mini-badge">${esc(p.source||'Public source')}</span></div></div>`).join('')||'<div class="freshness">No recent projects available.</div>';
+  const roc=c.roc||{};
+  const rocLicenses=(roc.licenses||[]).map(x=>`<div class="roc-license"><div class="roc-license-grid">
+    <div><small>ROC license</small><b>${esc(x.license_no||'—')}</b></div>
+    <div><small>Status</small><b>${esc(x.status||'—')}</b></div>
+    <div><small>Class</small><b>${esc(x.class_code||'—')} · ${esc(x.class_type||'—')}</b></div>
+    <div><small>Classification</small><span>${esc(x.class_detail||'—')}</span></div>
+    <div><small>Location</small><span>${esc([x.city,x.state,x.zip].filter(Boolean).join(', '))||'—'}</span></div>
+    <div><small>Expires</small><span>${esc(x.expiration_date||'—')}</span></div>
+    <div><small>Qualifying party</small><span>${esc(x.qualifying_party||'—')}</span></div>
+    <div><small>Issued</small><span>${esc(x.issued_date||'—')}</span></div>
+    <div><small>Licensed entity</small><span>${esc(x.business_name||'—')}${x.dba?` · DBA ${esc(x.dba)}`:''}</span></div>
+  </div></div>`).join('');
+  const rocPanel=roc.verified?`<div class="roc-panel"><div class="roc-panel-head"><div><h3>Arizona ROC license intelligence</h3><div class="freshness">Official roster identity match · ${roc.licenseCount||0} license${roc.licenseCount===1?'':'s'}</div></div><span class="roc-status">Matched ${roc.matchConfidence||'—'}%</span></div>${(roc.trades||[]).length?`<div class="roc-trades">${roc.trades.map(t=>`<span class="roc-trade">${esc(t)}</span>`).join('')}</div>`:''}${rocLicenses}<div class="roc-caveat">Source: Arizona Registrar of Contractors current-posting roster${roc.sourceAsOf?` · roster dated ${esc(roc.sourceAsOf)}`:''}. A roster match verifies identity/classification data in the imported posting list; it is not a recommendation or evidence that the company won a project. Confirm current standing with AZ ROC before relying on it.</div></div>`:`<div class="roc-no-match"><b>Arizona ROC:</b> No exact business-name/DBA match in the currently imported ROC roster. This does <b>not</b> mean the company is unlicensed; the permit entity name may differ from the licensed entity name.</div>`;
+
+  $('#cpBody').innerHTML=`
+    <div class="profile-grid">
+      <div class="profile-kpi"><small>Permit activity</small><strong>${c.permitCount||0}</strong></div>
+      <div class="profile-kpi"><small>Active projects</small><strong>${c.activeProjects||0}</strong></div>
+      <div class="profile-kpi"><small>Reported value</small><strong>${moneyCompact(c.reportedValue)}</strong></div>
+      <div class="profile-kpi"><small>Activity trend</small><strong class="${trendClass}">${trendArrow} ${Math.abs(c.permitTrend||0)}%</strong></div>
+    </div>
+    <div class="signal-card"><strong>Competitive signal</strong><br>${esc(c.competitiveSignal||'No meaningful change detected in the current period.')}</div>
+    ${rocPanel}
+    <button class="btn ${isWatching(c.company)?'watch-btn watching':'btn-primary watch-btn'}" onclick="toggleWatch('${String(c.company).replace(/'/g,"\'")}')">${isWatching(c.company)?'✓ Watching competitor':'Watch competitor'}</button>
+    <div class="territory-note">${user?.plan==='Territory'?'Meaningful competitor changes will be included in Territory alerts.':'Competitor watchlists and meaningful-change alerts are a Territory feature.'}</div>
+    <div class="profile-panel"><h3>Territories</h3>${territoryBars}</div>
+    <div class="profile-panel"><h3>Project mix</h3>${mixBars}</div>
+    <div class="profile-panel"><h3>Recent projects</h3><div class="profile-recent">${recent}</div></div>
+    <div class="profile-panel"><h3>Data quality</h3><div class="freshness">Average confidence: ${c.avgConfidence??'—'}% · Company entity match: ${c.entityMatchConfidence??'—'}% · Facts remain attributed to their public source.</div></div>`;
+  openModal('competitorProfileModal');
+}
+function renderCompetitors(){
+  const el=$('#competitorList'); if(!el)return;
+  if(!user){el.innerHTML='<div class="competitor-empty">Sign in to explore contractor activity across RevenueTrigger markets.</div>';return}
+  if(!competitorData.length){el.innerHTML='<div class="competitor-empty">No matching contractor activity found for these filters.</div>';return}
+  el.innerHTML=competitorData.map((c,i)=>`
+  <div class="competitor-row" id="competitorRow${i}">
+    <div><div class="competitor-name">${esc(c.company)}</div><div class="competitor-sub">${esc((c.markets||[]).join(' • '))} · Latest ${c.latestActivity?new Date(c.latestActivity).toLocaleDateString():'—'}</div>${c.roc?.verified?`<span class="roc-badge">AZ ROC matched</span>`:''}</div>
+    <div class="competitor-stat competitor-primary-stat"><small>Permits</small><strong>${c.permitCount||0}</strong></div>
+    <div class="competitor-stat"><small>Reported value</small><strong class="competitor-value">${moneyCompact(c.reportedValue)}</strong></div>
+    <div class="competitor-stat hide-tablet"><small>Markets</small><strong>${c.marketCount||0}</strong></div>
+    <div class="competitor-stat hide-tablet"><small>Avg score</small><strong>${Math.round(c.avgScore||0)}</strong></div>
+    <button class="view" onclick="openCompetitorProfile(${i})">View</button>
+  </div>`).join('');
+}
+function selectedMarketCount(){
+  return $('#competitorMarket').value==='all' ? 6 : 1;
+}
+function updateHeroMetrics(){
+  $('#heroCompanies').textContent=competitorTotal||'0';
+  $('#heroMarkets').textContent=selectedMarketCount();
+  $('#heroWindow').textContent=($('#competitorDays').value||'90')+'D';
+  $('#heroActivity').textContent=competitorTotal?`${competitorTotal} MATCHING COMPANIES FOUND`:'NO MATCHES IN CURRENT FILTER';
+}
+
+function renderCompetitorPagination(){
+  const more=$('#competitorMore'),line=$('#competitorCountline'),btn=$('#competitorLoadMore');
+  if(!more||!line||!btn)return;
+  const shown=competitorData.length;
+  const maxAvailable=Math.min(competitorTotal,100);
+  line.textContent=competitorTotal>100
+    ? `Showing ${shown} of ${competitorTotal} matching companies · first 100 available in this view`
+    : `Showing ${shown} of ${competitorTotal} matching companies`;
+  if(user && shown<maxAvailable){
+    more.classList.add('show');
+    btn.disabled=false;
+    btn.textContent=shown<50?'Load competitors':'Load 50 more';
+  }else{
+    more.classList.toggle('show', competitorTotal>0);
+    btn.style.display='none';
+  }
+}
+function resetCompetitorPagination(){
+  competitorLimit=50;
+  const btn=$('#competitorLoadMore');
+  if(btn)btn.style.display='';
+}
+async function loadMoreCompetitors(){
+  if(competitorLimit>=100)return;
+  competitorLimit=Math.min(100,competitorLimit+50);
+  const btn=$('#competitorLoadMore');
+  if(btn){btn.disabled=true;btn.textContent='Loading…'}
+  await loadCompetitors({preserveLimit:true});
+}
+async function loadCompetitors({preserveLimit=false}={}){
+  if(!user){renderCompetitors();openSignin();return}
+  if(!preserveLimit)competitorLimit=Math.max(50,Math.min(100,competitorLimit));
+  const q=$('#competitorSearch').value.trim(), market=$('#competitorMarket').value, days=$('#competitorDays').value;
+  $('#competitorNote').textContent='Loading competitor activity…'; $('#competitorList').innerHTML='<div class="competitor-empty">Analyzing contractor activity…</div>';
+  try{
+    const r=await fetch(`${CONFIG.apiBase}/competitors?days=${encodeURIComponent(days)}&market=${encodeURIComponent(market)}&q=${encodeURIComponent(q)}&limit=${encodeURIComponent(competitorLimit)}`,{headers:authHeaders()});
+    const d=await r.json().catch(()=>({})); if(r.status===401){user=null;updateUserUI();renderCompetitors();return} if(!r.ok)throw new Error(d.error||'Could not load competitor intelligence.');
+    competitorData=d.companies||[];
+    competitorTotal=Number(d.totalCount??d.count??competitorData.length);
+    $('#competitorNote').textContent=`${competitorTotal} matching compan${competitorTotal===1?'y':'ies'} · ${days}-day activity window`;
+    renderCompetitors();renderCompetitorPagination();updateHeroMetrics();
+  }catch(e){
+    competitorData=[];competitorTotal=0;
+    $('#competitorNote').textContent=e.message||'Could not load competitor intelligence.';
+    renderCompetitors();renderCompetitorPagination();updateHeroMetrics()
+  }
+}
+$('#competitorLoadMore').addEventListener('click',loadMoreCompetitors);
+$('#competitorRun').addEventListener('click',()=>{resetCompetitorPagination();loadCompetitors()});
+$('#competitorSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){resetCompetitorPagination();loadCompetitors()}});
+$('#competitorDays').addEventListener('change',()=>{
+  resetCompetitorPagination();
+  $('#heroWindow').textContent=$('#competitorDays').value+'D';
+  updateHeroMetrics();
+});
+$('#competitorMarket').addEventListener('change',()=>{ resetCompetitorPagination();updateHeroMetrics(); });
+$('#signinForm').addEventListener('submit',async e=>{e.preventDefault();const email=$('#signinEmail').value;$('#signinNotice').style.display='block';$('#signinNotice').textContent='Sending secure link…';try{const d=await requestSignin(email);if(d.dev&&d.magicLink)$('#signinNotice').innerHTML=`Development mode: <a style="color:#2aee61" href="${esc(d.magicLink)}">open sign-in link</a>`;else $('#signinNotice').textContent='Check your email. The link expires in 15 minutes.'}catch(err){$('#signinNotice').textContent=err.message}});
+$$('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id)}));
+
+/* Interactive competitor radar — mirrors the index radar interaction model. */
+const consoleEl=$('#intelConsole');
+const competitorRadarCenter=$('#competitorRadarCenter');
+const competitorNodes=$$('.radar .node');
+const canParallax=window.matchMedia('(hover:hover) and (pointer:fine)').matches &&
+  !window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+if(canParallax){
+  consoleEl.addEventListener('pointermove',e=>{
+    const r=consoleEl.getBoundingClientRect();
+    const xp=Math.max(0,Math.min(100,((e.clientX-r.left)/r.width)*100));
+    const yp=Math.max(0,Math.min(100,((e.clientY-r.top)/r.height)*100));
+    consoleEl.style.setProperty('--px',xp+'%');
+    consoleEl.style.setProperty('--py',yp+'%');
+    if(competitorRadarCenter){
+      competitorRadarCenter.style.transform=`translate(calc(-50% + ${(xp-50)*.05}px),calc(-50% + ${(yp-50)*.05}px))`;
+    }
+  },{passive:true});
+  consoleEl.addEventListener('pointerleave',()=>{
+    consoleEl.style.setProperty('--px','50%');
+    consoleEl.style.setProperty('--py','45%');
+    if(competitorRadarCenter)competitorRadarCenter.style.transform='translate(-50%,-50%)';
+  });
+}else{
+  consoleEl.style.transform='none';
+}
+
+function previewCompetitorMarket(node){
+  competitorNodes.forEach(n=>n.classList.toggle('selected',n===node));
+  const market=node?.dataset?.market||'';
+  if(market){
+    $('#heroActivity').textContent=`${market.toUpperCase()} MARKET SELECTED`;
+    const hint=$('#competitorRadarHint');
+    if(hint)hint.textContent='CLICK TO FILTER COMPETITOR ACTIVITY';
+  }
+}
+
+competitorNodes.forEach(node=>{
+  node.addEventListener('mouseenter',()=>previewCompetitorMarket(node));
+  node.addEventListener('focus',()=>previewCompetitorMarket(node));
+  node.addEventListener('click',()=>{
+    previewCompetitorMarket(node);
+    const market=node.dataset.market;
+    const select=$('#competitorMarket');
+    if(select && market){
+      select.value=market;
+      resetCompetitorPagination();
+      updateHeroMetrics();
+      loadCompetitors();
+      document.querySelector('#competitor-tool')?.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+  });
+});
+
+updateHeroMetrics();
+
+/* gently reposition radar nodes while keeping them interactive */
+let tick=0;
+setInterval(()=>{
+  tick++;
+  competitorNodes.forEach((n,i)=>{
+    const a=(tick*.42+i*1.45),rad=22+(i%2)*9;
+    n.style.left=(50+Math.cos(a)*rad)+'%';
+    n.style.top=(50+Math.sin(a)*rad*.72)+'%';
+  });
+},1900);
+
+(async()=>{const hp=new URLSearchParams(location.hash.replace(/^#/,''));const magic=hp.get('magic');if(magic){try{await verifyMagic(magic)}catch(e){$('#competitorNote').textContent=e.message}}else{const signed=await loadMe();if(signed){await loadWatchlist();resetCompetitorPagination();loadCompetitors()}else renderWatchlist()}})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1561 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="theme-color" content="#020806" />
+<title>RevenueTrigger — Opportunity Meets Action</title>
+<meta name="description" content="RevenueTrigger detects public business activity, scores buying intent, and turns it into ranked sales opportunities before competitors react." />
+<link rel="icon" type="image/png" href="/assets/FAVICON.png" />
+<meta property="og:title" content="RevenueTrigger — Opportunity Meets Action" />
+<meta property="og:description" content="Detect the revenue event before your competitor does." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://revenuetrigger.ai/" />
+<meta property="og:image" content="https://revenuetrigger.ai/assets/social-preview.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<script>
+(function(){
+  try{
+    var saved=localStorage.getItem('revenuetrigger_theme');
+    document.documentElement.setAttribute('data-theme',saved==='light'?'light':'dark');
+  }catch(e){
+    document.documentElement.setAttribute('data-theme','dark');
+  }
+})();
+</script>
+<style>
+
+:root{
+  --bg:#020806;--bg2:#04100a;--panel:#07120d;--panel2:#0a1a11;--ink:#f5f8f6;--muted:#899b92;
+  --line:#183125;--line2:#244735;--lime:#2aee61;--lime2:#0bd948;--lime-soft:#8affaa;
+  --gold:#d9b45f;--warm:#f39a4a;--red:#ff7474;--shadow:0 28px 80px rgba(0,0,0,.5);--glow:0 0 40px rgba(42,238,97,.18)
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 72% -12%,rgba(42,238,97,.14),transparent 31%),radial-gradient(circle at -10% 48%,rgba(42,238,97,.045),transparent 28%),linear-gradient(180deg,#020806 0%,#04100a 52%,#020806 100%);color:var(--ink);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}button,input,select{font:inherit}a{color:inherit;text-decoration:none}.wrap{width:min(1180px,calc(100% - 32px));margin:auto}
+.topbar{position:sticky;top:0;z-index:30;border-bottom:1px solid rgba(255,255,255,.07);backdrop-filter:blur(20px);background:rgba(2,8,6,.84)}nav{height:76px;display:flex;align-items:center;justify-content:flex-start;gap:14px}.brand{display:flex;align-items:center;min-width:190px}.brand-logo{display:block;width:auto;height:38px;max-width:230px;filter:drop-shadow(0 0 16px rgba(42,238,97,.09))}
+.brand-logo-light{display:none}
+html[data-theme="light"] .brand-logo-dark{display:none}
+html[data-theme="light"] .brand-logo-light{display:block;height:36px;max-width:250px;filter:none}
+
+/* Premium segmented primary navigation */
+.navlinks{display:flex;align-items:center;gap:4px;padding:5px;margin-left:auto;border:1px solid rgba(74,132,91,.28);border-radius:14px;background:linear-gradient(180deg,rgba(10,29,19,.86),rgba(4,17,10,.78));box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 8px 26px rgba(0,0,0,.16);color:#aebeb6;font-size:13px;font-weight:850;letter-spacing:.01em}
+.navlinks a{position:relative;display:flex;align-items:center;justify-content:center;gap:8px;min-width:92px;padding:9px 13px;border:1px solid transparent;border-radius:10px;transition:.2s color,.2s background,.2s border-color,.2s transform}
+.navlinks a::before{content:"";width:5px;height:5px;border-radius:50%;background:#476153;box-shadow:0 0 0 0 rgba(42,238,97,0);transition:.2s background,.2s box-shadow}
+.navlinks a:hover{color:#f2f8f4;background:rgba(42,238,97,.055);border-color:rgba(42,238,97,.13);transform:translateY(-1px)}
+.navlinks a:hover::before{background:var(--lime);box-shadow:0 0 10px rgba(42,238,97,.5)}
+.account-btn{margin-left:0;padding:10px 15px;border:1px solid #315841;border-radius:10px;background:#06130c;color:#f0f6f2;font-weight:850;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(255,255,255,.015)}.account-btn.live{border-color:var(--lime);color:var(--lime);box-shadow:0 0 24px rgba(42,238,97,.08)}
+.hero{position:relative;overflow:hidden;padding:86px 0 44px}.hero:after{content:"";position:absolute;right:max(3vw,16px);top:38px;width:min(430px,33vw);aspect-ratio:1;background:url('/assets/revenuetrigger-icon.svg') center/contain no-repeat;opacity:.075;filter:drop-shadow(0 0 54px rgba(42,238,97,.5));pointer-events:none}.hero .wrap{position:relative;z-index:1}.eyebrow{display:inline-flex;align-items:center;gap:9px;padding:7px 11px;border:1px solid #1e452f;border-radius:999px;background:rgba(5,20,12,.84);color:#d4e3db;font-size:11px;font-weight:850;letter-spacing:.17em;text-transform:uppercase}.dot{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 5px rgba(42,238,97,.08),0 0 18px rgba(42,238,97,.55)}h1{font-size:clamp(48px,7.8vw,92px);line-height:.94;margin:24px 0 23px;letter-spacing:-.057em;max-width:1000px}h1 em{font-style:normal;color:var(--lime);text-shadow:0 0 35px rgba(42,238,97,.12)}.sub{max-width:770px;color:#a7b6ae;font-size:18px}.brand-tagline{margin-top:16px;color:#71837a;font-size:11px;font-weight:800;letter-spacing:.34em;text-transform:uppercase}.hero-actions{display:flex;gap:12px;margin-top:30px;flex-wrap:wrap}.btn{border:none;border-radius:11px;padding:13px 18px;font-weight:900;cursor:pointer;transition:.2s transform,.2s opacity,.2s box-shadow,.2s border-color}.btn:hover{transform:translateY(-2px)}.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}.btn-primary{background:linear-gradient(135deg,var(--lime),#55ff7c);color:#011006;box-shadow:0 12px 35px rgba(42,238,97,.12)}.btn-primary:hover{box-shadow:0 14px 40px rgba(42,238,97,.2)}.btn-secondary{border:1px solid var(--line2);background:#07140d;color:var(--ink)}.btn-secondary:hover{border-color:#36734e}.btn-danger{border:1px solid #613737;background:#261414;color:#ffc5c5}.proof{display:flex;gap:30px;margin-top:38px;color:#84968d;flex-wrap:wrap;text-transform:uppercase;letter-spacing:.07em;font-size:12px}.proof b{color:var(--lime);margin-right:5px}.memberbar{display:none;margin-top:28px;border:1px solid #245039;background:linear-gradient(180deg,rgba(8,26,17,.95),rgba(5,18,12,.95));border-radius:15px;padding:14px 16px;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;box-shadow:inset 0 1px rgba(255,255,255,.018)}.memberbar.show{display:flex}.memberbar strong{color:var(--lime)}.mini-actions{display:flex;gap:8px;flex-wrap:wrap}.mini{padding:8px 10px;border-radius:9px;background:#0a1a11;border:1px solid #254b36;color:#dfe9e4;font-weight:800;cursor:pointer}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:30px 0}.kpi{background:linear-gradient(180deg,rgba(9,27,17,.96),rgba(4,16,10,.96));border:1px solid var(--line);border-radius:15px;padding:21px;min-height:112px;box-shadow:inset 0 1px rgba(255,255,255,.018)}.kpi small{color:#73877d;text-transform:uppercase;letter-spacing:.15em;font-weight:850;font-size:10px}.kpi strong{font-size:31px;display:block;margin-top:10px;letter-spacing:-.025em}.kpi .accent{color:var(--lime)}
+.pipeline-dashboard{margin-top:18px}.pipeline-dashbar{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid var(--line);gap:14px;flex-wrap:wrap}.pipeline-gridhead,.pipeline-lead{display:grid;grid-template-columns:68px minmax(220px,1.35fr) 118px minmax(155px,.9fr) minmax(145px,.8fr) 102px 78px;gap:10px;align-items:center}.pipeline-gridhead{padding:11px 18px;color:#678074;font-size:10px;text-transform:uppercase;letter-spacing:.15em;font-weight:850;border-bottom:1px solid #12291c}.pipeline-lead{padding:17px 18px;border-bottom:1px solid #10271a}.pipeline-lead:hover{background:#081a11}.pipeline-stage{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#8ca296}.pipeline-company{margin-top:5px;color:#a9c8b5;font-size:11px;font-weight:750}.pipeline-permit{font-size:12px;color:#74897e;margin-top:4px}.pipeline-copy{margin-top:5px;color:#8fa59b;font-size:12px;line-height:1.45}.pipeline-controls{display:flex;gap:8px;flex-wrap:wrap}.pipeline-controls select{color:#dce6e0;background:#081b11;border:1px solid #254934;border-radius:9px;padding:10px 12px;outline:none}.pipeline-empty{padding:30px 18px;color:#80948a;text-align:center}@media(max-width:800px){.pipeline-gridhead{display:none}.pipeline-lead{grid-template-columns:64px minmax(0,1fr);gap:10px}.pipeline-lead>div:nth-child(n+3){grid-column:2}.pipeline-lead .score{grid-row:1 / span 4}}.section{padding:46px 0}.section-head{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:19px}.section-head h2{font-size:36px;letter-spacing:-.04em;margin:0}.section-head p{margin:0;color:var(--muted);max-width:610px}.dashboard{border:1px solid #1b3b2a;border-radius:20px;background:#04100a;box-shadow:var(--shadow);overflow:hidden}.dashbar{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid var(--line);gap:14px;flex-wrap:wrap}.filters{display:flex;gap:8px;flex-wrap:wrap}.filters select,.filters input{color:#dce6e0;background:#081b11;border:1px solid #254934;border-radius:9px;padding:10px 12px;outline:none}.filters select:focus,.filters input:focus{border-color:var(--lime);box-shadow:0 0 0 3px rgba(42,238,97,.07)}.status{display:flex;align-items:center;gap:8px;color:#91a59c;font-size:13px}.spinner{width:8px;height:8px;border-radius:50%;background:var(--lime);box-shadow:0 0 14px rgba(42,238,97,.85)}.gridhead,.lead{display:grid;grid-template-columns:68px minmax(220px,1.3fr) minmax(145px,.78fr) minmax(150px,.85fr) .62fr 105px 92px;gap:10px;align-items:center}.gridhead{padding:11px 18px;color:#678074;font-size:10px;text-transform:uppercase;letter-spacing:.15em;font-weight:850;border-bottom:1px solid #12291c}.lead{padding:17px 18px;border-bottom:1px solid #10271a;transition:.2s background}.lead:hover{background:#081a11}.score{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;border:1px solid #356446;font-weight:950;color:var(--lime);background:#06170e;box-shadow:inset 0 0 18px rgba(42,238,97,.025)}.leadname{font-weight:900;font-size:15px}.meta{font-size:12px;color:#74897e;margin-top:4px}.chips{display:flex;gap:5px;flex-wrap:wrap}.chip{font-size:10px;font-weight:850;padding:4px 7px;border-radius:999px;border:1px solid #29523a;color:#b8c9c0}.value{font-weight:900;color:var(--gold)}.hot{color:var(--lime);font-weight:900}.warm{color:var(--warm);font-weight:900}.watch{color:#e2c15c;font-weight:900}.low{color:#80948a;font-weight:900}.row-actions{display:flex;gap:6px}.view,.save{background:transparent;border:1px solid #294f39;color:#dce6e1;padding:8px 10px;border-radius:9px;cursor:pointer;font-weight:850}.view:hover,.save:hover{border-color:#43805a}.save.active{border-color:var(--lime);color:var(--lime)}.empty{padding:42px 18px;text-align:center;color:#7c9286}
+.score-help{display:inline-flex;align-items:center;gap:7px;background:var(--lime);border:1px solid var(--lime);color:#04110a;border-radius:9px;padding:10px 12px;cursor:pointer;font-weight:900;box-shadow:0 10px 24px rgba(42,238,97,.18)}
+.score-help:hover{background:#48ff7a;border-color:#48ff7a;color:#04110a}
+.score-help .qmark{width:18px;height:18px;border-radius:50%;display:inline-grid;place-items:center;border:1px solid rgba(4,17,10,.24);background:rgba(4,17,10,.08);color:#04110a;font-size:11px;font-weight:950}
+.score-explainer{display:grid;gap:12px;margin-top:20px}
+.score-band{display:grid;grid-template-columns:92px 1fr;gap:14px;align-items:start;border:1px solid #1c3a29;border-radius:12px;padding:13px 14px;background:#05130b}
+.score-band strong{font-size:15px}.score-band p{margin:2px 0 0;color:#91a59b}
+.score-band.hot-band strong{color:var(--lime)}.score-band.warm-band strong{color:var(--warm)}
+.score-rules{margin-top:18px;border-top:1px solid #183125;padding-top:16px}
+.score-rule{display:grid;grid-template-columns:72px 1fr;gap:12px;padding:8px 0;border-bottom:1px solid #10271a}
+.score-rule:last-child{border-bottom:0}.score-rule b{color:var(--lime)}.score-note{margin-top:16px;padding:13px 14px;border-radius:10px;background:#092117;border-left:3px solid var(--lime);color:#b9ccc2}
+@media(max-width:620px){.navlinks{grid-template-columns:repeat(4,minmax(0,1fr))}.navlinks .nav-sources{display:none}
+
+.kpi{display:flex;flex-direction:column;justify-content:flex-start}
+.kpi small{display:block;min-height:2.7em;line-height:1.35}
+.kpi strong{margin-top:12px;line-height:1}
+}
+@media(max-width:620px){.hero-eyebrow-divider{height:12px}.hero-eyebrow .dot{width:6px;height:6px;flex:0 0 6px}}
+@media(max-width:620px){.score-band,.score-rule{grid-template-columns:1fr}.score-help{width:100%;justify-content:center}}
+.competitor-shell{border:1px solid var(--line);border-radius:20px;background:linear-gradient(180deg,#06170e,#031009);overflow:hidden}.competitor-toolbar{display:grid;grid-template-columns:1.5fr .8fr .7fr auto;gap:10px;padding:18px;border-bottom:1px solid var(--line)}.competitor-toolbar input,.competitor-toolbar select{width:100%;height:46px;border:1px solid #254934;background:#06160e;color:#e9f3ed;border-radius:11px;padding:0 13px;outline:none}.competitor-toolbar .btn{height:46px}.competitor-note{padding:12px 18px;color:#73877c;font-size:11px;border-bottom:1px solid #10291b}.competitor-list{display:grid}.competitor-row{display:grid;grid-template-columns:minmax(220px,1.4fr) .55fr .85fr .75fr .65fr auto;gap:16px;align-items:center;padding:18px;border-bottom:1px solid var(--line)}.competitor-row:last-child{border-bottom:0}.competitor-name{font-weight:900;color:#f3f8f5}.competitor-sub{margin-top:4px;color:#788d82;font-size:11px}.competitor-stat small{display:block;color:#6f8378;font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;margin-bottom:5px}.competitor-stat strong{font-size:15px;color:#dfe9e4}.competitor-value{color:var(--gold,#d9b45f)!important}.competitor-empty{padding:28px;text-align:center;color:#7f9288}.competitor-projects{display:none;grid-column:1 / -1;padding:14px 0 0;border-top:1px solid #10291b}.competitor-row.open .competitor-projects{display:grid;gap:8px}.competitor-project{display:grid;grid-template-columns:1.4fr .65fr .65fr;gap:12px;padding:10px 12px;border:1px solid #163823;border-radius:10px;background:#06150d}.competitor-project b{font-size:12px}.competitor-project span{color:#81958a;font-size:11px}.competitor-disclaimer{margin-top:12px;color:#6f8378;font-size:11px;line-height:1.5}
+/* ---------- Hybrid presentation + user-selectable theme ---------- */
+.theme-toggle{
+  min-width:112px;height:40px;display:inline-flex;align-items:center;justify-content:center;gap:8px;flex:0 0 auto;
+  padding:0 12px;border:1.5px solid var(--lime);border-radius:10px;background:#fff;color:#020806;
+  cursor:pointer;font-size:12px;font-weight:900;line-height:1;white-space:nowrap;
+  box-shadow:0 0 0 1px rgba(42,238,97,.08),0 6px 18px rgba(20,55,34,.08);
+  transition:.2s transform,.2s border-color,.2s background,.2s color,.2s box-shadow
+}
+.theme-toggle-icon{font-size:16px;line-height:1;color:inherit}
+.theme-label{font-size:11px;font-weight:900;letter-spacing:.02em;color:inherit;-webkit-text-stroke:0}
+.theme-label-short{display:none}
+.theme-toggle:hover{transform:translateY(-1px);border-color:var(--lime)}
+.theme-toggle:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+
+/* Strategic light sections in the default dark experience */
+.light-band{
+  background:#f3f6f3;color:#07120d;
+  border-top:1px solid #dce5df;border-bottom:1px solid #dce5df
+}
+.light-band .section-head h2{color:#07120d}
+.light-band .section-head p{color:#5d6b63}
+.light-band .eyebrow{background:#07120d;border-color:#153b27;color:var(--lime)}
+.light-band .source,.light-band .price{
+  background:#fff;border-color:#d8e2dc;color:#07120d;
+  box-shadow:0 14px 38px rgba(22,48,32,.07)
+}
+.light-band .source p{color:#647269}
+.light-band .source .tag{color:#078b35}
+.light-band .price ul{color:#526158}
+.light-band .money small{color:#708078}
+.light-band .price .btn-secondary{
+  background:#07120d;border-color:#07120d;color:#f5f8f6
+}
+.light-band .price.featured{
+  background:linear-gradient(180deg,#07170e,#041009);
+  color:#f5f8f6;border-color:#2e7c4b;
+  box-shadow:0 18px 55px rgba(8,41,22,.18)
+}
+.light-band .price.featured ul{color:#a9b9b1}
+.light-band .price.featured .money small{color:#899b92}
+
+/* Full light theme chosen by the user */
+html[data-theme="light"] body{
+  background:
+    radial-gradient(240px circle at var(--mouse-x,72vw) var(--mouse-y,14vh),rgba(42,238,97,.15),rgba(42,238,97,.08) 24%,transparent 62%),
+    linear-gradient(180deg,#f7faf7 0%,#eef4f0 52%,#f7faf7 100%);
+  background-attachment:fixed,fixed;
+  color:#0b1710
+}
+html[data-theme="light"] .topbar{
+  background:rgba(250,252,250,.9);border-bottom-color:#d9e4dd
+}
+html[data-theme="light"] .navlinks{
+  background:linear-gradient(180deg,#fff,#f5f8f6);
+  border-color:#d5e1da;color:#506158;box-shadow:0 8px 24px rgba(20,55,34,.06)
+}
+html[data-theme="light"] .navlinks a:hover{
+  color:#07120d;background:#e8f6ed;border-color:#bfe8cd
+}
+html[data-theme="light"] .navlinks a::before{background:#9aaba1}
+html[data-theme="light"] .account-btn{
+  background:#fff;color:#142119;border-color:#cad9cf
+}
+html[data-theme="light"] .account-btn.live{color:#078b35;border-color:#2aee61}
+html[data-theme="light"] .theme-toggle{background:#07120d;color:var(--lime);border-color:#07120d;box-shadow:none}
+html[data-theme="light"] .hero:after{opacity:.045}
+html[data-theme="light"] h1{color:#07120d}
+html[data-theme="light"] .sub{color:#526158}
+html[data-theme="light"] .brand-tagline{color:#687970}
+html[data-theme="light"] .hero .eyebrow{
+  background:#fff;border-color:#cfe0d5;color:#1f3829
+}
+html[data-theme="light"] .proof{color:#63746b}
+html[data-theme="light"] .memberbar{
+  background:#fff;border-color:#d2dfd7;color:#26372e
+}
+html[data-theme="light"] .mini{background:#f6faf7;border-color:#d3e0d8;color:#21342a}
+html[data-theme="light"] .kpi{
+  background:#fff;border-color:#d8e2dc;box-shadow:0 12px 34px rgba(16,43,27,.06)
+}
+html[data-theme="light"] .kpi small{color:#64756c}
+html[data-theme="light"] .section-head p{color:#5e6f66}
+html[data-theme="light"] .dashboard{
+  background:#fff;border-color:#d6e1da;box-shadow:0 18px 52px rgba(18,49,30,.08)
+}
+html[data-theme="light"] .dashbar,
+html[data-theme="light"] .gridhead,
+html[data-theme="light"] .lead,
+html[data-theme="light"] .pipeline-dashbar,
+html[data-theme="light"] .pipeline-gridhead,
+html[data-theme="light"] .pipeline-lead{border-color:#e1e9e4}
+html[data-theme="light"] .filters select,
+html[data-theme="light"] .filters input,
+html[data-theme="light"] .pipeline-controls select{
+  background:#f8fbf9;color:#142119;border-color:#cddbd2
+}
+html[data-theme="light"] .lead:hover,
+html[data-theme="light"] .pipeline-lead:hover{background:#f2f8f4}
+html[data-theme="light"] .gridhead,
+html[data-theme="light"] .pipeline-gridhead{color:#6d7d74}
+html[data-theme="light"] .meta,
+html[data-theme="light"] .pipeline-permit,
+html[data-theme="light"] .pipeline-copy,
+html[data-theme="light"] .pipeline-stage{color:#697a70}
+html[data-theme="light"] .pipeline-company{color:#315b42}
+html[data-theme="light"] .chip{border-color:#c9dbcf;color:#365142;background:#f7faf8}
+html[data-theme="light"] .view,
+html[data-theme="light"] .save{
+  border-color:#c6d8cd;color:#20342a;background:#fff
+}
+html[data-theme="light"] .score{
+  background:#effaf2;border-color:#78b98c;color:#078b35
+}
+html[data-theme="light"] .changed-shell{
+  background:#fff;border-color:#d6e1da;box-shadow:0 14px 38px rgba(18,49,30,.06)
+}
+html[data-theme="light"] .changed-intro p{color:#64756c}
+html[data-theme="light"] .changed-stat{
+  background:#f8fbf9;border-color:#dce6df
+}
+html[data-theme="light"] .changed-stat small{color:#6b7a72}
+html[data-theme="light"] .light-band{background:#edf3ef}
+html[data-theme="light"] footer{border-color:#d7e2db;color:#65756c}
+html[data-theme="light"] .modal{background:rgba(9,25,15,.42)}
+html[data-theme="light"] .modal-card{
+  background:#fff;color:#0d1b13;border-color:#cad9d0;box-shadow:0 28px 75px rgba(19,48,30,.18)
+}
+html[data-theme="light"] .detail,
+html[data-theme="light"] .feedback-box,
+html[data-theme="light"] .lifecycle,
+html[data-theme="light"] .action-card{
+  background:#f8fbf9;border-color:#d9e4dd
+}
+html[data-theme="light"] .why,
+html[data-theme="light"] .action-callout{background:#eaf7ee;color:#23402f}
+html[data-theme="light"] .formrow input,
+html[data-theme="light"] .formrow select{
+  background:#f8fbf9;color:#142119;border-color:#cddbd2
+}
+html[data-theme="light"] .close{color:#142119;border-color:#cbd9d0}
+html[data-theme="light"] .feedback-btn{
+  background:#fff;color:#31483b;border-color:#cbdad1
+}
+html[data-theme="light"] .account-card{
+  background:#f7faf8;border-color:#d5e1da
+}
+html[data-theme="light"] .notice{background:#edf7f0;border-color:#c9dfd0;color:#355043}
+
+@media(max-width:900px){
+  .theme-toggle{grid-column:2;grid-row:1;justify-self:end;margin:0;min-width:106px}
+  .account-btn{grid-column:2;grid-row:1}
+}
+@media(max-width:620px){
+  .theme-toggle{height:36px;min-width:72px;margin:0;padding:0 9px;gap:6px}.theme-label-full{display:none}.theme-label-short{display:inline}.theme-toggle-icon{font-size:14px}
+}
+
+@media(max-width:900px){.competitor-toolbar{grid-template-columns:1fr 1fr}.competitor-toolbar input{grid-column:1 / -1}.competitor-toolbar .btn{grid-column:1 / -1}.competitor-row{grid-template-columns:1.2fr .55fr .8fr auto}.competitor-row .hide-tablet{display:none}}@media(max-width:620px){.competitor-toolbar{grid-template-columns:1fr 1fr;padding:14px;gap:8px}.competitor-toolbar input{grid-column:1 / -1}.competitor-row{grid-template-columns:minmax(0,1fr) auto;padding:15px;gap:12px}.competitor-stat{display:none}.competitor-row .competitor-primary-stat{display:block;text-align:right}.competitor-row .competitor-primary-stat small{display:block}.competitor-project{grid-template-columns:1fr}.competitor-project span{text-align:left!important}}
+.changed-shell{display:grid;grid-template-columns:1.25fr repeat(4,.55fr);gap:10px;padding:16px;border:1px solid var(--line);border-radius:17px;background:linear-gradient(180deg,#07170e,#041009);align-items:stretch}.changed-intro{padding:8px 10px}.changed-intro h3{margin:6px 0 4px;font-size:20px}.changed-intro p{margin:0;color:#7f9388;font-size:12px}.changed-stat{padding:12px;border:1px solid #183526;border-radius:12px;background:#05140c}.changed-stat small{display:block;color:#6f8378;font-size:8px;font-weight:900;letter-spacing:.11em;text-transform:uppercase}.changed-stat strong{display:block;margin-top:5px;font-size:22px}.action-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}.action-card{border:1px solid #1c3a29;border-radius:11px;padding:12px;background:#05140c}.action-card small{display:block;color:#6f8378;font-size:8px;font-weight:900;letter-spacing:.11em;text-transform:uppercase}.action-card strong{display:block;margin-top:5px;font-size:15px}.action-card.accent{border-color:#286b42;background:#082017}.action-callout{margin-top:10px;padding:13px 14px;border-left:3px solid var(--lime);border-radius:10px;background:#092117}.action-callout b{color:#eaf8ef}.action-reason{display:block;margin-top:4px;color:#9cb0a5;font-size:12px}.watch-move{margin-top:7px;color:#a6b9af;font-size:11px}
+@media(max-width:900px){.changed-shell{grid-template-columns:1fr 1fr}.changed-intro{grid-column:1/-1}.action-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){.changed-shell{grid-template-columns:1fr 1fr}.changed-stat strong{font-size:19px}.action-grid{grid-template-columns:1fr 1fr}.action-card{padding:10px}}.competitor-teaser{display:flex;align-items:center;justify-content:space-between;gap:28px;padding:30px;border:1px solid #67ff8f;border-radius:20px;background:linear-gradient(135deg,var(--lime),#55ff7c);box-shadow:0 18px 48px rgba(42,238,97,.18),inset 0 1px rgba(255,255,255,.32);color:#021008}
+.competitor-teaser .eyebrow{border-color:#07140d;background:#020806;color:var(--lime)}
+.competitor-teaser h2{margin:10px 0 10px;font-size:clamp(30px,4vw,48px);letter-spacing:-.04em;color:#021008}
+.competitor-teaser p{margin:0;color:#0b2b18;max-width:720px;font-weight:650}
+.competitor-teaser .btn{white-space:nowrap;background:#031109;color:#f4fff7;border:1px solid #031109;box-shadow:0 12px 30px rgba(0,0,0,.18)}
+.competitor-teaser .btn:hover{background:#071a10;border-color:#071a10;box-shadow:0 14px 34px rgba(0,0,0,.24)}
+@media(max-width:760px){.competitor-teaser{align-items:flex-start;flex-direction:column;padding:22px}.competitor-teaser .btn{width:100%;text-align:center}}
+.sources{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.source{padding:21px;border:1px solid var(--line);border-radius:15px;background:linear-gradient(180deg,#07170e,#041009)}.source .tag{font-size:10px;color:var(--lime);font-weight:900;letter-spacing:.15em;text-transform:uppercase}.source h3{margin:12px 0 7px}.source p{color:var(--muted);margin:0}.source.locked{opacity:.58}.pricing{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.price{border:1px solid var(--line);background:linear-gradient(180deg,#07170e,#041009);border-radius:17px;padding:24px;position:relative}.price.featured{border-color:#3b8f58;box-shadow:0 0 0 1px rgba(42,238,97,.06),0 20px 70px rgba(0,0,0,.32),0 0 45px rgba(42,238,97,.045)}.price .badge{position:absolute;right:18px;top:18px;color:#021007;background:var(--lime);border-radius:999px;padding:4px 8px;font-size:9px;letter-spacing:.08em;font-weight:950}.price h3{font-size:20px}.money{font-size:42px;font-weight:950;letter-spacing:-.05em}.money small{font-size:14px;color:var(--muted)}.price ul{padding-left:18px;color:#a9b9b1;min-height:155px}.price .btn{width:100%}.cta{position:relative;overflow:hidden;margin:40px 0 82px;padding:34px;border-radius:22px;background:linear-gradient(120deg,#34f267,#11d84a);color:#021006;display:flex;justify-content:space-between;align-items:center;gap:22px;box-shadow:0 24px 70px rgba(18,214,73,.1)}.cta:after{content:"";position:absolute;right:-60px;top:-100px;width:280px;height:280px;background:rgba(255,255,255,.12);filter:blur(70px);border-radius:50%}.cta> *{position:relative;z-index:1}.cta h2{font-size:36px;letter-spacing:-.04em;margin:0 0 8px}.cta p{margin:0;max-width:670px}.capture{display:flex;gap:8px;min-width:390px}.capture input{flex:1;padding:12px;border:1px solid rgba(0,0,0,.13);border-radius:9px;background:rgba(255,255,255,.86);color:#021006;outline:none}.capture button{border:0;background:#021006;color:white;border-radius:9px;padding:12px 14px;font-weight:900;cursor:pointer}footer{padding:31px 0 50px;border-top:1px solid #13281d;color:#657a70;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;font-size:13px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:60;display:none;place-items:center;padding:20px;backdrop-filter:blur(8px)}.modal.open{display:grid}.modal-card{width:min(760px,100%);max-height:92vh;overflow:auto;background:#07150d;border:1px solid #27503a;border-radius:18px;padding:24px;box-shadow:var(--shadow)}.modal-card.small{width:min(470px,100%)}.modal-top{display:flex;justify-content:space-between;gap:10px}.modal-brand{width:44px;height:44px;object-fit:contain;margin-bottom:12px}.close{background:transparent;border:1px solid #31513f;color:white;width:38px;height:38px;border-radius:9px;cursor:pointer}.detailgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}.detail{border:1px solid #1c3a29;border-radius:11px;padding:12px}.detail small{display:block;color:#6b8277;text-transform:uppercase;letter-spacing:.1em;font-size:9px;font-weight:850}.detail strong{display:block;margin-top:5px}.why{margin-top:14px;padding:15px;background:#092117;border-left:3px solid var(--lime);border-radius:9px;color:#bfd1c7}.formrow{margin-top:14px}.formrow label{display:block;color:#91a59a;font-size:11px;font-weight:850;margin-bottom:6px;text-transform:uppercase;letter-spacing:.1em}.formrow input,.formrow select{width:100%;padding:12px;border:1px solid #264b36;background:#04120a;color:#eef5f2;border-radius:9px;outline:none}.checkgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.check{display:flex;gap:8px;align-items:center;padding:10px;border:1px solid #23432f;border-radius:9px;color:#c7d5cf}.check input{accent-color:var(--lime)}.account-card{margin-top:16px;border:1px solid #203f2d;background:#05130b;border-radius:13px;padding:15px}.account-stat{display:flex;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px solid #142d1f}.account-stat:last-child{border-bottom:0}.account-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.notice{padding:12px;border-radius:9px;background:#0b2117;border:1px solid #28513a;color:#bed0c8;margin-top:12px}.notice.warn{background:#2a2110;border-color:#5a4920;color:#f5dda2}.onboarding-progress{display:flex;gap:7px;margin:16px 0 20px}.onboarding-progress span{height:4px;flex:1;border-radius:999px;background:#173524}.onboarding-progress span.active{background:var(--lime);box-shadow:0 0 12px rgba(42,238,97,.22)}.onboarding-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.onboarding-option{display:flex;align-items:center;gap:9px;padding:12px;border:1px solid #244a34;border-radius:11px;background:#07170e;color:#d8e3dd;cursor:pointer;font-weight:800}.onboarding-option:has(input:checked){border-color:var(--lime);background:#092116;box-shadow:0 0 0 2px rgba(42,238,97,.05)}.onboarding-option input{accent-color:#2aee61}.onboarding-note{margin-top:12px;color:#7f958a;font-size:12px;line-height:1.5}.onboarding-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:20px}.onboarding-actions .btn{min-width:120px}@media(max-width:620px){.onboarding-grid{grid-template-columns:1fr}.onboarding-actions{flex-direction:column-reverse}.onboarding-actions .btn{width:100%}}.confidence-meter{display:flex;align-items:center;gap:10px}.confidence-track{height:7px;flex:1;border-radius:999px;background:#10271b;overflow:hidden}.confidence-fill{height:100%;background:linear-gradient(90deg,#2aee61,#75ff9b);border-radius:999px}.lifecycle{margin-top:14px;padding:14px;border:1px solid #1c3a29;border-radius:11px;background:#05140c}.lifecycle-title{font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#83988d;margin-bottom:11px}.lifecycle-row{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}.life-step{text-align:center;color:#60766b;font-size:8px;font-weight:850}.life-step:before{content:"";display:block;height:5px;border-radius:999px;background:#163021;margin-bottom:7px}.life-step.done:before{background:#25583a}.life-step.current{color:#dff7e7}.life-step.current:before{background:var(--lime);box-shadow:0 0 13px rgba(42,238,97,.45)}.cluster-note{margin-top:10px;color:#9db1a6;font-size:11px}.freshness{color:#88a095;font-size:11px}.feedback-box{margin-top:14px;padding:15px;border:1px solid #1c3a29;border-radius:11px;background:#05140c}.feedback-title{font-weight:900;margin-bottom:4px}.feedback-sub{color:#7f958a;font-size:12px;margin-bottom:12px}.feedback-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.feedback-btn{border:1px solid #2a5139;background:#071a10;color:#cbd8d2;border-radius:9px;padding:9px 11px;font-weight:850;cursor:pointer}.feedback-btn:hover{border-color:#4d7b5e}.feedback-btn.active{border-color:var(--lime);color:var(--lime);background:#092116;box-shadow:0 0 0 2px rgba(42,238,97,.06)}.feedback-btn.negative.active{border-color:#e58f6b;color:#f0aa89;background:#24120d}.feedback-state{margin-top:10px;color:#8da197;font-size:11px}.toast{position:fixed;right:18px;bottom:18px;background:#dcffe6;color:#021008;border:1px solid rgba(42,238,97,.35);border-radius:11px;padding:12px 16px;font-weight:850;display:none;z-index:80;box-shadow:var(--shadow)}
+@media(max-width:900px){
+nav{height:auto;min-height:76px;display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:9px 9px;padding:10px 0 11px}
+.brand{min-width:0;grid-column:1;grid-row:1}.theme-toggle{grid-column:2;grid-row:1;justify-self:end;margin:0}
+.brand-logo{height:34px}
+.account-btn{grid-column:3;grid-row:1;justify-self:end;align-self:center;margin:0;white-space:nowrap;max-width:100%}
+.navlinks{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-column:1 / -1;grid-row:2;margin-left:0;width:100%;gap:4px;padding:4px;border-radius:12px}
+.navlinks a{min-width:0;padding:8px 8px;border-radius:9px;font-size:12px;gap:6px}
+.navlinks a::before{width:4px;height:4px}
+.hero:after{width:320px;right:-110px;top:70px;opacity:.05}
+.kpis,.sources,.pricing{grid-template-columns:1fr 1fr}.gridhead{display:none}.lead{grid-template-columns:60px 1fr 90px 105px}.lead>div:nth-child(3),.lead>div:nth-child(4){display:none}.row-actions{justify-self:end}.cta{display:block}.capture{min-width:0;margin-top:18px}
+}
+@media(max-width:620px){
+.wrap{width:min(100% - 20px,1180px)}
+nav{min-height:0;padding:9px 0 9px;gap:8px 7px}
+.brand-logo{height:29px;max-width:176px}
+.navlinks{gap:3px;padding:3px;border-radius:11px}
+.navlinks a{padding:7px 3px;font-size:10px;letter-spacing:-.01em;white-space:nowrap}
+.navlinks a::before{display:none}
+.hero{padding-top:52px}
+.hero:after{width:240px;right:-98px;top:92px;opacity:.04}
+.brand-tagline{font-size:9px;letter-spacing:.22em}
+.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+.kpi{min-width:0;padding:16px}
+.kpi strong{font-size:24px}
+.section-head{display:block}
+.section-head p{margin-top:8px}
+
+/* Cleaner mobile feed controls */
+.dashbar{padding:14px 14px 13px;gap:12px}
+.filters{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);gap:9px;width:100%}
+.filters select,.filters input,.score-help{width:100%;min-width:0;height:46px;padding:0 13px;border-radius:11px;font-size:14px;line-height:1.2}
+#market{grid-column:1 / -1}
+#industry{grid-column:1}
+#minScore{grid-column:2}
+#sortFeed{grid-column:1 / -1}
+#savedFilter{grid-column:1 / -1}
+#search{grid-column:1 / -1}
+.score-help{grid-column:1 / -1;justify-content:center;padding:0 12px}
+.score-help .qmark{width:20px;height:20px;flex:0 0 20px}
+.status{width:100%;padding:2px 1px 0;font-size:12px}
+
+/* Chandler Early Pipeline — match live-feed mobile card structure */
+.pipeline-lead{grid-template-columns:52px minmax(0,1fr);column-gap:9px;row-gap:7px;padding:16px 14px}
+.pipeline-lead>div:nth-child(1){grid-column:1;grid-row:1;align-self:start;justify-self:start}
+.pipeline-lead>div:nth-child(2){grid-column:2;grid-row:1;min-width:0}
+.pipeline-copy{display:none}
+.pipeline-permit{font-size:11px;line-height:1.35;margin-top:4px}
+.pipeline-lead>div:nth-child(3){grid-column:2;grid-row:2;align-self:center;justify-self:start;font-size:10px;line-height:1.2;margin-top:1px}
+.pipeline-lead>div:nth-child(4){display:none}
+.pipeline-lead>div:nth-child(5){grid-column:1;grid-row:2;align-self:start;justify-self:start;position:relative;left:21px;transform:translateX(-50%);width:max-content;text-align:center;white-space:nowrap;font-size:14px;line-height:1.15;letter-spacing:0;font-weight:900;margin-top:3px}
+.pipeline-lead>div:nth-child(6){grid-column:2;grid-row:3;justify-self:end;margin-top:1px}
+.pipeline-lead .score{width:42px;height:42px}
+.pipeline-lead .leadname{font-size:14px;line-height:1.25}
+.pipeline-lead .view{padding:8px 11px;border-radius:9px;font-size:12px}
+/* Compact mobile lead cards + show value */
+.lead{grid-template-columns:52px minmax(0,1fr);column-gap:9px;row-gap:7px;padding:16px 14px}
+.lead>div:nth-child(1){grid-column:1;grid-row:1;align-self:start;justify-self:start}
+.lead>div:nth-child(2){grid-column:2;grid-row:1}
+.lead>div:nth-child(3){display:none}
+.lead>div:nth-child(4){display:block;grid-column:2;grid-row:2;color:var(--gold);font-size:18px;line-height:1.1;margin-top:2px}
+.lead>div:nth-child(4)::before{content:"EST. OPPORTUNITY  ";color:#6f8278;font-size:9px;letter-spacing:.1em;font-weight:850;vertical-align:2px}
+.lead>div:nth-child(5){grid-column:1;grid-row:2;align-self:start;justify-self:start;position:relative;left:21px;transform:translateX(-50%);width:max-content;text-align:center;white-space:nowrap;font-size:14px;line-height:1.15;letter-spacing:0;font-weight:900;margin-top:3px}
+.row-actions{grid-column:2;grid-row:3}
+.leadname{font-size:14px;line-height:1.25}
+.meta{font-size:11px;line-height:1.35}
+.row-actions{justify-self:stretch;justify-content:flex-end;margin-top:1px}
+.view,.save{padding:8px 11px;border-radius:9px;font-size:12px}
+.score{width:42px;height:42px}
+.cta{padding:24px}
+.cta h2{font-size:29px}
+.capture{display:block}
+.capture input,.capture button{width:100%}
+.capture button{margin-top:8px}
+.detailgrid,.checkgrid{grid-template-columns:1fr}
+.pricing,.sources{grid-template-columns:1fr}
+h1{font-size:52px}
+.account-btn{padding:9px 9px;font-size:11px}
+.proof{gap:17px}
+.proof span{font-size:11px}
+}
+
+
+/* RevenueTrigger hero v3 — all styles scoped to the new hero */
+.hero{isolation:isolate;min-height:660px;padding:72px 0 48px;background:radial-gradient(ellipse at 76% 46%,rgba(20,149,62,.11) 0%,transparent 43%)}
+.hero:after{display:none}
+.hero-ambient{position:absolute;border-radius:50%;filter:blur(72px);pointer-events:none;z-index:-1}
+.hero-ambient-a{width:430px;height:440px;right:8%;top:2%;background:rgba(24,191,73,.08);animation:ambientFloat 10s ease-in-out infinite alternate}
+.hero-ambient-b{width:300px;height:300px;left:-12%;bottom:-20%;background:rgba(11,105,57,.10);animation:ambientFloat 15s ease-in-out infinite alternate-reverse}
+.hero-shell{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(400px,.92fr);gap:clamp(24px,3.5vw,60px);align-items:center}
+.hero-copy{min-width:0;padding:20px 0 0;position:relative}
+.hero-eyebrow{font-size:13.5px;letter-spacing:.15em;gap:16px;padding:11px 17px;border-color:rgba(86,207,114,.28);color:#d6e5de;background:rgba(5,21,13,.9);white-space:normal}
+.hero-eyebrow-divider{height:18px;width:1px;background:#3f6a53}
+.hero h1{font-size:clamp(50px,5.08vw,77px);letter-spacing:-.06em;line-height:.98;margin:27px 0 24px;max-width:750px;font-weight:850}
+.hero h1 .headline-line{display:block;opacity:0;transform:translateY(20px);animation:headlineIn 1.1s cubic-bezier(.2,.75,.18,1) forwards}
+.hero h1 .headline-line:nth-child(2){animation-delay:.18s}
+.hero h1 .headline-line:nth-child(3){animation-delay:.36s}
+.hero h1 .headline-line:nth-child(4){animation-delay:.54s}
+.hero h1 em{color:#3bf36d;text-shadow:0 0 54px rgba(51,238,102,.18);white-space:nowrap}
+.hero .headline-period{color:var(--lime)}
+.hero .sub{max-width:680px;font-size:20px;line-height:1.58;color:#d0ddd6;font-weight:650;margin:0}
+.hero .hero-actions{margin-top:28px;align-items:center;gap:10px}
+.hero .hero-primary{display:inline-flex;align-items:center;gap:23px;justify-content:space-between;min-width:195px;text-align:left}
+.hero .hero-primary span{font-size:19px;line-height:1}
+.hero .hero-bottomline{display:flex;align-items:center;gap:18px;margin-top:42px;color:#b8c7bf;letter-spacing:.24em;font-size:15px;font-weight:820}
+.hero-bottomline-stroke{height:3px;width:54px;flex:none;background:var(--lime);box-shadow:0 0 18px rgba(43,237,105,.5)}
+.hero .proof{margin-top:24px;gap:30px;align-items:center;letter-spacing:.085em;font-size:16.5px}
+.hero .proof b{font-size:15px;color:#5ff289;margin-right:7px}
+.hero .memberbar{margin-top:25px;max-width:600px}
+.hero-console{--px:50%;--py:45%;position:relative;min-width:0;overflow:hidden;border:1px solid rgba(69,140,92,.4);border-radius:23px;background:linear-gradient(150deg,rgba(13,38,24,.75),rgba(2,13,8,.95) 54%,rgba(5,27,14,.93));box-shadow:0 35px 90px rgba(0,0,0,.41),0 0 58px rgba(23,210,76,.052),inset 0 1px 0 rgba(153,255,178,.08);transition:border-color .24s,box-shadow .3s;animation:consoleIn 1.1s cubic-bezier(.19,.79,.25,1) both .20s}
+.hero-console:hover{border-color:rgba(77,225,116,.54);box-shadow:0 35px 95px rgba(0,0,0,.44),0 0 68px rgba(23,210,76,.09),inset 0 1px 0 rgba(153,255,178,.09)}
+.hero-console:before{content:"";pointer-events:none;position:absolute;inset:0;z-index:0;background:radial-gradient(310px circle at var(--px) var(--py),rgba(51,235,101,.08),transparent 74%)}
+.console-header{position:relative;z-index:2;height:58px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid rgba(57,104,72,.37);background:rgba(6,22,13,.75)}
+.console-header-title{display:flex;align-items:center;gap:11px;font-size:10px;letter-spacing:.16em;font-weight:950;color:#cadacf;white-space:nowrap}
+.console-symbol{display:inline-block;height:12px;width:12px;border:2px solid var(--lime);transform:rotate(45deg);box-shadow:0 0 14px rgba(42,238,97,.27)}
+.console-header-light{height:5px;width:5px;border-radius:50%;background:var(--lime);box-shadow:0 0 11px var(--lime)}
+.console-frequency{color:#83bd9a;border-radius:5px;border:1px solid rgba(61,130,83,.3);padding:5px 7px;font-size:9px;line-height:1.2;white-space:nowrap;letter-spacing:.07em;font-weight:830}
+.radar-surface{height:330px;position:relative;overflow:hidden;background:radial-gradient(circle at 50% 47%,rgba(42,221,92,.095) 0,transparent 44%),repeating-linear-gradient(0deg,transparent 0,transparent 36px,rgba(82,187,105,.034) 37px),repeating-linear-gradient(90deg,transparent 0,transparent 36px,rgba(82,187,105,.034) 37px)}
+.radar-surface:before,.radar-surface:after{content:"";position:absolute;inset:0;pointer-events:none}
+.radar-surface:before{background:radial-gradient(circle at center,transparent 30%,rgba(0,9,4,.5) 84%)}
+.radar-surface:after{z-index:1;background:linear-gradient(180deg,rgba(3,24,9,.025) 0,rgba(41,237,102,.035) 51%,transparent 51%);background-size:100% 7px;opacity:.45}
+.radar-crosshair{position:absolute;z-index:0;background:rgba(89,183,113,.09)}.radar-crosshair-h{left:8%;right:8%;height:1px;top:47%}.radar-crosshair-v{top:5%;bottom:5%;width:1px;left:50%}
+.radar-ring{position:absolute;left:50%;top:47%;border:1px solid rgba(65,188,94,.21);border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}
+.radar-ring-outer{width:300px;height:300px;border-color:rgba(65,188,94,.19)}.radar-ring-middle{width:222px;height:222px;border-style:dashed;border-color:rgba(65,188,94,.22)}.radar-ring-inner{width:130px;height:130px;border-color:rgba(65,188,94,.28);box-shadow:0 0 27px rgba(19,202,65,.055)}
+.radar-sweep{position:absolute;z-index:0;left:50%;top:47%;width:306px;height:306px;margin:-153px;transform-origin:center center;border-radius:50%;background:conic-gradient(from 0deg,transparent 0deg,transparent 280deg,rgba(50,238,101,.015) 285deg,rgba(50,238,101,.21) 359deg,rgba(73,255,125,.4) 360deg);-webkit-mask:radial-gradient(circle,transparent 0 24px,#000 25px 100%);mask:radial-gradient(circle,transparent 0 24px,#000 25px 100%);animation:radarSpin 11s linear infinite;pointer-events:none}
+.radar-ray{position:absolute;z-index:0;left:50%;top:47%;height:1px;transform-origin:left center;width:125px;background:linear-gradient(90deg,rgba(44,209,84,.1),rgba(78,224,109,.24));pointer-events:none}.radar-ray-a{transform:rotate(-52deg)}.radar-ray-b{transform:rotate(26deg)}.radar-ray-c{transform:rotate(142deg)}
+.radar-center{position:absolute;left:50%;top:47%;z-index:2;width:98px;height:98px;margin:-49px 0 0 -49px;display:grid;place-items:center;transition:transform .38s cubic-bezier(.18,.6,.28,1);pointer-events:none}
+.radar-center:before{content:"";position:absolute;inset:10px;border:1px solid rgba(62,248,118,.23);transform:rotate(45deg);box-shadow:0 0 38px rgba(50,245,104,.10),inset 0 0 21px rgba(50,245,104,.08)}
+.radar-center img{position:relative;z-index:1;width:60px;height:60px;object-fit:contain;filter:drop-shadow(0 0 15px rgba(51,235,101,.4))}
+.radar-center-glow{position:absolute;inset:-38px;border-radius:50%;background:radial-gradient(circle,rgba(35,222,83,.1),transparent 62%);animation:centerBreathe 4.5s ease-in-out infinite}
+.radar-node{position:absolute;z-index:5;border:0;display:grid;place-items:center;width:20px;height:20px;background:transparent;color:#c1ffce;transform:translate(-50%,-50%);cursor:pointer;transition:filter .2s}
+.radar-node-one{left:37%;top:17%}.radar-node-two{left:77%;top:42%}.radar-node-three{left:27%;top:71%}
+.radar-node:before{content:"";display:block;position:absolute;width:9px;height:9px;border:1.5px solid #94fbb0;background:#28de65;transform:rotate(45deg);box-shadow:0 0 16px rgba(55,253,106,.82)}
+.radar-node:after{content:"";display:block;position:absolute;width:23px;height:23px;border:1px solid rgba(76,251,117,.43);border-radius:50%;transition:.2s transform,.2s border-color}
+.radar-node:hover:after,.radar-node:focus-visible:after,.radar-node.selected:after{transform:scale(1.43);border-color:#60f88d}
+.radar-node.selected:before{background:#9dffae;box-shadow:0 0 24px rgba(103,255,158,1)}
+.radar-node:focus-visible{outline:1px solid #9bffb0;outline-offset:16px;border-radius:50%}
+.radar-node:disabled{cursor:default;opacity:.3}.radar-node[hidden]{display:none}
+.radar-ping{position:absolute;border:1px solid rgba(86,246,128,.52);height:13px;width:13px;border-radius:50%;animation:nodePulse 3.7s ease-out infinite}
+.radar-node-two .radar-ping{animation-delay:1.1s}.radar-node-three .radar-ping{animation-delay:2.2s}
+.radar-node-label{position:absolute;left:50%;top:23px;transform:translateX(-50%);font-size:9px;letter-spacing:.13em;font-weight:900;color:#90bba0;background:rgba(4,19,10,.86);border:1px solid rgba(62,145,83,.22);padding:3px 6px;border-radius:4px;white-space:nowrap;transition:.2s color,.2s border-color}
+.radar-node.selected .radar-node-label,.radar-node:hover .radar-node-label{color:#d5ffe2;border-color:rgba(79,229,111,.53)}
+.radar-node-three .radar-node-label{top:auto;bottom:23px}
+.radar-topo{position:absolute;color:rgba(137,178,143,.38);font-size:8px;font-weight:800;letter-spacing:.15em;line-height:1.8;pointer-events:none}.radar-topo-top{top:19px;left:21px}.radar-topo-bottom{bottom:20px;right:19px;text-align:right}
+.radar-interact-hint{position:absolute;left:20px;bottom:21px;color:#7da68a;font-size:9px;font-weight:750;letter-spacing:.12em}
+.radar-detail{position:relative;z-index:2;border-top:1px solid rgba(77,139,91,.36);background:linear-gradient(180deg,rgba(10,37,20,.66),rgba(4,19,11,.9));padding:17px 21px 18px;min-height:176px}
+.radar-detail-eyebrow{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#7ec495;font-size:9px;font-weight:900;letter-spacing:.17em}
+.radar-detail-index{color:#5e9874;font-size:10px;font-variant-numeric:tabular-nums}
+.radar-detail-title{color:#f5fff7;font-weight:850;letter-spacing:-.025em;font-size:18px;line-height:1.3;margin-top:9px;min-height:24px;max-width:100%;overflow-wrap:anywhere}
+.radar-detail-location{color:#8ca598;font-size:12px;margin:5px 0 14px;line-height:1.45}
+.radar-detail-footer{display:flex;align-items:end;gap:19px}
+.radar-metric{display:flex;flex-direction:column;min-width:0;gap:2px}.radar-metric small{font-size:8px;letter-spacing:.13em;color:#8ca69a;font-weight:850;white-space:nowrap}.radar-metric strong{font-size:20px;color:var(--lime);letter-spacing:-.02em;line-height:1.25}.radar-metric .radar-dollar{color:var(--gold)}
+.radar-view{margin-left:auto;white-space:nowrap;font-size:11px;font-weight:900;color:#0c1b10;background:var(--lime);border:none;border-radius:8px;padding:9px 11px;cursor:pointer;transition:background .2s,transform .2s}.radar-view:hover{background:#78ffa0;transform:translateY(-2px)}.radar-view:disabled{opacity:.3;cursor:not-allowed;transform:none}.radar-view span{font-size:15px}
+.console-foot{position:relative;z-index:2;display:flex;align-items:center;gap:8px;border-top:1px solid rgba(43,104,57,.33);padding:10px 21px;color:#83ae90;font-size:9px;letter-spacing:.08em;font-weight:850;background:rgba(3,16,8,.7)}
+.console-foot-indicator{height:6px;width:6px;border-radius:50%;background:var(--lime);box-shadow:0 0 9px rgba(55,233,101,.64);flex:none}
+.console-foot-right{margin-left:auto;color:#4d765a;white-space:nowrap}
+@keyframes radarSpin{to{transform:rotate(360deg)}}
+@keyframes nodePulse{0%{opacity:.8;transform:scale(.6)}73%,100%{opacity:0;transform:scale(3.1)}}
+@keyframes centerBreathe{50%{opacity:.52;transform:scale(1.18)}}
+@keyframes ambientFloat{to{transform:translate(22px,-25px)}}
+@keyframes headlineIn{to{opacity:1;transform:translateY(0)}}
+@keyframes consoleIn{from{opacity:0;transform:translateY(23px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:1080px){.hero{padding:58px 0 40px}.hero-shell{grid-template-columns:minmax(0,1fr) minmax(360px,.9fr);gap:28px}.hero h1{font-size:clamp(43px,5vw,60px)}.hero .proof{gap:21px;font-size:14px}.radar-detail-footer{gap:11px}.radar-metric strong{font-size:18px}}
+@media(max-width:860px){.hero{padding:48px 0 20px}.hero-shell{grid-template-columns:1fr;gap:36px}.hero-copy{padding-top:0}.hero h1{font-size:clamp(48px,7vw,76px)}.hero .sub{max-width:690px}.hero-console{max-width:650px;width:100%;margin:0 auto}.radar-surface{height:350px}.radar-ring-outer{width:318px;height:318px}.hero .memberbar{max-width:650px}}
+@media(max-width:620px){.hero{padding:34px 0 16px}.hero-shell{gap:28px}.hero h1{font-size:clamp(39px,10vw,58px);letter-spacing:-.053em;margin:20px 0}.hero h1 em{white-space:normal}.hero-eyebrow{font-size:9px;padding:9px 10px;letter-spacing:.045em;gap:7px;white-space:nowrap;width:100%;justify-content:center}.hero .sub{font-size:16px;line-height:1.58;color:#d0ddd6}.hero .hero-actions{gap:9px;margin-top:24px}.hero .hero-primary{min-width:0}.hero .hero-actions .btn{padding:12px 13px;font-size:12px}.hero .hero-bottomline{margin-top:32px;font-size:13.5px;letter-spacing:.14em}.hero .proof{gap:16px;font-size:13.5px;flex-wrap:wrap}.hero-console{border-radius:17px}.console-header{height:50px;padding:0 13px}.console-header-title{font-size:9px;gap:7px;letter-spacing:.1em}.console-frequency{font-size:8px}.radar-surface{height:300px}.radar-ring-outer{width:265px;height:265px}.radar-ring-middle{width:198px;height:198px}.radar-ring-inner{width:108px;height:108px}.radar-sweep{width:270px;height:270px;margin:-135px}.radar-center{width:84px;height:84px;margin:-42px 0 0 -42px}.radar-center img{width:54px;height:54px}.radar-center:before{inset:9px}.radar-detail{padding:16px;min-height:170px}.radar-detail-footer{gap:12px}.radar-metric strong{font-size:19px}.radar-view{padding:8px;font-size:10px}.console-foot{padding:9px 14px;font-size:8px}.console-foot-right{letter-spacing:.04em}.radar-topo{font-size:7px}.radar-node-one{left:37%;top:16%}.radar-node-two{left:78%;top:42%}.radar-node-three{left:25%;top:69%}}
+@media(max-width:365px){.hero .hero-actions .btn{padding:11px;font-size:11px}.hero .hero-bottomline{font-size:12px}.hero .proof{gap:12px}.radar-detail-footer{gap:8px}.radar-metric small{font-size:7px}.radar-metric strong{font-size:16px}.radar-view{padding:7px}.console-foot-right{display:none}}
+@media(max-width:620px){html[data-theme="light"] .brand-logo-light{height:27px;max-width:142px}}
+@media(prefers-reduced-motion:reduce){.hero-ambient,.hero h1 .headline-line,.hero-console,.radar-sweep,.radar-ping,.radar-center-glow{animation:none!important}.hero h1 .headline-line{opacity:1;transform:none}.hero-console{opacity:1;transform:none}.radar-node,.radar-center,.radar-view{transition:none}}
+
+
+/* V72 — mobile index second-row nav spacing */
+@media(max-width:620px){
+  .topbar .navlinks{
+    grid-column:1 / -1;
+    grid-row:2;
+    width:100%;
+    margin:0;
+    padding:3px 6px;
+    gap:4px;
+    display:grid;
+    grid-template-columns:1.08fr 1.12fr 1.08fr .82fr;
+    align-items:center;
+  }
+
+  .topbar .navlinks a{
+    min-width:0;
+    width:100%;
+    padding:8px 2px;
+    font-size:10px;
+    line-height:1.1;
+    text-align:center;
+    white-space:nowrap;
+  }
+
+  .topbar .navlinks a::before{display:none}
+}
+
+@media(max-width:380px){
+  .topbar .navlinks{
+    padding:3px 4px;
+    gap:2px;
+    grid-template-columns:1.06fr 1.14fr 1.08fr .80fr;
+  }
+
+  .topbar .navlinks a{
+    padding:8px 1px;
+    font-size:9.5px;
+  }
+}
+
+
+/* V79 — mobile Project Lifecycle fit */
+@media(max-width:620px){
+  .lifecycle{
+    padding:13px 12px;
+    overflow:hidden;
+  }
+
+  .lifecycle-title{
+    font-size:9px;
+    line-height:1.45;
+    letter-spacing:.10em;
+    margin-bottom:12px;
+  }
+
+  .lifecycle-row{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:12px 8px;
+    width:100%;
+  }
+
+  .life-step{
+    min-width:0;
+    font-size:8px;
+    line-height:1.25;
+    text-align:left;
+    overflow-wrap:anywhere;
+  }
+
+  .life-step:before{
+    width:100%;
+    height:5px;
+    margin-bottom:6px;
+  }
+}
+
+
+/* V80 — guaranteed mobile Project Lifecycle fit */
+@media(max-width:900px){
+  .lifecycle{
+    width:100% !important;
+    max-width:100% !important;
+    padding:13px 12px !important;
+    overflow:hidden !important;
+  }
+
+  .lifecycle-title{
+    display:block !important;
+    width:100% !important;
+    max-width:100% !important;
+    font-size:9px !important;
+    line-height:1.45 !important;
+    letter-spacing:.09em !important;
+    overflow-wrap:anywhere !important;
+    white-space:normal !important;
+  }
+
+  .lifecycle-row{
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:12px 10px !important;
+    width:100% !important;
+    max-width:100% !important;
+    overflow:hidden !important;
+  }
+
+  .life-step{
+    display:block !important;
+    width:100% !important;
+    min-width:0 !important;
+    max-width:100% !important;
+    font-size:8px !important;
+    line-height:1.25 !important;
+    text-align:left !important;
+    white-space:normal !important;
+    overflow-wrap:anywhere !important;
+  }
+
+  .life-step:before{
+    display:block !important;
+    width:100% !important;
+    max-width:100% !important;
+    height:5px !important;
+    margin-bottom:6px !important;
+  }
+}
+
+
+/* V81 — company columns + light lifecycle contrast */
+.permit-company,
+.pipeline-company-cell{
+  color:#b7c8bf;
+  font-size:11px;
+  line-height:1.35;
+  font-weight:780;
+  overflow-wrap:anywhere;
+}
+.pipeline-company-cell{display:flex;flex-direction:column;gap:3px}
+.pipeline-company-cell strong{color:#d9e5df;font-size:11px}
+.pipeline-company-cell small{
+  color:#71887c;
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.company-missing{color:#60756a;font-weight:700}
+
+/* Light theme: make the current lifecycle label clearly readable.
+   Dark theme is intentionally unchanged. */
+html[data-theme="light"] .life-step.current{
+  color:#075f2c !important;
+  font-weight:950 !important;
+}
+html[data-theme="light"] .life-step.current:before{
+  background:#16d956 !important;
+  box-shadow:0 0 0 1px rgba(8,111,48,.12),0 0 12px rgba(42,238,97,.22) !important;
+}
+html[data-theme="light"] .life-step.done{color:#496a58}
+html[data-theme="light"] .pipeline-company-cell strong,
+html[data-theme="light"] .permit-company{color:#274335}
+html[data-theme="light"] .pipeline-company-cell small{color:#6b8174}
+html[data-theme="light"] .company-missing{color:#83948a}
+
+/* Class-based mobile feed layout so the new company column cannot break cards. */
+@media(max-width:620px){
+  .lead{
+    grid-template-columns:52px minmax(0,1fr) !important;
+    column-gap:9px !important;
+    row-gap:7px !important;
+    padding:16px 14px !important;
+  }
+  .lead .score{grid-column:1;grid-row:1;align-self:start;justify-self:start}
+  .lead .lead-main{grid-column:2;grid-row:1}
+  .lead .permit-company{
+    display:block !important;
+    grid-column:2;
+    grid-row:2;
+    margin-top:2px;
+    font-size:11px;
+  }
+  .lead .permit-company:before{
+    content:"COMPANY ON PERMIT  ";
+    color:#6f8278;
+    font-size:8px;
+    letter-spacing:.09em;
+    font-weight:900;
+  }
+  .lead .lead-seller{display:none !important}
+  .lead .lead-value{
+    display:block !important;
+    grid-column:2;
+    grid-row:3;
+    color:var(--gold);
+    font-size:18px;
+    line-height:1.1;
+    margin-top:2px;
+  }
+  .lead .lead-value:before{
+    content:"EST. OPPORTUNITY  ";
+    color:#6f8278;
+    font-size:9px;
+    letter-spacing:.1em;
+    font-weight:850;
+    vertical-align:2px;
+  }
+  .lead .lead-temperature{
+    grid-column:1;
+    grid-row:3;
+    align-self:start;
+    justify-self:start;
+    position:relative;
+    left:21px;
+    transform:translateX(-50%);
+    width:max-content;
+    text-align:center;
+    white-space:nowrap;
+    font-size:14px;
+    line-height:1.15;
+    font-weight:900;
+    margin-top:3px;
+  }
+  .lead .lead-actions{
+    grid-column:2;
+    grid-row:4;
+    justify-self:stretch;
+    justify-content:flex-end;
+    margin-top:1px;
+  }
+
+  .pipeline-lead{
+    grid-template-columns:52px minmax(0,1fr) !important;
+    gap:8px 10px !important;
+    padding:16px 14px !important;
+  }
+  .pipeline-lead .score{grid-column:1;grid-row:1 / span 5 !important}
+  .pipeline-lead .pipeline-main{grid-column:2;grid-row:1}
+  .pipeline-lead .pipeline-stage{grid-column:2;grid-row:2}
+  .pipeline-lead .pipeline-company-cell{
+    grid-column:2;
+    grid-row:3;
+    display:flex !important;
+    padding:7px 9px;
+    border:1px solid #193a28;
+    border-radius:8px;
+    background:rgba(8,27,17,.45);
+  }
+  .pipeline-lead .pipeline-seller{grid-column:2;grid-row:4;display:flex !important}
+  .pipeline-lead .pipeline-temperature{grid-column:2;grid-row:5}
+  .pipeline-lead .pipeline-actions{grid-column:2;grid-row:6}
+  html[data-theme="light"] .pipeline-lead .pipeline-company-cell{
+    background:#f7faf8;
+    border-color:#d7e3db;
+  }
+}
+
+
+/* V82 — company listed/not-listed toggles */
+.company-toggle-wrap{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:38px;
+}
+.company-toggle-label{
+  color:#7f958a;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.company-toggle{
+  display:inline-flex;
+  padding:3px;
+  border:1px solid #254934;
+  border-radius:10px;
+  background:#06140c;
+}
+.company-toggle-btn{
+  border:0;
+  border-radius:7px;
+  background:transparent;
+  color:#80948a;
+  padding:7px 9px;
+  font-size:10px;
+  font-weight:900;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.company-toggle-btn.active{
+  background:var(--lime);
+  color:#031108;
+  box-shadow:0 0 15px rgba(42,238,97,.12);
+}
+html[data-theme="light"] .company-toggle{
+  background:#f5f9f6;
+  border-color:#cbdad1;
+}
+html[data-theme="light"] .company-toggle-label{color:#63756b}
+html[data-theme="light"] .company-toggle-btn{color:#687970}
+html[data-theme="light"] .company-toggle-btn.active{
+  background:#07120d;
+  color:var(--lime);
+}
+
+/* Radar center uses the full RevenueTrigger header logo instead of the diamond-only mark. */
+.radar-center img{
+  width:84px !important;
+  height:auto !important;
+  max-height:44px !important;
+}
+
+@media(max-width:620px){
+  .company-toggle-wrap{
+    width:100%;
+    justify-content:space-between;
+    gap:6px;
+  }
+  .company-toggle-label{
+    font-size:8px;
+  }
+  .company-toggle{
+    margin-left:auto;
+  }
+  .company-toggle-btn{
+    padding:7px 8px;
+    font-size:9px;
+  }
+}
+
+
+/* V83 — Opportunity Radar logo correction */
+.radar-center{
+  background:transparent !important;
+}
+.radar-center img{
+  background:transparent !important;
+  width:78px !important;
+  height:auto !important;
+  max-height:42px !important;
+  object-fit:contain;
+}
+.opportunity-radar-title-logo{
+  display:inline-block;
+  width:26px;
+  height:26px;
+  object-fit:contain;
+  background:transparent;
+  vertical-align:middle;
+  margin-left:7px;
+  filter:drop-shadow(0 0 8px rgba(42,238,97,.12));
+}
+@media(max-width:620px){
+  .opportunity-radar-title-logo{
+    width:22px;
+    height:22px;
+    margin-left:5px;
+  }
+}
+
+
+/* V84 — Opportunity Radar header logo placement */
+.console-header-title .console-symbol{display:none !important}
+.opportunity-radar-title-logo{
+  margin-left:0 !important;
+  margin-right:7px !important;
+}
+@media(max-width:620px){
+  .opportunity-radar-title-logo{
+    margin-left:0 !important;
+    margin-right:5px !important;
+  }
+}
+
+</style>
+</head>
+<body>
+<header class="topbar"><div class="wrap"><nav><a class="brand" href="#" aria-label="RevenueTrigger home">
+      <img class="brand-logo brand-logo-dark" src="/assets/revenuetrigger-icon.svg" alt="RevenueTrigger">
+      <img class="brand-logo brand-logo-light" src="/assets/RT-Logo-WHT-BG.svg" alt="RevenueTrigger">
+    </a><div class="navlinks"><a href="#signals">Opportunities</a><a href="#pipeline">Early Pipeline</a><a href="/competitors.html">Competitors</a><a href="#sources" class="nav-sources">Sources</a><a href="#pricing">Pricing</a></div><button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light theme" title="Switch to light theme" onclick="toggleTheme()">
+        <span class="theme-toggle-icon" id="themeIcon">☀</span>
+        <span class="theme-label theme-label-full" id="themeLabel">Light mode</span>
+        <span class="theme-label theme-label-short" id="themeLabelShort">Light</span>
+      </button><button class="account-btn" id="accountBtn" onclick="openAccount()">Sign in</button></nav></div></header>
+<main>
+<section class="hero" id="hero">
+  <div class="hero-ambient hero-ambient-a" aria-hidden="true"></div>
+  <div class="hero-ambient hero-ambient-b" aria-hidden="true"></div>
+  <div class="wrap hero-shell">
+    <div class="hero-copy">
+      <span class="eyebrow hero-eyebrow"><span class="dot"></span><span>ARIZONA COMMERCIAL INTELLIGENCE</span><span class="hero-eyebrow-divider"></span><span>HOURLY SIGNAL SCAN</span></span>
+      <h1><span class="headline-line">Find the</span> <span class="headline-line"><em>money event</em></span> <span class="headline-line">before your</span> <span class="headline-line">competitor does<span class="headline-period">.</span></span></h1>
+      <p class="sub">Built for commercial contractors. RevenueTrigger finds who’s about to spend through permit activity, ranks the opportunities, and shows you where to focus first.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary hero-primary" href="#signals">Explore live opportunities <span aria-hidden="true">↗</span></a>
+        <button class="btn btn-secondary" type="button" onclick="openAccount()">Customer dashboard</button>
+      </div>
+      <div class="hero-bottomline"><span class="hero-bottomline-stroke"></span><span>OPPORTUNITY MEETS ACTION</span></div>
+      <div class="proof" aria-label="How RevenueTrigger works"><span><b>01</b> Detect</span><span><b>02</b> Score</span><span><b>03</b> Match</span><span><b>04</b> Alert</span></div>
+      <div class="memberbar" id="memberbar"><div><strong id="memberPlan">Beta</strong> • <span id="memberEmail"></span></div><div class="mini-actions"><button class="mini" onclick="showSavedOnly()">Saved <span id="savedCount">0</span></button><button class="mini" onclick="openAccount()">Preferences</button><button class="mini" id="exportTop" onclick="exportCsv()">Export CSV</button></div></div>
+    </div>
+
+    <div class="hero-console" id="heroRadar" aria-label="Interactive opportunity signal radar">
+      <div class="console-header">
+        <div class="console-header-title"><img class="opportunity-radar-title-logo" src="/assets/revenuetrigger-logo.svg" alt=""><span>OPPORTUNITY RADAR</span><span class="console-header-light" aria-hidden="true"></span></div>
+        <span class="console-frequency" id="heroRadarState">CONNECTING</span>
+      </div>
+      <div class="radar-surface" id="radarSurface">
+        <div class="radar-crosshair radar-crosshair-h" aria-hidden="true"></div>
+        <div class="radar-crosshair radar-crosshair-v" aria-hidden="true"></div>
+        <div class="radar-ring radar-ring-outer" aria-hidden="true"></div>
+        <div class="radar-ring radar-ring-middle" aria-hidden="true"></div>
+        <div class="radar-ring radar-ring-inner" aria-hidden="true"></div>
+        <div class="radar-sweep" aria-hidden="true"></div>
+        <div class="radar-ray radar-ray-a" aria-hidden="true"></div>
+        <div class="radar-ray radar-ray-b" aria-hidden="true"></div>
+        <div class="radar-ray radar-ray-c" aria-hidden="true"></div>
+        <div class="radar-center" id="radarCenter"><div class="radar-center-glow" aria-hidden="true"></div><img src="/assets/revenuetrigger-logo.svg" alt="RevenueTrigger"></div>
+        <button class="radar-node radar-node-one" type="button" data-radar-index="0" aria-label="Preview the first opportunity" disabled><span class="radar-ping"></span><span class="radar-node-label">01 / SIGNAL</span></button>
+        <button class="radar-node radar-node-two" type="button" data-radar-index="1" aria-label="Preview the second opportunity" disabled><span class="radar-ping"></span><span class="radar-node-label">02 / SIGNAL</span></button>
+        <button class="radar-node radar-node-three" type="button" data-radar-index="2" aria-label="Preview the third opportunity" disabled><span class="radar-ping"></span><span class="radar-node-label">03 / SIGNAL</span></button>
+        <div class="radar-topo radar-topo-top" aria-hidden="true">33.4484° N<br>112.0740° W</div>
+        <div class="radar-topo radar-topo-bottom" aria-hidden="true">RT / PHX<br>01—03</div>
+        <span class="radar-interact-hint" id="radarInteractHint">SELECT A SIGNAL TO PREVIEW</span>
+      </div>
+      <div class="radar-detail">
+        <div class="radar-detail-eyebrow"><span id="heroSignalMode">PUBLIC-DATA SIGNAL</span><span class="radar-detail-index" id="heroSignalIndex">— / —</span></div>
+        <div class="radar-detail-title" id="heroSignalTitle" aria-live="polite">Connecting to Phoenix permit data…</div>
+        <p id="heroSignalLocation" class="radar-detail-location">Ranked opportunities appear here when the feed loads.</p>
+        <div class="radar-detail-footer">
+          <div class="radar-metric"><small>INTENT SCORE</small><strong id="heroSignalScore">—</strong></div>
+          <div class="radar-metric"><small>EST. OPPORTUNITY</small><strong class="radar-dollar" id="heroSignalValue">—</strong></div>
+          <button class="radar-view" id="heroSignalExplore" type="button" disabled>Explore <span aria-hidden="true">↗</span></button>
+        </div>
+      </div>
+      <div class="console-foot"><span class="console-foot-indicator" aria-hidden="true"></span><span id="heroRadarFoot">Checking feed connection</span><span class="console-foot-right">DETECT / SCORE / MATCH</span></div>
+    </div>
+  </div>
+</section>
+<section><div class="wrap"><div class="kpis"><div class="kpi"><small>Opportunities loaded</small><strong id="kSignals">—</strong></div><div class="kpi"><small>High-intent</small><strong class="accent" id="kHot">—</strong></div><div class="kpi"><small>Est. opportunity</small><strong id="kValue">—</strong></div><div class="kpi"><small>Feed</small><strong id="kFresh">Connecting</strong></div></div></div></section>
+<section class="section" id="what-changed" style="padding-bottom:0">
+  <div class="wrap">
+    <div class="changed-shell">
+      <div class="changed-intro">
+        <span class="eyebrow">What changed</span>
+        <h3>Since yesterday.</h3>
+        <p id="changedMessage">Sign in to see the activity that deserves your attention today.</p>
+        <div id="changedMoves"></div>
+      </div>
+      <div class="changed-stat"><small>New opportunities</small><strong id="chgOpp">—</strong></div>
+      <div class="changed-stat"><small>Hot</small><strong class="accent" id="chgHot">—</strong></div>
+      <div class="changed-stat"><small>Major projects</small><strong id="chgMajor">—</strong></div>
+      <div class="changed-stat"><small>Competitor moves</small><strong id="chgComp">—</strong></div>
+    </div>
+  </div>
+</section>
+<section class="section" id="competitor-teaser">
+  <div class="wrap">
+    <div class="competitor-teaser">
+      <div>
+        <span class="eyebrow">Competitor intelligence</span>
+        <h2>See who is active in your market.</h2>
+        <p>Track contractors and companies tied to public permit activity, compare recent project activity, and see where competitors are showing up.</p>
+      </div>
+      <a class="btn btn-primary" href="/competitors.html">Explore competitors <span aria-hidden="true">↗</span></a>
+    </div>
+  </div>
+</section>
+<section class="section" id="signals"><div class="wrap"><div class="section-head"><div><span class="eyebrow">Opportunity feed</span><h2>Ranked Arizona money events.</h2></div><p id="feedExplainer">Public permit activity is translated into likely downstream buying needs. Sign in to personalize the feed and save opportunities.</p></div><div class="dashboard"><div class="dashbar"><div class="filters"><div class="company-toggle-wrap" aria-label="Company on permit filter"><span class="company-toggle-label">Company on permit</span><div class="company-toggle" id="permitCompanyToggle"><button type="button" class="company-toggle-btn active" data-value="listed">Listed</button><button type="button" class="company-toggle-btn" data-value="not-listed">Not Listed</button></div></div><select id="market"><option value="all">All live markets</option><option>Phoenix</option><option>Tempe</option><option>Tucson</option><option>Scottsdale</option><option>Mesa</option></select><select id="industry"><option value="all">All industries</option><option>Commercial services</option><option>HVAC</option><option>Electrical</option><option>Plumbing</option><option>Roofing</option><option>Landscaping</option><option>Security</option><option>Signage</option></select><select id="minScore"><option value="0">Any score</option><option value="40">40+ WATCH</option><option value="60">60+ WARM</option><option value="80">80+ HOT</option></select><select id="sortFeed" aria-label="Sort opportunities"><option value="score">Sort: highest score</option><option value="newest">Detected: newest first</option><option value="oldest">Detected: oldest first</option></select><select id="savedFilter" style="display:none"><option value="all">All matched</option><option value="saved">Saved only</option></select><input id="search" placeholder="Search project, address…" /><button class="score-help" type="button" onclick="openModal('scoreModal')"><span class="qmark">?</span>How scoring works</button></div><div class="status"><span class="spinner"></span><span id="feedStatus">Connecting…</span></div></div><div class="gridhead"><div>Score</div><div>Money event</div><div>Company on permit</div><div>Who should sell</div><div>Opportunity</div><div>Temperature</div><div></div></div><div id="leadList"><div class="empty">Loading opportunities…</div></div></div></div></section>
+
+<section class="section" id="pipeline">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Early pipeline</span>
+        <h2>Chandler opportunities before the live permit window.</h2>
+      </div>
+      <p>Early Pipeline surfaces PRE-TECH and approved projects that may indicate future commercial work before a new permit appears—giving you an earlier view of where opportunities could be developing.</p>
+    </div>
+
+    <div class="dashboard pipeline-dashboard">
+      <div class="pipeline-dashbar">
+        <div class="pipeline-controls">
+          <div class="company-toggle-wrap" aria-label="Company or participant filter"><span class="company-toggle-label">Company / participant</span><div class="company-toggle" id="pipelineCompanyToggle"><button type="button" class="company-toggle-btn active" data-value="listed">Listed</button><button type="button" class="company-toggle-btn" data-value="not-listed">Not Listed</button></div></div>
+          <select id="pipelineStage">
+            <option value="all">All pipeline stages</option>
+            <option value="PRE-TECH">PRE-TECH</option>
+            <option value="APPROVED PROJECTS">Approved projects</option>
+          </select>
+          <select id="pipelineMinScore">
+            <option value="0">Any score</option>
+            <option value="40">40+ WATCH</option>
+            <option value="60">60+ WARM</option>
+            <option value="80">80+ HOT</option>
+          </select>
+          <button class="btn btn-primary" id="pipelineRefresh">Refresh pipeline</button>
+        </div>
+        <div class="status"><span class="spinner"></span><span id="pipelineStatus">Loading Chandler early pipeline…</span></div>
+      </div>
+
+      <div class="pipeline-gridhead">
+        <div>Score</div>
+        <div>Opportunity</div>
+        <div>Stage</div>
+        <div>Company / participant</div>
+        <div>Who should sell</div>
+        <div>Temperature</div>
+        <div></div>
+      </div>
+
+      <div id="pipelineList"><div class="pipeline-empty">Loading early-pipeline opportunities…</div></div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section light-band" id="sources"><div class="wrap"><div class="section-head"><div><span class="eyebrow">Data engine</span><h2>Five Arizona permit markets live.</h2></div><p>RevenueTrigger now normalizes municipal permit feeds into one ranked opportunity stream. Each city keeps its own source attribution and refresh cadence.</p></div><div class="sources"><div class="source"><span class="tag">Live</span><h3>Phoenix permits</h3><p>City of Phoenix Planning &amp; Development permit activity refreshed into RevenueTrigger.</p></div><div class="source"><span class="tag">Live · Weekly source</span><h3>Tempe permits</h3><p>City of Tempe Building Safety permit data published from its Accela open-data feed.</p></div><div class="source"><span class="tag">Live</span><h3>Tucson permits</h3><p>Current City of Tucson commercial permit activity discovered through Property Research Online (PRO) and normalized into the same scoring model.</p></div><div class="source"><span class="tag">Live</span><h3>Scottsdale permits</h3><p>City of Scottsdale Building Permit Reports are ingested from the official CSV feed and normalized into RevenueTrigger.</p></div><div class="source"><span class="tag">Live</span><h3>Mesa permits</h3><p>Current commercial permit activity is ingested from the City of Mesa Data Hub Building Permits API and normalized into RevenueTrigger.</p></div><div class="source"><span class="tag">Early Pipeline</span><h3>Chandler projects</h3><p>Chandler PRE-TECH and approved projects are surfaced separately as Early Pipeline intelligence instead of being mixed into the live 7-day permit feed.</p></div></div></div></section>
+<section class="section light-band" id="pricing"><div class="wrap"><div class="section-head"><div><span class="eyebrow">Plans</span><h2>Pay for speed and relevance.</h2></div><p>Choose a plan based on how quickly you want opportunities delivered and how much history you need.</p></div><div class="pricing"><div class="price"><h3>Scout</h3><div class="money">$49 <small>/mo</small></div><ul><li>1 industry · 1 market</li><li>Weekly opportunity digest</li><li>7-day history</li><li>Saved opportunities</li></ul><button class="btn btn-secondary" onclick="buyPlan('Scout')">Choose Scout</button></div><div class="price featured"><span class="badge">BEST VALUE</span><h3>Hunter</h3><div class="money">$149 <small>/mo</small></div><ul><li>Up to 3 industries · 3 markets</li><li>Daily email digest</li><li>30-day history</li><li>Saved opportunities</li><li>CSV export</li></ul><button class="btn btn-primary" onclick="buyPlan('Hunter')">Choose Hunter</button></div><div class="price"><h3>Territory</h3><div class="money">$499 <small>/mo</small></div><ul><li>All live industries · all markets</li><li>Near-real-time high-intent alerts</li><li>90-day history</li><li>CSV export</li><li>Priority expansion features</li></ul><button class="btn btn-secondary" onclick="buyPlan('Territory')">Choose Territory</button></div></div><div class="cta"><div><h2>Start with a free account.</h2><p>Use passwordless sign-in, personalize your industry, save opportunities, then upgrade when you want automated delivery and deeper history.</p></div><form class="capture" id="capture"><input required type="email" id="email" placeholder="you@company.com"/><button>Send sign-in link</button></form></div></div></section>
+</main>
+<footer class="wrap"><div>© 2026 RevenueTrigger • Arizona</div><div>Public-data intelligence • Opportunity values are directional estimates</div></footer>
+
+<div class="modal" id="leadModal"><div class="modal-card"><div class="modal-top"><div><span class="eyebrow">Signal detail</span><h2 id="mTitle" style="margin:12px 0 0"></h2></div><button class="close" onclick="closeModal('leadModal')">×</button></div><div class="detailgrid" id="mGrid"></div><div class="why" id="mWhy"></div><div class="feedback-box" id="mFeedback" style="display:none"><div class="feedback-title">Help RevenueTrigger learn what turns into business.</div><div class="feedback-sub">Your feedback improves ranking quality over time.</div><div class="feedback-row"><button class="feedback-btn" data-feedback="useful" onclick="setLeadFeedback('useful')">Useful</button><button class="feedback-btn negative" data-feedback="not_useful" onclick="setLeadFeedback('not_useful')">Not useful</button></div><div class="feedback-row"><button class="feedback-btn" data-feedback="contacted" onclick="setLeadFeedback('contacted')">Contacted</button><button class="feedback-btn" data-feedback="won" onclick="setLeadFeedback('won')">Won</button><button class="feedback-btn negative" data-feedback="lost" onclick="setLeadFeedback('lost')">Lost</button></div><div class="feedback-state" id="mFeedbackState"></div></div><div class="account-actions"><button class="btn btn-secondary" id="mSave" onclick="toggleCurrentSave()">Save opportunity</button></div></div></div>
+<div class="modal" id="scoreModal"><div class="modal-card"><div class="modal-top"><div><span class="eyebrow">Opportunity scoring</span><h2 style="margin:12px 0 0">How the RevenueTrigger Opportunity Score works.</h2></div><button class="close" onclick="closeModal('scoreModal')">×</button></div>
+<p style="color:#98aaa2;margin:14px 0 0">The RevenueTrigger Opportunity Score ranks each opportunity from 0–100 based on factors like project type, scope, commercial relevance, estimated value, and recency—so you can quickly see which opportunities deserve attention first.</p>
+<div class="score-explainer">
+<div class="score-band hot-band"><strong>80–100 · HOT</strong><p>High-priority opportunity with strong timing, scope and seller-fit signals.</p></div>
+<div class="score-band warm-band"><strong>60–79 · WARM</strong><p>Good opportunity worth active review.</p></div>
+<div class="score-band"><strong>40–59 · WATCH</strong><p>Potential opportunity with weaker scope, timing or commercial relevance.</p></div>
+<div class="score-band"><strong>0–39 · LOW</strong><p>Low-priority activity remains visible rather than being artificially rated warm.</p></div>
+</div>
+<div class="score-rules">
+<div class="score-rule"><b>0–25</b><span>Project / permit type</span></div>
+<div class="score-rule"><b>0–20</b><span>Scope intensity</span></div>
+<div class="score-rule"><b>0–15</b><span>Commercial relevance</span></div>
+<div class="score-rule"><b>0–15</b><span>Permit stage</span></div>
+<div class="score-rule"><b>0–15</b><span>Economic size, using official valuation where available</span></div>
+<div class="score-rule"><b>0–5</b><span>Seller breadth</span></div>
+<div class="score-rule"><b>0–5</b><span>Recency</span></div>
+<div class="score-rule"><b>0 to −20</b><span>Negative adjustments for canceled, expired, low-relevance or limited-scope activity</span></div>
+</div>
+<div class="score-note"><strong>Seller Fit:</strong> trade-specific relevance is calculated separately for HVAC, Electrical, Plumbing, Roofing, Landscaping, Security and Signage.</div>
+<div class="score-note" style="margin-top:10px"><strong>Important:</strong> this is an explainable ranking model, not a prediction of project award or guaranteed spend.</div>
+</div></div>
+
+<div class="modal" id="pipelineModal">
+  <div class="modal-card">
+    <div class="modal-top">
+      <div>
+        <span class="eyebrow">Early Pipeline</span>
+        <h2 id="pTitle" style="margin:12px 0 0">Chandler opportunity</h2>
+      </div>
+      <button class="close" onclick="closeModal('pipelineModal')">×</button>
+    </div>
+    <div class="detail-grid" id="pGrid"></div>
+    <div class="why" id="pWhy"></div>
+  </div>
+</div>
+
+<div class="modal" id="onboardingModal">
+  <div class="modal-card">
+    <div class="modal-top">
+      <div>
+        <span class="eyebrow">Set up your feed</span>
+        <h2 style="margin:12px 0 0">Make RevenueTrigger yours.</h2>
+      </div>
+      <button class="close" onclick="closeModal('onboardingModal')">×</button>
+    </div>
+    <p style="color:#98aaa2;margin-bottom:0">Choose what you sell, where you sell, and how selective you want the feed to be. You can change this later.</p>
+    <div class="onboarding-progress"><span class="active"></span><span class="active"></span><span class="active"></span></div>
+
+    <div class="formrow">
+      <label>What do you sell?</label>
+      <div class="onboarding-grid" id="onboardingIndustries"></div>
+      <div class="meta" id="onboardingIndustryLimit"></div>
+    </div>
+
+    <div class="formrow">
+      <label>Where do you sell?</label>
+      <div class="onboarding-grid" id="onboardingMarkets"></div>
+      <div class="meta" id="onboardingMarketLimit"></div>
+    </div>
+
+    <div class="formrow">
+      <label>Minimum opportunity score</label>
+      <select id="onboardingScore">
+        <option value="40">40+ WATCH — broader discovery</option>
+        <option value="60">60+ WARM — recommended</option>
+        <option value="80">80+ HOT — highest intent only</option>
+      </select>
+      <div class="onboarding-note" id="onboardingAlertNote"></div>
+    </div>
+
+    <div class="onboarding-actions">
+      <button class="btn btn-secondary" onclick="closeModal('onboardingModal');openAccount()">Set up later</button>
+      <button class="btn btn-primary" onclick="completeOnboarding()">Build my feed</button>
+    </div>
+  </div>
+</div>
+<div class="modal" id="signinModal"><div class="modal-card small"><div class="modal-top"><div><img class="modal-brand" src="/assets/revenuetrigger-icon.svg" alt=""><br><span class="eyebrow">Passwordless access</span><h2 style="margin:12px 0 0">Sign in to RevenueTrigger</h2></div><button class="close" onclick="closeModal('signinModal')">×</button></div><p style="color:#98aaa2">We’ll email you a secure one-time link. No password required.</p><form id="signinForm"><div class="formrow"><label>Email</label><input id="signinEmail" required type="email" placeholder="you@company.com"></div><button class="btn btn-primary" style="width:100%;margin-top:14px">Send sign-in link</button></form><div class="notice" id="signinNotice" style="display:none"></div></div></div>
+<div class="modal" id="accountModal"><div class="modal-card"><div class="modal-top"><div><img class="modal-brand" src="/assets/revenuetrigger-icon.svg" alt=""><br><span class="eyebrow">Customer account</span><h2 style="margin:12px 0 0">Your RevenueTrigger</h2></div><button class="close" onclick="closeModal('accountModal')">×</button></div><div id="accountLoggedOut"><p style="color:#9aaea5">Sign in to personalize signals, save opportunities, record outcomes and manage billing.</p><button class="btn btn-primary" onclick="closeModal('accountModal');openSignin()">Sign in</button></div><div id="accountLoggedIn" style="display:none"><div class="account-card"><div class="account-stat"><span>Email</span><strong id="aEmail"></strong></div><div class="account-stat"><span>Plan</span><strong id="aPlan"></strong></div><div class="account-stat"><span>Subscription</span><strong id="aStatus"></strong></div><div class="account-stat"><span>Saved leads</span><strong id="aSaved"></strong></div></div><div class="formrow"><label>Industries</label><div class="checkgrid" id="industryChecks"></div><div class="meta" id="industryLimitText"></div></div><div class="formrow"><label>Markets</label><div class="checkgrid" id="marketChecks"></div><div class="meta" id="marketLimitText"></div></div><div class="formrow"><label>Minimum opportunity score</label><select id="prefScore"><option value="40">40+ WATCH</option><option value="60">60+ WARM</option><option value="80">80+ HOT</option></select></div><div class="formrow"><label>Alert delivery</label><input id="prefAlert" disabled></div><div class="account-actions"><button class="btn btn-primary" onclick="savePreferences()">Save preferences</button><button class="btn btn-secondary" onclick="exportCsv()" id="exportBtn">Export CSV</button><button class="btn btn-secondary" onclick="manageBilling()" id="billingBtn">Manage billing</button><button class="btn btn-danger" onclick="logout()">Sign out</button></div><div class="notice" id="accountNotice">Your plan controls industry count, history depth, alert cadence and exports.</div></div></div></div>
+<div class="toast" id="toast"></div>
+<script>
+const CONFIG={apiBase:localStorage.getItem('revenuetrigger_api')||localStorage.getItem('signalhound_api')||'https://api.revenuetrigger.ai/api'};
+const INDUSTRIES=['Commercial services','HVAC','Electrical','Plumbing','Roofing','Landscaping','Security','Signage'];
+const LIVE_MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa'];
+const SAMPLE=[
+{id:'demo-1',name:'Restaurant tenant improvement',address:'Central Phoenix',date:Date.now()-14400000,company:'Public permit signal',scope:'Commercial interior build-out with mechanical, electrical, plumbing and signage scope.',score:94,categories:['HVAC','Electrical','Plumbing','Signage','Commercial services'],value:38000,temperature:'HOT',permit:'DEMO-001',source:'Demo fallback'},
+{id:'demo-2',name:'New commercial building',address:'North Phoenix',date:Date.now()-46800000,company:'Public permit signal',scope:'New commercial construction creates multiple downstream service needs.',score:90,categories:['Electrical','HVAC','Security','Landscaping','Commercial services'],value:65000,temperature:'HOT',permit:'DEMO-002',source:'Demo fallback'}
+];
+let leads=[],user=null,currentLead=null,savedOnly=false;
+let permitCompanyFilter='listed',pipelineCompanyFilter='listed';
+let heroRadarEntries=[],heroRadarSelected=0;
+const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
+const THEME_KEY='revenuetrigger_theme';
+function currentTheme(){return document.documentElement.getAttribute('data-theme')==='light'?'light':'dark'}
+function syncThemeUI(){
+  const light=currentTheme()==='light';
+  const b=$('#themeToggle'),i=$('#themeIcon'),label=$('#themeLabel'),shortLabel=$('#themeLabelShort');
+  if(i)i.textContent=light?'☾':'☀';
+  if(label)label.textContent=light?'Dark mode':'Light mode';
+  if(shortLabel)shortLabel.textContent=light?'Dark':'Light';
+  if(b){
+    b.setAttribute('aria-label',light?'Switch to dark theme':'Switch to light theme');
+    b.title=light?'Switch to dark theme':'Switch to light theme';
+  }
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.setAttribute('content',light?'#f7faf7':'#020806');
+}
+function setTheme(theme){
+  const next=theme==='light'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  try{localStorage.setItem(THEME_KEY,next)}catch(e){}
+  syncThemeUI();
+}
+function toggleTheme(){setTheme(currentTheme()==='light'?'dark':'light')}
+
+function initLightMouseGlow(){
+  if(!window.matchMedia('(pointer:fine)').matches||window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  const setGlow=(x,y)=>{document.body.style.setProperty('--mouse-x',x);document.body.style.setProperty('--mouse-y',y)};
+  setGlow('72vw','14vh');
+  window.addEventListener('pointermove',e=>{
+    if(currentTheme()!=='light')return;
+    setGlow(e.clientX+'px',e.clientY+'px');
+  },{passive:true});
+  window.addEventListener('pointerleave',()=>setGlow('72vw','14vh'));
+}
+initLightMouseGlow();
+
+syncThemeUI();
+function esc(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function money(n){return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0,notation:n>=1e6?'compact':'standard'}).format(n||0)}
+function age(ts){const h=Math.max(0,Math.round((Date.now()-new Date(ts).getTime())/36e5));return h<1?'just now':h<24?`${h}h ago`:`${Math.round(h/24)}d ago`}
+function token(){return localStorage.getItem('revenuetrigger_session')||localStorage.getItem('signalhound_session')||''}
+function authHeaders(extra={}){const t=token();return {...extra,...(t?{Authorization:`Bearer ${t}`}:{})}}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.style.display='block';clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.style.display='none',3500)}
+function openModal(id){$('#'+id).classList.add('open')}function closeModal(id){$('#'+id).classList.remove('open')}
+function openSignin(){openModal('signinModal');setTimeout(()=>$('#signinEmail').focus(),50)}
+async function openAccount(){renderAccount();await syncBilling();openModal('accountModal')}
+function planActive(){return user&&['active','trialing'].includes(user.subscriptionStatus)?user.plan:'Beta'}
+function render(){
+  const market=$('#market').value,industry=$('#industry').value,min=+$(`#minScore`).value,q=$('#search').value.toLowerCase(),saved=$('#savedFilter').value==='saved',sort=$('#sortFeed')?.value||'score';
+  const filtered=leads.filter(x=>(market==='all'||(x.market||'Phoenix')===market)&&(industry==='all'||x.categories?.includes(industry))&&x.score>=min&&(!saved||x.saved)&&(permitCompanyFilter==='listed'?Boolean(String(x.company||'').trim()):!String(x.company||'').trim())&&(`${x.name} ${x.address} ${x.company} ${x.scope}`.toLowerCase().includes(q)));
+  filtered.sort((a,b)=>{
+    if(sort==='newest')return (new Date(b.date).getTime()||0)-(new Date(a.date).getTime()||0);
+    if(sort==='oldest')return (new Date(a.date).getTime()||0)-(new Date(b.date).getTime()||0);
+    return (Number(b.score)||0)-(Number(a.score)||0)||((new Date(b.date).getTime()||0)-(new Date(a.date).getTime()||0));
+  });
+  $('#leadList').innerHTML=filtered.length?filtered.map(x=>`<div class="lead"><div class="score">${x.score}</div><div class="lead-main"><div class="leadname">${esc(x.name||'Permit activity')}</div><div class="meta">${esc(x.address||'Phoenix, AZ')} • ${age(x.date)}</div></div><div class="permit-company">${x.company?esc(x.company):'<span class="company-missing">Not listed</span>'}</div><div class="chips lead-seller">${(x.categories||[]).slice(0,4).map(c=>`<span class="chip">${esc(c)}</span>`).join('')}</div><div class="value lead-value">${money(x.value)}</div><div class="lead-temperature ${x.temperature==='HOT'?'hot':x.temperature==='WARM'?'warm':x.temperature==='WATCH'?'watch':'low'}">${esc(x.temperature||'LOW')}</div><div class="row-actions lead-actions">${user?`<button class="save ${x.saved?'active':''}" onclick="toggleSave('${esc(x.id)}')">${x.saved?'★':'☆'}</button>`:''}<button class="view" onclick="openLead('${esc(x.id)}')">View</button></div></div>`).join(''):'<div class="empty">No signals match these filters.</div>';
+  $('#kSignals').textContent=leads.length;$('#kHot').textContent=leads.filter(x=>x.score>=85).length;$('#kValue').textContent=money(leads.reduce((s,x)=>s+(x.value||0),0));
+  syncHeroRadar();
+}
+
+let currentFeedback={relevance:null,outcome:null};
+
+function renderLeadFeedback(){
+  const box=$('#mFeedback');
+  if(!box)return;
+  box.style.display=user?'block':'none';
+  if(!user)return;
+
+  $$('#mFeedback [data-feedback]').forEach(btn=>btn.classList.remove('active'));
+  if(currentFeedback.relevance){
+    const b=$(`#mFeedback [data-feedback="${currentFeedback.relevance}"]`);
+    if(b)b.classList.add('active');
+  }
+  if(currentFeedback.outcome){
+    const b=$(`#mFeedback [data-feedback="${currentFeedback.outcome}"]`);
+    if(b)b.classList.add('active');
+  }
+
+  const parts=[];
+  if(currentFeedback.relevance)parts.push(currentFeedback.relevance==='useful'?'Marked useful':'Marked not useful');
+  if(currentFeedback.outcome)parts.push(currentFeedback.outcome==='contacted'?'Contacted':currentFeedback.outcome==='won'?'Won':'Lost');
+  $('#mFeedbackState').textContent=parts.length?parts.join(' • '):'No feedback yet.';
+}
+
+async function loadLeadFeedback(){
+  currentFeedback={relevance:null,outcome:null};
+  renderLeadFeedback();
+  if(!user||!currentLead)return;
+  try{
+    const r=await fetch(`${CONFIG.apiBase}/feedback?leadId=${encodeURIComponent(currentLead.id)}`,{headers:authHeaders()});
+    if(!r.ok)return;
+    const d=await r.json();
+    currentFeedback=d.feedback||currentFeedback;
+    renderLeadFeedback();
+  }catch{}
+}
+
+async function setLeadFeedback(action){
+  if(!user){openSignin();return}
+  if(!currentLead)return;
+  try{
+    const r=await fetch(`${CONFIG.apiBase}/feedback`,{
+      method:'POST',
+      headers:authHeaders({'content-type':'application/json'}),
+      body:JSON.stringify({leadId:currentLead.id,action})
+    });
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.error||'Could not save feedback');
+    currentFeedback=d.feedback||currentFeedback;
+    renderLeadFeedback();
+    const labels={useful:'Marked useful.',not_useful:'Marked not useful.',contacted:'Marked contacted.',won:'Marked won.',lost:'Marked lost.'};
+    toast(labels[action]||'Feedback saved.');
+  }catch(e){
+    toast(e.message||'Could not save feedback.');
+  }
+}
+
+function openLead(id){
+  const x=leads.find(v=>String(v.id)===String(id));if(!x)return;currentLead=x;
+  const fits=Object.entries(x.sellerFit||{}).sort((a,b)=>b[1]-a[1]).filter(([k,v])=>v>=20).slice(0,5);
+  const fitText=fits.length?fits.map(([k,v])=>`${k} ${v}`).join(' • '):(x.categories||[]).join(', ');
+  const conf=Number(x.dataConfidence?.score||0);
+  const checked=x.checkedAt?new Date(x.checkedAt).toLocaleString():'Current feed refresh';
+  $('#mTitle').textContent=x.name||'Permit opportunity';
+  $('#mGrid').innerHTML=[
+    ["Score",x.score+' / 100'],['Data confidence',conf?conf+'%':'—'],['Temperature',x.temperature||'—'],
+    ['Estimated service opportunity',money(x.value)],['Official permit valuation',x.officialPermitValue?money(x.officialPermitValue):'Not published'],
+    ['Market',x.market||'Phoenix'],['Permit',x.permit||'—'],['Permit status',x.permitStatus||x.permit_status||'—'],
+    ['Address',x.address||((x.market||'Phoenix')+', AZ')],['Company on permit',x.company||'—'],['Detected',new Date(x.date).toLocaleString()],
+    ['Seller fit',fitText],['Source',x.source||'Municipal public permit data'],['Last checked',checked]
+  ].map(([a,b])=>`<div class="detail"><small>${esc(a)}</small><strong>${esc(b)}</strong></div>`).join('');
+
+  const b=x.scoreBreakdown||{};
+  const lines=[
+    ['Project stage',b.projectStage],['Recency',b.recency],['Project value',b.projectValue],['Trade relevance',b.tradeRelevance],
+    ['Project type',b.projectType],['Pre-permit intelligence',b.prePermit],['Company context',b.companyBehavior]
+  ].filter(([,v])=>v!==undefined).map(([k,v])=>`${esc(k)}: <strong>+${esc(v)}</strong>`).join('<br>');
+
+  const life=x.lifecycle||{stage:'APPLICATION',index:2,steps:['PRE-TECH','PLANNING','APPLICATION','PERMIT ISSUED','CONSTRUCTION','COMPLETE']};
+  const lifecycle=`<div class="lifecycle"><div class="lifecycle-title">Project lifecycle · You are here: ${esc(life.stage)}</div><div class="lifecycle-row">${life.steps.map((s,i)=>`<div class="life-step ${i<life.index?'done':''} ${i===life.index?'current':''}">${esc(s)}</div>`).join('')}</div></div>`;
+  const confReasons=(x.dataConfidence?.reasons||[]).slice(0,4).join(' • ');
+  const confidence=conf?`<div style="margin-top:14px"><strong>Data confidence</strong><div class="confidence-meter"><div class="confidence-track"><div class="confidence-fill" style="width:${Math.min(100,conf)}%"></div></div><b>${conf}%</b></div>${confReasons?`<div class="freshness">${esc(confReasons)}</div>`:''}</div>`:'';
+  const cluster=x.relatedPermitCount>1?`<div class="cluster-note"><strong>Project cluster:</strong> ${x.relatedPermitCount} related permit records detected at this location and grouped into this opportunity.</div>`:'';
+  const ai=x.actionIntelligence||{};
+  const actionGrid=`<div class="action-grid">
+    <div class="action-card accent"><small>First-Mover</small><strong>${ai.firstMover??'—'}</strong></div>
+    <div class="action-card"><small>Opportunity window</small><strong>${esc(ai.opportunityWindow?.label||'—')}</strong><span class="action-reason">${esc(ai.opportunityWindow?.detail||'')}</span></div>
+    <div class="action-card"><small>Buying window</small><strong>${esc(ai.buyingWindow?.label||'—')}</strong><span class="action-reason">${esc(ai.buyingWindow?.detail||'')}</span></div>
+    <div class="action-card"><small>Momentum</small><strong>${esc(ai.momentum?.label||'—')}</strong><span class="action-reason">${esc(ai.velocity?.label||'')} ${esc(ai.velocity?.detail||'')}</span></div>
+  </div>`;
+  const whyNow=ai.whyNow?`<div class="action-callout"><b>WHY NOW</b><span class="action-reason">${esc(ai.whyNow)}</span></div>`:'';
+  const nextAction=ai.nextBestAction?`<div class="action-callout"><b>RECOMMENDED ACTION — ${esc(ai.nextBestAction.action)}</b><span class="action-reason">${esc(ai.nextBestAction.reason)}</span></div>`:'';
+
+  $('#mWhy').innerHTML=`<strong>Why RevenueTrigger flagged it:</strong><br>${esc(x.scope||'Recent permit activity suggests an upcoming spend event.')}<br>${actionGrid}${whyNow}${nextAction}<br>${lines?`<strong>Score breakdown</strong><br>${lines}`:''}${confidence}${lifecycle}${cluster}<br><span style="color:#8fa59b">Action Intelligence is a RevenueTrigger inference from observed public activity, not a guarantee of vendor selection or project timing.</span>`;
+  $('#mSave').style.display=user?'inline-block':'none';$('#mSave').textContent=x.saved?'★ Saved':'☆ Save opportunity';
+  currentFeedback={relevance:null,outcome:null};renderLeadFeedback();openModal('leadModal');loadLeadFeedback()
+}
+
+let competitorData=[];
+
+function moneyCompact(n){
+  n=Number(n||0);
+  if(!n)return '—';
+  if(n>=1000000)return '$'+(n/1000000).toFixed(n>=10000000?0:1)+'M';
+  if(n>=1000)return '$'+Math.round(n/1000)+'K';
+  return '$'+Math.round(n).toLocaleString();
+}
+
+function renderCompetitors(){
+  const el=$('#competitorList');
+  if(!el)return;
+  if(!user){
+    el.innerHTML='<div class="competitor-empty">Sign in to explore contractor activity across RevenueTrigger’s live permit markets.</div>';
+    $('#competitorNote').textContent='Competitor Intelligence is available to signed-in RevenueTrigger users.';
+    return;
+  }
+  if(!competitorData.length){
+    el.innerHTML='<div class="competitor-empty">No matching contractor activity found for these filters.</div>';
+    return;
+  }
+
+  el.innerHTML=competitorData.map((c,i)=>`
+    <div class="competitor-row" id="competitorRow${i}">
+      <div>
+        <div class="competitor-name">${esc(c.company)}</div>
+        <div class="competitor-sub">${esc((c.markets||[]).join(' • '))} · Latest ${c.latestActivity?new Date(c.latestActivity).toLocaleDateString():'—'}</div>
+      </div>
+      <div class="competitor-stat competitor-primary-stat"><small>Permits</small><strong>${c.permitCount||0}</strong></div>
+      <div class="competitor-stat"><small>Reported value</small><strong class="competitor-value">${moneyCompact(c.reportedValue)}</strong></div>
+      <div class="competitor-stat hide-tablet"><small>Markets</small><strong>${c.marketCount||0}</strong></div>
+      <div class="competitor-stat hide-tablet"><small>Avg score</small><strong>${Math.round(c.avgScore||0)}</strong></div>
+      <button class="view" onclick="toggleCompetitor(${i})">View</button>
+      <div class="competitor-projects">
+        ${(c.recentProjects||[]).map(p=>`
+          <div class="competitor-project">
+            <div><b>${esc(p.name||'Permit activity')}</b><br><span>${esc(p.address||'Address not listed')}</span></div>
+            <span>${esc(p.market||'')} · ${p.date?new Date(p.date).toLocaleDateString():'—'}</span>
+            <span style="text-align:right">${p.officialValue?moneyCompact(p.officialValue):'Value not reported'}</span>
+          </div>`).join('') || '<div class="competitor-empty">No recent projects available.</div>'}
+      </div>
+    </div>`).join('');
+}
+
+function toggleCompetitor(i){
+  $('#competitorRow'+i)?.classList.toggle('open');
+}
+
+async function loadCompetitors(){
+  if(!user){
+    renderCompetitors();
+    openSignin();
+    return;
+  }
+  const q=$('#competitorSearch')?.value.trim()||'';
+  const market=$('#competitorMarket')?.value||'all';
+  const days=$('#competitorDays')?.value||'90';
+
+  $('#competitorNote').textContent='Loading competitor activity…';
+  $('#competitorList').innerHTML='<div class="competitor-empty">Analyzing contractor activity…</div>';
+
+  try{
+    const r=await fetch(`${CONFIG.apiBase}/competitors?days=${encodeURIComponent(days)}&market=${encodeURIComponent(market)}&q=${encodeURIComponent(q)}&limit=30`,{headers:authHeaders()});
+    const d=await r.json().catch(()=>({}));
+    if(r.status===401){user=null;updateUserUI();renderCompetitors();return}
+    if(!r.ok)throw new Error(d.error||'Could not load competitor intelligence.');
+    competitorData=d.companies||[];
+    $('#competitorNote').textContent=`${competitorData.length} contractor${competitorData.length===1?'':'s'} found · ${days}-day activity window`;
+    renderCompetitors();
+  }catch(e){
+    competitorData=[];
+    $('#competitorNote').textContent=e.message||'Could not load competitor intelligence.';
+    renderCompetitors();
+  }
+}
+
+
+async function loadChanges(){
+  const msg=$('#changedMessage');if(!msg)return;
+  if(!user){
+    $('#chgOpp').textContent='—';$('#chgHot').textContent='—';$('#chgMajor').textContent='—';$('#chgComp').textContent='—';
+    msg.textContent='Sign in to see the activity that deserves your attention today.';
+    $('#changedMoves').innerHTML='';
+    return;
+  }
+  try{
+    const r=await fetch(`${CONFIG.apiBase}/changes`,{headers:authHeaders()});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.error||'Could not load changes');
+    const s=d.summary||{};
+    $('#chgOpp').textContent=s.opportunities??0;$('#chgHot').textContent=s.hot??0;$('#chgMajor').textContent=s.majorProjects??0;$('#chgComp').textContent=s.competitorMoves??0;
+    msg.textContent=s.opportunities?`${s.opportunities} matched opportunities changed in the last 24 hours.`:'No new matched opportunities in the last 24 hours.';
+    $('#changedMoves').innerHTML=(d.competitorMoves||[]).slice(0,2).map(x=>`<div class="watch-move">• ${esc(x.title)}</div>`).join('');
+  }catch(e){
+    msg.textContent='Could not load today’s change summary.';
+  }
+}
+async function loadPublic(){try{const selected=$('#market')?.value||'all';const marketParam=selected!=='all'?`&markets=${encodeURIComponent(selected)}`:'';const limit=selected!=='all'?200:120;const r=await fetch(`${CONFIG.apiBase}/leads?days=7&limit=${limit}${marketParam}`);if(!r.ok)throw new Error();const d=await r.json();leads=d.leads||[];if(!leads.length&&selected==='all')throw new Error();$('#feedStatus').textContent=`Live • ${leads.length} ${selected==='all'?'Arizona':selected} permit signals`;$('#kFresh').textContent='Live';}catch{leads=SAMPLE;$('#feedStatus').textContent='Demo mode • API unavailable';$('#kFresh').textContent='Demo';}render()}
+async function loadDashboard(){if(!user)return loadPublic();try{const r=await fetch(`${CONFIG.apiBase}/dashboard?limit=200`,{headers:authHeaders()});if(r.status===401){localStorage.removeItem('revenuetrigger_session');localStorage.removeItem('signalhound_session');user=null;updateUserUI();return loadPublic()}if(!r.ok)throw new Error();const d=await r.json();leads=d.leads||[];$('#feedStatus').textContent=`Personalized • ${leads.length} matched signals`;$('#kFresh').textContent=planActive();$('#feedExplainer').textContent=`Your ${planActive()} feed is filtered to your saved industry preferences and plan history.`;render();}catch(e){toast('Could not load personalized feed.');loadPublic()}}
+async function loadMe(){if(!token()){user=null;updateUserUI();return false}try{const r=await fetch(`${CONFIG.apiBase}/me`,{headers:authHeaders()});if(!r.ok)throw new Error();user=(await r.json()).user;updateUserUI();return true}catch{localStorage.removeItem('revenuetrigger_session');localStorage.removeItem('signalhound_session');user=null;updateUserUI();return false}}
+function updateUserUI(){if(user){$('#accountBtn').textContent=user.email.split('@')[0];$('#accountBtn').classList.add('live');$('#memberbar').classList.add('show');$('#memberEmail').textContent=user.email;$('#memberPlan').textContent=planActive();$('#savedCount').textContent=user.savedCount||0;$('#savedFilter').style.display='inline-block';$('#exportTop').style.display=user.entitlements?.export&&planActive()!=='Beta'?'inline-block':'none'}else{$('#accountBtn').textContent='Sign in';$('#accountBtn').classList.remove('live');$('#memberbar').classList.remove('show');$('#savedFilter').style.display='none';$('#savedFilter').value='all'}}
+function renderAccount(){if(!user){$('#accountLoggedOut').style.display='block';$('#accountLoggedIn').style.display='none';return}$('#accountLoggedOut').style.display='none';$('#accountLoggedIn').style.display='block';$('#aEmail').textContent=user.email;$('#aPlan').textContent=planActive();$('#aStatus').textContent=user.subscriptionStatus||'inactive';$('#aSaved').textContent=user.savedCount||0;$('#prefScore').value=String(user.preferences?.minScore||70);$('#prefAlert').value=user.entitlements?.alert||'none';const limit=user.entitlements?.industryLimit||1;$('#industryLimitText').textContent=`Your ${planActive()} plan allows ${limit} industr${limit===1?'y':'ies'}.`;$('#industryChecks').innerHTML=INDUSTRIES.map(i=>`<label class="check"><input type="checkbox" value="${esc(i)}" ${(user.preferences?.industries||[]).includes(i)?'checked':''}>${esc(i)}</label>`).join('');const marketLimit=user.entitlements?.marketLimit||1;$('#marketLimitText').textContent=`Your ${planActive()} plan allows ${marketLimit} market${marketLimit===1?'':'s'}.`;$('#marketChecks').innerHTML=LIVE_MARKETS.map(m=>`<label class="check"><input type="checkbox" value="${esc(m)}" ${(user.preferences?.markets||['Phoenix']).includes(m)?'checked':''}>${esc(m)}</label>`).join('');$('#exportBtn').disabled=!(user.entitlements?.export&&planActive()!=='Beta');$('#billingBtn').textContent=user.subscriptionStatus==='active'||user.subscriptionStatus==='trialing'?'Manage billing':'Upgrade plan'}
+
+function renderOnboarding(){
+  if(!user)return;
+  const industryLimit=user.entitlements?.industryLimit||1;
+  const marketLimit=user.entitlements?.marketLimit||1;
+  const selectedIndustries=user.preferences?.industries||['Commercial services'];
+  const selectedMarkets=user.preferences?.markets||['Phoenix'];
+
+  $('#onboardingIndustries').innerHTML=INDUSTRIES.map(i=>`
+    <label class="onboarding-option">
+      <input type="checkbox" value="${esc(i)}" ${selectedIndustries.includes(i)?'checked':''}>
+      <span>${esc(i)}</span>
+    </label>`).join('');
+
+  $('#onboardingMarkets').innerHTML=LIVE_MARKETS.map(m=>`
+    <label class="onboarding-option">
+      <input type="checkbox" value="${esc(m)}" ${selectedMarkets.includes(m)?'checked':''}>
+      <span>${esc(m)}</span>
+    </label>`).join('');
+
+  $('#onboardingIndustryLimit').textContent=`Your ${planActive()} plan allows ${industryLimit} industr${industryLimit===1?'y':'ies'}.`;
+  $('#onboardingMarketLimit').textContent=`Your ${planActive()} plan allows ${marketLimit} market${marketLimit===1?'':'s'}.`;
+  $('#onboardingScore').value=String(user.preferences?.minScore||60);
+  $('#onboardingAlertNote').textContent=planActive()==='Beta'
+    ? 'Beta accounts use the personalized dashboard. Automated alert delivery begins with a paid plan.'
+    : `Your ${planActive()} plan includes ${user.entitlements?.alert||'plan-based'} alert delivery.`;
+}
+
+function maybeOpenOnboarding(){
+  if(!user||user.onboardingComplete)return;
+  renderOnboarding();
+  openModal('onboardingModal');
+}
+
+async function completeOnboarding(){
+  if(!user)return;
+
+  const industryLimit=user.entitlements?.industryLimit||1;
+  const marketLimit=user.entitlements?.marketLimit||1;
+  const industries=$$('#onboardingIndustries input:checked').map(x=>x.value);
+  const markets=$$('#onboardingMarkets input:checked').map(x=>x.value);
+
+  if(!industries.length){toast('Choose at least one industry.');return}
+  if(industries.length>industryLimit){toast(`Your plan allows ${industryLimit} industr${industryLimit===1?'y':'ies'}.`);return}
+  if(!markets.length){toast('Choose at least one market.');return}
+  if(markets.length>marketLimit){toast(`Your plan allows ${marketLimit} market${marketLimit===1?'':'s'}.`);return}
+
+  try{
+    const r=await fetch(`${CONFIG.apiBase}/preferences`,{
+      method:'POST',
+      headers:authHeaders({'content-type':'application/json'}),
+      body:JSON.stringify({
+        industries,
+        markets,
+        minScore:+$('#onboardingScore').value
+      })
+    });
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.error||'Could not build your feed.');
+
+    user=d.user;
+    updateUserUI();
+    renderAccount();
+    closeModal('onboardingModal');
+    toast('Your personalized feed is ready.');
+    await loadDashboard();
+    document.querySelector('#signals')?.scrollIntoView({behavior:'smooth'});
+  }catch(e){
+    toast(e.message||'Could not build your feed.');
+  }
+}
+
+async function requestSignin(email){const r=await fetch(`${CONFIG.apiBase}/auth/request`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Could not send link');return d}
+async function verifyMagic(raw){const r=await fetch(`${CONFIG.apiBase}/auth/verify`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token:raw})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Sign-in link failed');localStorage.setItem('revenuetrigger_session',d.session);localStorage.removeItem('signalhound_session');user=d.user;history.replaceState({},'',location.pathname);updateUserUI();toast('Signed in.');await loadDashboard();maybeOpenOnboarding();loadCompetitors();loadChanges();const pending=localStorage.getItem('revenuetrigger_pending_plan')||localStorage.getItem('signalhound_pending_plan');if(pending){localStorage.removeItem('revenuetrigger_pending_plan');localStorage.removeItem('signalhound_pending_plan');setTimeout(()=>buyPlan(pending),300)}}
+$('#signinForm').addEventListener('submit',async e=>{e.preventDefault();const email=$('#signinEmail').value;$('#signinNotice').style.display='block';$('#signinNotice').textContent='Sending secure link…';try{const d=await requestSignin(email);if(d.dev&&d.magicLink){$('#signinNotice').innerHTML=`Development mode is enabled. <a style="color:#2aee61" href="${esc(d.magicLink)}">Open the sign-in link</a>.`}else $('#signinNotice').textContent='Check your email. The link expires in 15 minutes.'}catch(err){$('#signinNotice').textContent=err.message}});
+$('#capture').addEventListener('submit',async e=>{e.preventDefault();const email=$('#email').value;try{await requestSignin(email);toast('Sign-in link sent. Check your email.');$('#signinEmail').value=email;openSignin()}catch(err){toast(err.message)}});
+async function toggleSave(id){if(!user){openSignin();return}const x=leads.find(v=>String(v.id)===String(id));if(!x)return;const next=!x.saved;const r=await fetch(`${CONFIG.apiBase}/saved`,{method:'POST',headers:authHeaders({'content-type':'application/json'}),body:JSON.stringify({leadId:id,saved:next})});if(!r.ok){toast('Could not update saved lead.');return}x.saved=next;user.savedCount=Math.max(0,(user.savedCount||0)+(next?1:-1));updateUserUI();render();if(currentLead&&String(currentLead.id)===String(id)){$('#mSave').textContent=next?'★ Saved':'☆ Save opportunity'}toast(next?'Opportunity saved.':'Removed from saved.')}
+function toggleCurrentSave(){if(currentLead)toggleSave(currentLead.id)}
+function showSavedOnly(){if(!user)return openSignin();$('#savedFilter').value='saved';savedOnly=true;document.querySelector('#signals').scrollIntoView({behavior:'smooth'});render()}
+async function savePreferences(){if(!user)return;const limit=user.entitlements?.industryLimit||1;let industries=$$('#industryChecks input:checked').map(x=>x.value);if(industries.length>limit){toast(`Your plan allows ${limit} industr${limit===1?'y':'ies'}.`);return}if(!industries.length){toast('Choose at least one industry.');return}const marketLimit=user.entitlements?.marketLimit||1;let markets=$$('#marketChecks input:checked').map(x=>x.value);if(markets.length>marketLimit){toast(`Your plan allows ${marketLimit} market${marketLimit===1?'':'s'}.`);return}if(!markets.length){toast('Choose at least one market.');return}const r=await fetch(`${CONFIG.apiBase}/preferences`,{method:'POST',headers:authHeaders({'content-type':'application/json'}),body:JSON.stringify({industries,markets,minScore:+$('#prefScore').value})});const d=await r.json().catch(()=>({}));if(!r.ok){toast(d.error||'Could not save preferences.');return}user=d.user;updateUserUI();renderAccount();closeModal('accountModal');toast('Preferences saved.');loadDashboard();loadChanges()}
+async function buyPlan(plan){if(!user){localStorage.setItem('revenuetrigger_pending_plan',plan);openSignin();toast(`Sign in first to choose ${plan}.`);return}try{const r=await fetch(`${CONFIG.apiBase}/billing/checkout`,{method:'POST',headers:authHeaders({'content-type':'application/json'}),body:JSON.stringify({plan})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Checkout unavailable');location.href=d.url}catch(err){toast(err.message)}}
+async function syncBilling(){
+  if(!user)return null;
+  try{
+    const r=await fetch(`${CONFIG.apiBase}/billing/sync`,{method:'POST',headers:authHeaders()});
+    const d=await r.json().catch(()=>({}));
+    if(r.ok&&d.user){
+      user=d.user;
+      updateUserUI();
+      renderAccount();
+      return user;
+    }
+  }catch(e){}
+  return null;
+}
+async function manageBilling(){if(!user)return;if(!['active','trialing','past_due'].includes(user.subscriptionStatus)){closeModal('accountModal');document.querySelector('#pricing').scrollIntoView({behavior:'smooth'});return}try{const r=await fetch(`${CONFIG.apiBase}/billing/portal`,{method:'POST',headers:authHeaders()});const d=await r.json();if(!r.ok)throw new Error(d.error||'Billing portal unavailable');location.href=d.url}catch(err){toast(err.message)}}
+async function exportCsv(){if(!user){openSignin();return}if(!(user.entitlements?.export&&planActive()!=='Beta')){toast('CSV export is available on Hunter and Territory.');return}const r=await fetch(`${CONFIG.apiBase}/export.csv`,{headers:authHeaders()});if(!r.ok){const d=await r.json().catch(()=>({}));toast(d.error||'Export failed');return}const blob=await r.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='revenuetrigger-leads.csv';a.click();URL.revokeObjectURL(url)}
+async function logout(){try{await fetch(`${CONFIG.apiBase}/logout`,{method:'POST',headers:authHeaders()})}catch{}localStorage.removeItem('revenuetrigger_session');localStorage.removeItem('signalhound_session');user=null;closeModal('accountModal');updateUserUI();toast('Signed out.');loadPublic()}
+
+// Interactive hero radar: inspect actual entries from the existing feed. Demo entries are labeled explicitly.
+function selectHeroRadar(index){
+  if(!heroRadarEntries.length)return;
+  heroRadarSelected=Math.max(0,Math.min(index,heroRadarEntries.length-1));
+  const entry=heroRadarEntries[heroRadarSelected];
+  const demo=$('#feedStatus').textContent.toLowerCase().includes('demo');
+  $('#heroSignalMode').textContent=demo?'DEMO PREVIEW · SAMPLE SIGNAL':user?`PERSONALIZED · ${(entry.market||'ARIZONA').toUpperCase()} PERMIT`:`${(entry.market||'ARIZONA').toUpperCase()} PERMIT · PUBLIC SIGNAL`;
+  $('#heroSignalIndex').textContent=String(heroRadarSelected+1).padStart(2,'0')+' / '+String(heroRadarEntries.length).padStart(2,'0');
+  $('#heroSignalTitle').textContent=entry.name||`${entry.market||'Arizona'} permit activity`;
+  $('#heroSignalLocation').textContent=(entry.address||'Phoenix, AZ')+' · '+age(entry.date);
+  $('#heroSignalScore').textContent=entry.score??'—';
+  $('#heroSignalValue').textContent=money(entry.value);
+  $('#heroSignalExplore').disabled=false;
+  $$('.radar-node').forEach((node,i)=>node.classList.toggle('selected',i===heroRadarSelected));
+}
+function syncHeroRadar(){
+  if(!$('#heroRadar'))return;
+  heroRadarEntries=[...leads].sort((a,b)=>(Number(b.score)||0)-(Number(a.score)||0)).slice(0,3);
+  const demo=$('#feedStatus').textContent.toLowerCase().includes('demo');
+  $('#heroRadarState').textContent=demo?'DEMO PREVIEW':'HOURLY LIVE FEED';
+  $('#heroRadarFoot').textContent=demo?'Preview only · API unavailable':heroRadarEntries.length+' ranked '+(heroRadarEntries.length===1?'signal':'signals')+' ready';
+  $$('.radar-node').forEach((node,i)=>{
+    node.hidden=!heroRadarEntries[i];node.disabled=!heroRadarEntries[i];
+    if(heroRadarEntries[i])node.setAttribute('aria-label','Preview signal: '+(heroRadarEntries[i].name||'Arizona permit'));
+  });
+  if(!heroRadarEntries.length){
+    $('#heroSignalTitle').textContent='No matching signals in this feed';
+    $('#heroSignalLocation').textContent='Check back after the next hourly scan.';
+    $('#heroSignalScore').textContent='—';$('#heroSignalValue').textContent='—';
+    $('#heroSignalExplore').disabled=true;
+    return;
+  }
+  selectHeroRadar(heroRadarSelected);
+}
+$$('.radar-node').forEach(node=>{
+  const pick=()=>selectHeroRadar(Number(node.dataset.radarIndex));
+  node.addEventListener('click',pick);
+  node.addEventListener('mouseenter',pick);
+  node.addEventListener('focus',pick);
+});
+$('#heroSignalExplore').addEventListener('click',()=>{
+  const selected=heroRadarEntries[heroRadarSelected];if(selected)openLead(selected.id);
+});
+// Pointer spotlight and subtle logo parallax only on fine-pointer devices.
+if(window.matchMedia('(pointer:fine)').matches&&!window.matchMedia('(prefers-reduced-motion:reduce)').matches){
+  const consoleEl=$('#heroRadar'),centerEl=$('#radarCenter');
+  consoleEl.addEventListener('pointermove',e=>{
+    const r=consoleEl.getBoundingClientRect();
+    const xp=Math.max(0,Math.min(100,((e.clientX-r.left)/r.width)*100));
+    const yp=Math.max(0,Math.min(100,((e.clientY-r.top)/r.height)*100));
+    consoleEl.style.setProperty('--px',xp+'%');consoleEl.style.setProperty('--py',yp+'%');
+    centerEl.style.transform='translate3d('+((xp-50)*.075)+'px,'+((yp-50)*.075)+'px,0)';
+  },{passive:true});
+  consoleEl.addEventListener('pointerleave',()=>{
+    consoleEl.style.setProperty('--px','50%');consoleEl.style.setProperty('--py','45%');
+    centerEl.style.transform='translate3d(0,0,0)';
+  });
+}
+
+
+let pipelineRows=[];
+
+async function loadPipeline(){
+  const status=$('#pipelineStatus');
+  if(status)status.textContent='Loading Chandler early pipeline…';
+  try{
+    const r=await fetch(`${CONFIG.apiBase}/pipeline?market=Chandler`);
+    if(!r.ok)throw new Error();
+    const d=await r.json();
+    pipelineRows=d.pipeline||[];
+    renderPipeline();
+  }catch{
+    if(status)status.textContent='Pipeline unavailable.';
+    const list=$('#pipelineList');
+    if(list)list.innerHTML='';
+  }
+}
+
+
+function pipelineSummary(x){
+  const s=String(x.scope||'').replace(/\s+/g,' ').trim();
+  if(!s)return '';
+  return s.length>150?s.slice(0,147)+'…':s;
+}
+
+function openPipelineLead(id){
+  const x=pipelineRows.find(v=>String(v.id)===String(id));
+  if(!x)return;
+
+  const fits=Object.entries(x.sellerFit||{})
+    .sort((a,b)=>b[1]-a[1])
+    .filter(([k,v])=>v>=20)
+    .slice(0,6);
+
+  const fitText=fits.length
+    ? fits.map(([k,v])=>`${k} ${v}`).join(' • ')
+    : (x.categories||[]).join(', ');
+
+  $('#pTitle').textContent=x.name||'Chandler opportunity';
+  $('#pGrid').innerHTML=[
+    ['Score',(x.score??'—')+' / 100'],
+    ['Temperature',x.temperature||'—'],
+    ['Stage',x.stage||'—'],
+    ['Permit / project ID',x.permit||'—'],
+    ['Market',x.market||'Chandler'],
+    ['Approval date',x.date?new Date(x.date).toLocaleDateString():'Not published'],
+    ['Company / participant',x.company||'Not published'],
+    ['Role',x.companyRole||'—'],
+    ['Seller fit',fitText],
+    ['Source',x.source||'City of Chandler DSActiveProjects']
+  ].map(([a,b])=>`<div class="detail"><small>${esc(a)}</small><strong>${esc(b)}</strong></div>`).join('');
+
+  const b=x.scoreBreakdown||{};
+  const scoreLines=[
+    ['Project / permit type',b.projectType],
+    ['Scope intensity',b.scopeIntensity],
+    ['Commercial relevance',b.commercialRelevance],
+    ['Permit stage',b.permitStage],
+    ['Economic size',b.economicSize],
+    ['Seller breadth',b.sellerBreadth],
+    ['Recency',b.recency],
+    ['Negative adjustment',b.negative]
+  ].filter(([,v])=>v!==undefined)
+   .map(([k,v])=>`${esc(k)}: <strong>${Number(v)>0?'+':''}${esc(v)}</strong>`)
+   .join('<br>');
+
+  $('#pWhy').innerHTML=
+    `<strong>Project description</strong><br>${esc(x.scope||'No detailed description published.')}<br><br>`+
+    (scoreLines?`<strong>Score breakdown</strong><br>${scoreLines}<br><br>`:'')+
+    `<span style="color:#8fa59b">Early Pipeline items are pre-construction intelligence and are kept separate from the live 7-day permit feed.</span>`;
+
+  openModal('pipelineModal');
+}
+
+function renderPipeline(){
+  const list=$('#pipelineList');
+  if(!list)return;
+
+  const stage=$('#pipelineStage')?.value||'all';
+  const minScore=Number($('#pipelineMinScore')?.value||0);
+
+  const rows=pipelineRows.filter(x=>
+    (stage==='all'||x.stage===stage) &&
+    Number(x.score||0)>=minScore &&
+    (pipelineCompanyFilter==='listed'?Boolean(String(x.company||'').trim()):!String(x.company||'').trim())
+  );
+
+  $('#pipelineStatus').textContent=`${rows.length} Chandler early-pipeline opportunities`;
+
+  list.innerHTML=rows.slice(0,120).map(x=>`
+    <div class="pipeline-lead">
+      <div class="score">${esc(x.score)}</div>
+      <div class="pipeline-main">
+        <div class="leadname">${esc(x.name||'Chandler project')}</div>
+        <div class="pipeline-copy">${esc(pipelineSummary(x))}</div>
+        <div class="pipeline-permit">${esc(x.permit||'—')}</div>
+      </div>
+      <div class="pipeline-stage">${esc(x.stage||'')}</div>
+      <div class="pipeline-company-cell">${x.company?`<strong>${esc(x.company)}</strong><small>${esc(x.companyRole||'Participant')}</small>`:'<span class="company-missing">Not listed</span>'}</div>
+      <div class="chips pipeline-seller">${(x.categories||[]).map(c=>`<span class="chip">${esc(c)}</span>`).join(' ')}</div>
+      <div class="pipeline-temperature ${x.temperature==='HOT'?'hot':x.temperature==='WARM'?'warm':x.temperature==='WATCH'?'watch':'low'}">${esc(x.temperature||'LOW')}</div>
+      <div class="pipeline-actions"><button class="view" onclick="openPipelineLead('${String(x.id).replace(/'/g,"\\'")}')">View</button></div>
+    </div>
+  `).join('') || '<div class="pipeline-empty">No pipeline opportunities match the current filters.</div>';
+}
+
+
+function bindCompanyToggle(rootId,onChange){
+  const root=$('#'+rootId);
+  if(!root)return;
+  const buttons=[...root.querySelectorAll('.company-toggle-btn')];
+  buttons.forEach(btn=>btn.addEventListener('click',()=>{
+    buttons.forEach(b=>b.classList.toggle('active',b===btn));
+    onChange(btn.dataset.value);
+  }));
+}
+bindCompanyToggle('permitCompanyToggle',value=>{permitCompanyFilter=value;render()});
+bindCompanyToggle('pipelineCompanyToggle',value=>{pipelineCompanyFilter=value;renderPipeline()});
+
+$('#competitorRun')?.addEventListener('click',loadCompetitors);$('#competitorSearch')?.addEventListener('keydown',e=>{if(e.key==='Enter')loadCompetitors()});$('#market').addEventListener('change',()=>{if(user)render();else loadPublic()});['industry','minScore','sortFeed','savedFilter'].forEach(id=>$('#'+id).addEventListener('change',render));$('#pipelineStage')?.addEventListener('change',renderPipeline);$('#pipelineMinScore')?.addEventListener('change',renderPipeline);$('#pipelineRefresh')?.addEventListener('click',loadPipeline);$('#search').addEventListener('input',render);$$('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id)}));
+(async()=>{const qp=new URLSearchParams(location.search);if(qp.get('billing')==='success')toast('Subscription checkout completed. Updating your account…');if(qp.get('billing')==='cancel')toast('Checkout canceled.');const hashParams=new URLSearchParams(location.hash.replace(/^#/,''));const magic=hashParams.get('magic');if(magic){try{await verifyMagic(magic);history.replaceState({},'',location.pathname+location.search)}catch(e){history.replaceState({},'',location.pathname+location.search);toast(e.message)}}else{const signed=await loadMe();if(signed){await loadDashboard();maybeOpenOnboarding();loadCompetitors();loadChanges()}else{await loadPublic();renderCompetitors();loadChanges()}loadPipeline()}if(qp.get('billing')==='success'){setTimeout(async()=>{await loadMe();await loadDashboard()},1800);history.replaceState({},'',location.pathname)}})();
+</script>
+</body></html>
