@@ -1252,6 +1252,77 @@ async function stored(env,limit=120,days=7){
   return clusterLeads((r.results||[]).map(hydrateStoredLead));
 }
 
+
+async function scoringAudit(env,{days=30,limit=300}={}){
+  days=clamp(Number(days||30),1,90);
+  limit=clamp(Number(limit||300),25,500);
+
+  // Use persisted production leads for all established markets, but replace
+  // Chandler with the validated first-party live source so stale snapshots do
+  // not distort the audit while the scheduled D1 refresh catches up.
+  const storedRows=(await stored(env,Math.min(500,limit*2),days))||[];
+  let chandler=[];
+  try{chandler=clusterLeads(await fetchChandlerAccelaPermits(Math.min(days,30),500));}catch{}
+  const combined=[...storedRows.filter(x=>(x.market||'')!=='Chandler'),...chandler]
+    .sort((a,b)=>(Number(b.score||0)-Number(a.score||0))||(new Date(b.date)-new Date(a.date)))
+    .slice(0,limit);
+
+  const keys=['projectStage','recency','projectValue','tradeRelevance','projectType','prePermit','companyBehavior'];
+  const componentTotals=Object.fromEntries(keys.map(k=>[k,0]));
+  const buckets={HOT:0,WARM:0,WATCH:0,LOW:0};
+  const quality={missingCompany:0,missingOfficialValue:0,missingAddress:0,missingPermit:0,lowDataConfidence:0};
+  const markets={};
+
+  for(const x of combined){
+    const market=x.market||marketFromSource(x.source)||'Unknown';
+    if(!markets[market])markets[market]={count:0,scoreTotal:0,minScore:101,maxScore:-1,HOT:0,WARM:0,WATCH:0,LOW:0};
+    const m=markets[market],score=Number(x.score||0),temp=x.temperature||temperatureForScore(score);
+    m.count++;m.scoreTotal+=score;m.minScore=Math.min(m.minScore,score);m.maxScore=Math.max(m.maxScore,score);m[temp]=(m[temp]||0)+1;
+    buckets[temp]=(buckets[temp]||0)+1;
+    for(const k of keys)componentTotals[k]+=Number(x.scoreBreakdown?.[k]||0);
+    if(!cleanCompanyName(x.company))quality.missingCompany++;
+    if(!(Number(x.officialPermitValue)>0))quality.missingOfficialValue++;
+    if(!String(x.address||'').trim())quality.missingAddress++;
+    if(!String(x.permit||'').trim()||String(x.permit)==='—')quality.missingPermit++;
+    if(Number(x.dataConfidence?.score||0)<60)quality.lowDataConfidence++;
+  }
+
+  for(const m of Object.values(markets)){
+    m.avgScore=m.count?Number((m.scoreTotal/m.count).toFixed(1)):0;
+    delete m.scoreTotal;
+    if(m.minScore===101)m.minScore=0;
+    if(m.maxScore===-1)m.maxScore=0;
+  }
+  const n=combined.length||1;
+  const componentAverages=Object.fromEntries(keys.map(k=>[k,Number((componentTotals[k]/n).toFixed(2))]));
+  const maxWeights={projectStage:25,recency:20,projectValue:15,tradeRelevance:15,projectType:10,prePermit:10,companyBehavior:2};
+  const maxPossible=Object.values(maxWeights).reduce((a,b)=>a+b,0);
+
+  const missingDateProbe=opportunityScore({text:'commercial project',status:'PRE-TECH',date:null,officialValue:null,address:'',company:''});
+  const issuedProbe=opportunityScore({text:'commercial project',status:'issued',date:Date.now(),officialValue:null,address:'',company:''});
+  const preTechProbe=opportunityScore({text:'commercial project',status:'PRE-TECH',date:Date.now(),officialValue:null,address:'',company:''});
+
+  return {
+    sample:{days,requestedLimit:limit,count:combined.length,sourceMode:'D1 production leads for established markets + live City of Chandler Accela records'},
+    scoreBuckets:buckets,
+    byMarket:markets,
+    componentAverages,
+    quality,
+    scorerChecks:{
+      maxWeights,
+      maxPossible,
+      configuredTemperatureThresholds:{HOT:80,WARM:60,WATCH:40},
+      missingDateProbe:{score:missingDateProbe.score,recencyPoints:missingDateProbe.breakdown.recency,note:'A null date currently receives the same recency treatment as now.'},
+      stageOverlapProbe:{preTech:{score:preTechProbe.score,projectStage:preTechProbe.breakdown.projectStage,prePermit:preTechProbe.breakdown.prePermit},issued:{score:issuedProbe.score,projectStage:issuedProbe.breakdown.projectStage,prePermit:issuedProbe.breakdown.prePermit},note:'Project stage and pre-permit components both reward lifecycle timing; audit whether this intentional overlap is too strong.'}
+    },
+    examples:{
+      highest:combined.slice(0,8).map(x=>({market:x.market,name:x.name,score:x.score,temperature:x.temperature,breakdown:x.scoreBreakdown,dataConfidence:x.dataConfidence?.score??null})),
+      lowest:[...combined].sort((a,b)=>Number(a.score||0)-Number(b.score||0)).slice(0,8).map(x=>({market:x.market,name:x.name,score:x.score,temperature:x.temperature,breakdown:x.scoreBreakdown,dataConfidence:x.dataConfidence?.score??null}))
+    },
+    generatedAt:nowIso()
+  };
+}
+
 function bytesToHex(buf){return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');}
 function bytesToB64Url(bytes){let s='';for(const b of bytes)s+=String.fromCharCode(b);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
 function randomToken(size=32){const a=new Uint8Array(size);crypto.getRandomValues(a);return bytesToB64Url(a);}
@@ -2133,6 +2204,12 @@ export default {
         if(!env.ADMIN_TOKEN||token!==env.ADMIN_TOKEN)return json({error:'unauthorized'},401,env);
         const data=await tucsonDebug(env);
         return json({ok:true,now:nowIso(),...data},200,env);
+      }
+      if(path==='/score-audit'&&request.method==='GET'){
+        const days=clamp(Number(url.searchParams.get('days')||30),1,90);
+        const limit=clamp(Number(url.searchParams.get('limit')||300),25,500);
+        const audit=await scoringAudit(env,{days,limit});
+        return json({ok:true,...audit},200,env);
       }
       if(path==='/source-health'&&request.method==='GET'){
         const market=(url.searchParams.get('market')||'').trim();
