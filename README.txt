@@ -1,16 +1,18 @@
-RevenueTrigger V102 — Data QA
+RevenueTrigger V103 — Chandler Official Accela Source
 
-Changes:
-1. Chandler Early Pipeline participant matching
-   - keeps direct participant fields as highest priority
-   - adds conservative fuzzy project-name matching against Chandler GPS Construction Projects
-   - requires >=2 meaningful shared project tokens and a strong confidence threshold
-   - returns companyMatchType/companyMatchConfidence for QA
+What changed
+- Keeps all V102 Scottsdale diagnostics and Chandler fuzzy-match improvements.
+- Adds the City of Chandler official Accela permit layer (ArcGIS) as a validation/enrichment source.
+- Early Pipeline now attempts participant resolution in this order:
+  1. exact permit/project match to Chandler Accela permit record
+  2. participant fields already present in DSActiveProjects
+  3. conservative GPS Construction Projects project-name match
+- Adds companyProvenance and match-confidence metadata to pipeline rows.
+- Adds protected GET /admin/chandler-permits-debug?days=30 endpoint.
+- Does NOT promote Chandler into the live Opportunity Feed yet.
+- No SQL migrations or schema changes.
 
-2. Scottsdale diagnostics
-   - adds protected GET /admin/scottsdale-debug?days=7
-   - requires existing ADMIN_TOKEN bearer auth
-   - reports raw parsed row count, CSV headers, coverage fields, issue-date distribution, and five sample rows
-   - does not alter Scottsdale production ingestion yet
-
-No SQL migrations. No schema changes. No frontend changes.
+Protected diagnostic endpoints after deployment
+- /admin/scottsdale-debug?days=7
+- /admin/chandler-permits-debug?days=30
+Both require the existing ADMIN_TOKEN as a Bearer token.

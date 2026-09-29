@@ -21,6 +21,7 @@ const SCOTTSDALE_CSV='https://eservices.scottsdaleaz.gov/bldgresources/BuildingP
 const MESA_PERMITS='https://data.mesaaz.gov/resource/m2kk-w2hz.json';
 const CHANDLER_ACTIVE='https://gis.chandleraz.gov/appsanonymous/rest/services/DevelopmentServices/DSActiveProjects/MapServer';
 const CHANDLER_CONSTRUCTION='https://gis.chandleraz.gov/portalserver/rest/services/EM/DevelopmentServices/MapServer/56';
+const CHANDLER_ACCELA_PERMITS='https://gis.chandleraz.gov/appsanonymous/rest/services/Tolemi/Building_Blocks/MapServer/0/query';
 const MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler'];
 const LIVE_MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa'];
 const SOURCE_STATUS={
@@ -29,7 +30,7 @@ const SOURCE_STATUS={
   Tucson:{status:'live',cadence:'Hourly RevenueTrigger discovery',source:'City of Tucson Property Research Online (PRO)'},
   Scottsdale:{status:'live',cadence:'Official CSV permit report',source:'City of Scottsdale Building Permit Reports'},
   Mesa:{status:'live',cadence:'City open-data API',source:'City of Mesa Data Hub — Building Permits'},
-  Chandler:{status:'planned',cadence:'Permit source validation in progress',source:'City of Chandler'}
+  Chandler:{status:'validation',cadence:'Official Accela/ArcGIS permit feed + active-project pipeline',source:'City of Chandler Accela permit layer + DSActiveProjects'}
 };
 const INDUSTRIES=['Commercial services','HVAC','Electrical','Plumbing','Roofing','Landscaping','Security','Signage'];
 const PLANS={
@@ -750,6 +751,97 @@ function chandlerParticipantFromAttributes(a={}){
   }
   return null;
 }
+function chandlerAccelaParticipant(a={}){
+  const contractor=cleanCompanyName(a.PRI_CNTRCT_BUS_NM);
+  if(contractor)return {company:contractor,role:'Contractor',field:'PRI_CNTRCT_BUS_NM',matchType:'accela-permit-exact',matchConfidence:1};
+  const contactBusiness=cleanCompanyName(a.PRI_CNTCT_BUS_NM);
+  if(contactBusiness)return {company:contactBusiness,role:'Primary Contact Business',field:'PRI_CNTCT_BUS_NM',matchType:'accela-permit-exact',matchConfidence:1};
+  const owner=cleanCompanyName(a.OWNER_NM);
+  if(owner)return {company:owner,role:'Owner',field:'OWNER_NM',matchType:'accela-permit-exact',matchConfidence:1};
+  return null;
+}
+function chandlerAccelaLead(a={}){
+  const permit=String(a.PERMIT_NBR||'').trim();
+  const project=String(a.PROJECT_NM||'').trim()||String(a.PERMIT_TYPE||a.B1_PER_TYPE||'Chandler permit').trim();
+  const address=String(a.FULL_ADDR||a.FULL_ADDRESS||'Chandler, AZ').trim()||'Chandler, AZ';
+  const desc=String(a.DETAIL_DESC||'').trim();
+  const type=[a.PERMIT_TYPE,a.B1_PER_TYPE,a.B1_PER_SUB_TYPE].filter(Boolean).join(' — ');
+  const sqft=Number(String(a.SQ_FOOT||'').replace(/[^0-9.]/g,''));
+  const value=Number(String(a.JOB_VALUE||'').replace(/[$,\s]/g,''));
+  const participant=chandlerAccelaParticipant(a);
+  const date=Number(a.CREATE_DT)||new Date(a.CREATE_DT||Date.now()).getTime();
+  const scope=[type,desc,Number.isFinite(sqft)&&sqft>0?`${Math.round(sqft).toLocaleString('en-US')} sq ft`:null].filter(Boolean).join(' — ');
+  return leadFrom({
+    market:'Chandler',
+    id:permit||a.OBJECTID,
+    name:project,
+    address,
+    date:Number.isFinite(date)?date:Date.now(),
+    company:participant?.company||'Not listed',
+    scope,
+    permit:permit||'—',
+    permitStatus:a.PERMIT_STATUS||'—',
+    source:'City of Chandler Accela permit layer — official ArcGIS',
+    officialValue:Number.isFinite(value)&&value>0?value:null
+  });
+}
+async function fetchChandlerAccelaPermits(days=7,limit=500){
+  const count=Math.min(Math.max(Number(limit)||500,50),2000);
+  const features=await fetchArcGIS(CHANDLER_ACCELA_PERMITS,{
+    where:'1=1',
+    outFields:'OBJECTID,FULL_ADDRESS,PERMIT_NBR,CREATE_DT,PROJECT_NM,B1_PER_TYPE,B1_PER_SUB_TYPE,PERMIT_STATUS,DETAIL_DESC,PERMIT_TYPE,PARCEL_NBR,JOB_VALUE,SQ_FOOT,FULL_ADDR,ZIP_CODE,PRI_CNTCT_BUS_NM,PRI_CNTRCT_BUS_NM,OWNER_NM',
+    orderByFields:'CREATE_DT DESC',
+    resultRecordCount:String(count),
+    returnGeometry:'false',
+    f:'json'
+  },'Chandler Accela');
+  const cutoff=Date.now()-Math.max(1,Number(days)||7)*86400000;
+  const rows=[];
+  for(const f of features){
+    const a=f.attributes||{};
+    const ts=Number(a.CREATE_DT)||new Date(a.CREATE_DT||0).getTime();
+    if(!Number.isFinite(ts)||ts<cutoff)continue;
+    rows.push(chandlerAccelaLead(a));
+    if(rows.length>=limit)break;
+  }
+  return rows;
+}
+async function fetchChandlerAccelaByPermits(permitNumbers=[]){
+  const ids=[...new Set((permitNumbers||[]).map(x=>String(x||'').trim()).filter(Boolean))];
+  if(!ids.length)return [];
+  const out=[];
+  for(let i=0;i<ids.length;i+=75){
+    const batch=ids.slice(i,i+75);
+    const quoted=batch.map(x=>`'${x.replace(/'/g,"''")}'`).join(',');
+    const features=await fetchArcGIS(CHANDLER_ACCELA_PERMITS,{
+      where:`PERMIT_NBR IN (${quoted})`,
+      outFields:'OBJECTID,FULL_ADDRESS,PERMIT_NBR,CREATE_DT,PROJECT_NM,B1_PER_TYPE,B1_PER_SUB_TYPE,PERMIT_STATUS,DETAIL_DESC,PERMIT_TYPE,PARCEL_NBR,JOB_VALUE,SQ_FOOT,FULL_ADDR,ZIP_CODE,PRI_CNTCT_BUS_NM,PRI_CNTRCT_BUS_NM,OWNER_NM',
+      resultRecordCount:'2000',
+      returnGeometry:'false',
+      f:'json'
+    },'Chandler Accela detail');
+    for(const f of features)out.push(f.attributes||{});
+  }
+  return out;
+}
+function buildChandlerAccelaIndex(rows=[]){
+  const byPermit=new Map(),byProject=new Map();
+  for(const a of rows){
+    const permit=String(a.PERMIT_NBR||'').trim().toLowerCase();
+    if(permit&&!byPermit.has(permit))byPermit.set(permit,a);
+    const project=normalizeProjectName(a.PROJECT_NM||'');
+    if(project&&!byProject.has(project))byProject.set(project,a);
+  }
+  return {byPermit,byProject};
+}
+function matchChandlerAccelaRecord(permit,project,index){
+  const p=String(permit||'').trim().toLowerCase();
+  if(p&&p!=='—'&&index.byPermit.has(p))return {row:index.byPermit.get(p),matchType:'permit-exact',matchConfidence:1};
+  const key=normalizeProjectName(project||'');
+  if(key&&index.byProject.has(key))return {row:index.byProject.get(key),matchType:'project-exact',matchConfidence:.97};
+  return null;
+}
+
 async function fetchChandlerConstructionContractors(limit=500){
   const qs=new URLSearchParams({
     where:"GPS_CONTRACTOR_NAME IS NOT NULL AND GPS_CONTRACTOR_NAME <> ''",
@@ -835,6 +927,61 @@ function matchChandlerContractor(project,index){
   if(!best||bestOverlap<2||bestScore<.68)return null;
   const { _key,_tokens,...clean }=best;
   return {...clean,matchType:'fuzzy-project',matchConfidence:Number(bestScore.toFixed(2))};
+}
+
+async function chandlerAccelaDebug(days=30){
+  const features=await fetchArcGIS(CHANDLER_ACCELA_PERMITS,{
+    where:'1=1',
+    outFields:'OBJECTID,FULL_ADDRESS,PERMIT_NBR,CREATE_DT,PROJECT_NM,B1_PER_TYPE,B1_PER_SUB_TYPE,PERMIT_STATUS,DETAIL_DESC,PERMIT_TYPE,PARCEL_NBR,JOB_VALUE,SQ_FOOT,FULL_ADDR,ZIP_CODE,PRI_CNTCT_BUS_NM,PRI_CNTRCT_BUS_NM,OWNER_NM',
+    orderByFields:'CREATE_DT DESC',
+    resultRecordCount:'1000',
+    returnGeometry:'false',
+    f:'json'
+  },'Chandler Accela diagnostics');
+  const cutoff=Date.now()-Math.max(1,Number(days)||30)*86400000;
+  const recent=[];
+  let contractor=0,contactBusiness=0,owner=0,value=0;
+  let newest=null,oldest=null;
+  for(const f of features){
+    const a=f.attributes||{};
+    const ts=Number(a.CREATE_DT)||new Date(a.CREATE_DT||0).getTime();
+    if(Number.isFinite(ts)){
+      if(newest===null||ts>newest)newest=ts;
+      if(oldest===null||ts<oldest)oldest=ts;
+    }
+    if(!Number.isFinite(ts)||ts<cutoff)continue;
+    recent.push(a);
+    if(cleanCompanyName(a.PRI_CNTRCT_BUS_NM))contractor++;
+    if(cleanCompanyName(a.PRI_CNTCT_BUS_NM))contactBusiness++;
+    if(cleanCompanyName(a.OWNER_NM))owner++;
+    const v=Number(String(a.JOB_VALUE||'').replace(/[$,\s]/g,''));
+    if(Number.isFinite(v)&&v>0)value++;
+  }
+  return {
+    fetched:features.length,
+    days,
+    recent:recent.length,
+    newest:newest?new Date(newest).toISOString():null,
+    oldestFetched:oldest?new Date(oldest).toISOString():null,
+    coverage:{
+      contractorBusiness:recent.length?Number((contractor/recent.length).toFixed(3)):0,
+      contactBusiness:recent.length?Number((contactBusiness/recent.length).toFixed(3)):0,
+      owner:recent.length?Number((owner/recent.length).toFixed(3)):0,
+      jobValue:recent.length?Number((value/recent.length).toFixed(3)):0
+    },
+    sample:recent.slice(0,8).map(a=>({
+      permit:a.PERMIT_NBR||null,
+      created:a.CREATE_DT?new Date(Number(a.CREATE_DT)||a.CREATE_DT).toISOString():null,
+      project:a.PROJECT_NM||null,
+      type:a.PERMIT_TYPE||a.B1_PER_TYPE||null,
+      status:a.PERMIT_STATUS||null,
+      address:a.FULL_ADDR||a.FULL_ADDRESS||null,
+      contractor:a.PRI_CNTRCT_BUS_NM||null,
+      contactBusiness:a.PRI_CNTCT_BUS_NM||null,
+      owner:a.OWNER_NM||null,
+      jobValue:a.JOB_VALUE||null
+    }))
+  };
 }
 
 async function chandlerLayer(id,stage,limit=250){
@@ -1943,6 +2090,13 @@ export default {
         const data=await scottsdaleDebug(days);
         return json({ok:true,now:nowIso(),...data},200,env);
       }
+      if(path==='/admin/chandler-permits-debug'&&request.method==='GET'){
+        const token=(request.headers.get('authorization')||'').replace(/^Bearer\s+/i,'');
+        if(!env.ADMIN_TOKEN||token!==env.ADMIN_TOKEN)return json({error:'unauthorized'},401,env);
+        const days=clamp(Number(url.searchParams.get('days')||30),1,90);
+        const data=await chandlerAccelaDebug(days);
+        return json({ok:true,now:nowIso(),source:'City of Chandler Accela permit layer',...data},200,env);
+      }
       if(path==='/sources'&&request.method==='GET')return json({markets:SOURCE_STATUS,liveMarkets:LIVE_MARKETS,plannedMarkets:MARKETS.filter(m=>!LIVE_MARKETS.includes(m)),generatedAt:nowIso()},200,env);
       if(path==='/pipeline'&&request.method==='GET'){
         const market=(url.searchParams.get('market')||'Chandler').trim();
@@ -1956,7 +2110,21 @@ export default {
           fetchChandlerConstructionContractors(600).then(v=>({ok:true,rows:v})).catch(e=>({ok:false,rows:[],error:String(e?.message||e)}))
         ]);
 
+        const permitNumbers=[];
+        for(const r of settled){
+          if(r.status!=='fulfilled')continue;
+          for(const item of r.value||[]){
+            const a=item.a||{};
+            const permit=String(a.PRE_B1_ALT_ID||a.CIV_F_B1_ALT_ID||'').trim();
+            if(permit)permitNumbers.push(permit);
+          }
+        }
+        const accelaResult=await fetchChandlerAccelaByPermits(permitNumbers)
+          .then(v=>({ok:true,rows:v}))
+          .catch(e=>({ok:false,rows:[],error:String(e?.message||e)}));
+
         const contractorIndex=buildChandlerContractorIndex(contractorResult.rows||[]);
+        const accelaIndex=buildChandlerAccelaIndex(accelaResult.rows||[]);
         const pipeline=[],stages={};
 
         settled.forEach((r,i)=>{
@@ -1989,9 +2157,15 @@ export default {
             }
 
             const text=[project,type,desc].filter(Boolean).join(' — ');
+            const accelaMatch=matchChandlerAccelaRecord(permit,project,accelaIndex);
+            const accelaParticipant=accelaMatch?chandlerAccelaParticipant(accelaMatch.row):null;
+            if(accelaParticipant&&accelaMatch){
+              accelaParticipant.matchType=`accela-${accelaMatch.matchType}`;
+              accelaParticipant.matchConfidence=accelaMatch.matchConfidence;
+            }
             const directParticipant=chandlerParticipantFromAttributes(a);
             const matchedContractor=matchChandlerContractor(project,contractorIndex);
-            const participant=directParticipant || (matchedContractor?{
+            const participant=accelaParticipant || directParticipant || (matchedContractor?{
               company:matchedContractor.company,
               role:matchedContractor.role,
               field:'GPS_CONTRACTOR_NAME',
@@ -2021,6 +2195,7 @@ export default {
               companySourceField:participant?.field||null,
               companyMatchType:participant?.matchType||(directParticipant?'direct-source-field':null),
               companyMatchConfidence:participant?.matchConfidence||(directParticipant?1:null),
+              companyProvenance:accelaParticipant?'City of Chandler Accela permit record':(directParticipant?'City of Chandler DSActiveProjects':(matchedContractor?'City of Chandler GPS Construction Projects':null)),
               score:model.score,
               scoreBreakdown:model.breakdown,
               sellerFit:model.sellerFit,
@@ -2049,6 +2224,12 @@ export default {
           market:'Chandler',
           count:rows.length,
           stages,
+          accelaPermitSource:{
+            ok:accelaResult.ok,
+            requestedPermits:permitNumbers.length,
+            matchedRecords:(accelaResult.rows||[]).length,
+            error:accelaResult.error||null
+          },
           contractorSource:{
             ok:contractorResult.ok,
             count:(contractorResult.rows||[]).length,
