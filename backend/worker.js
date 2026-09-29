@@ -2544,6 +2544,56 @@ export default {
         }
         participantStats.listedShare=rows.length?Number((participantStats.listed/rows.length).toFixed(3)):0;
 
+        // V111 diagnostic-only shadow scoring for Early Pipeline. Production scores
+        // remain unchanged. This specifically measures the two V110 safeguards in
+        // the place where they matter most: PRE-TECH rows with no reliable date.
+        const bucket=score=>temperatureForScore(Number(score||0));
+        const productionBuckets={HOT:0,WARM:0,WATCH:0,LOW:0};
+        const candidateBuckets={HOT:0,WARM:0,WATCH:0,LOW:0};
+        const movement={scoreUp:0,scoreDown:0,scoreSame:0,temperatureUp:0,temperatureDown:0,temperatureSame:0,missingDateRecords:0,lifecycleCapRecords:0};
+        const rank={LOW:0,WATCH:1,WARM:2,HOT:3};
+        const byStage={};
+        const comparisons=[];
+        for(const x of rows){
+          const prodScore=Number(x.score||0);
+          const prodTemp=bucket(prodScore);
+          const cand=opportunityScoreCandidate({
+            text:x.scope||x.name||'',
+            status:x.permitStatus||x.stage||'',
+            date:x.date||null,
+            officialValue:null,
+            address:x.address||'',
+            company:x.company||''
+          });
+          const candScore=Number(cand.score||0);
+          const candTemp=bucket(candScore);
+          productionBuckets[prodTemp]=(productionBuckets[prodTemp]||0)+1;
+          candidateBuckets[candTemp]=(candidateBuckets[candTemp]||0)+1;
+          if(candScore>prodScore)movement.scoreUp++; else if(candScore<prodScore)movement.scoreDown++; else movement.scoreSame++;
+          if(rank[candTemp]>rank[prodTemp])movement.temperatureUp++; else if(rank[candTemp]<rank[prodTemp])movement.temperatureDown++; else movement.temperatureSame++;
+          if(!cand.diagnostics?.hasValidDate)movement.missingDateRecords++;
+          if(Number(cand.diagnostics?.lifecycleCapApplied||0)>0)movement.lifecycleCapRecords++;
+          const stage=x.stage||'UNKNOWN';
+          byStage[stage] ||= {count:0,productionAvg:0,candidateAvg:0,productionBuckets:{HOT:0,WARM:0,WATCH:0,LOW:0},candidateBuckets:{HOT:0,WARM:0,WATCH:0,LOW:0},_prod:0,_cand:0};
+          const st=byStage[stage];
+          st.count++; st._prod+=prodScore; st._cand+=candScore; st.productionBuckets[prodTemp]++; st.candidateBuckets[candTemp]++;
+          comparisons.push({
+            permit:x.permit,name:x.name,stage,hasDate:!!x.date,
+            productionScore:prodScore,productionTemperature:prodTemp,
+            candidateScore:candScore,candidateTemperature:candTemp,
+            delta:candScore-prodScore,
+            candidateBreakdown:cand.breakdown,
+            diagnostics:cand.diagnostics
+          });
+        }
+        for(const st of Object.values(byStage)){
+          st.productionAvg=st.count?Number((st._prod/st.count).toFixed(1)):0;
+          st.candidateAvg=st.count?Number((st._cand/st.count).toFixed(1)):0;
+          delete st._prod; delete st._cand;
+        }
+        movement.avgDelta=rows.length?Number((comparisons.reduce((n,x)=>n+x.delta,0)/rows.length).toFixed(2)):0;
+        const biggestDrops=[...comparisons].sort((a,b)=>a.delta-b.delta).slice(0,12);
+
         return json({
           ok:true,
           market:'Chandler',
@@ -2557,6 +2607,18 @@ export default {
             error:accelaResult.error||null
           },
           participantCoverage:participantStats,
+          scoringShadowV111:{
+            productionUnchanged:true,
+            candidateRules:[
+              'Missing or invalid dates receive 0 recency points instead of full recency credit.',
+              'Combined lifecycle stage + pre-permit contribution is capped at 30 points.'
+            ],
+            productionBuckets,
+            candidateBuckets,
+            movement,
+            byStage,
+            biggestDrops
+          },
           contractorSource:{
             ok:contractorResult.ok,
             count:(contractorResult.rows||[]).length,
