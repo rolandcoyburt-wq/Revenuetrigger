@@ -833,6 +833,38 @@ html[data-theme="dark"] .sources-page-price .price.featured .btn-primary{
 .sources-page-price .price:hover{transform:translateY(-4px);border-color:#41b866 !important}
 .sources-page-price .price.featured:hover{box-shadow:0 26px 72px rgba(0,0,0,.34),0 0 34px rgba(42,238,97,.10) !important}
 
+
+/* V93 — compact mobile navigation shared across all public pages. */
+.mobile-nav{display:none}
+@media(max-width:620px){
+  .topbar .navlinks{display:none !important}
+  .mobile-nav{display:block;grid-column:1 / -1;grid-row:2;width:100%;margin:0}
+  .mobile-nav summary{list-style:none;display:flex;align-items:center;justify-content:space-between;width:100%;min-height:46px;padding:0 15px;border:1px solid #234a34;border-radius:12px;background:linear-gradient(180deg,#081b11,#041109);color:#dce8e1;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+  .mobile-nav summary::-webkit-details-marker{display:none}
+  .mobile-nav[open] summary{border-color:#3e8b59;border-radius:12px 12px 8px 8px}
+  .mobile-nav-icon{color:var(--lime);font-size:17px;line-height:1}
+  .mobile-nav-panel{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:8px;margin-top:6px;border:1px solid #1e402d;border-radius:12px;background:#041009;box-shadow:0 18px 42px rgba(0,0,0,.26)}
+  .mobile-nav-panel a{display:flex;align-items:center;justify-content:center;min-height:42px;padding:8px 10px;border:1px solid #173825;border-radius:9px;background:#07170e;color:#cbd9d2;font-size:11px;font-weight:850;text-align:center}
+  .mobile-nav-panel a:active{border-color:var(--lime);color:var(--lime)}
+  .mobile-nav-pricing{grid-column:1 / -1}
+  html[data-theme="light"] .mobile-nav summary{background:#07120d;color:#f5f8f6;border-color:#07120d}
+  html[data-theme="light"] .mobile-nav-panel{background:#fff;border-color:#d5e1da;box-shadow:0 16px 34px rgba(20,55,34,.10)}
+  html[data-theme="light"] .mobile-nav-panel a{background:#f6f9f7;color:#203128;border-color:#d9e4dd}
+}
+
+/* V93 — source-page pricing and light hero refinements. */
+.sources-page-price:before, html[data-theme="light"] .sources-page-price:before, html[data-theme="dark"] .sources-page-price:before{display:none !important;background:none !important}
+.sources-page-price .eyebrow, html[data-theme="light"] .sources-page-price .eyebrow, html[data-theme="dark"] .sources-page-price .eyebrow{background:#fff !important;color:#050b07 !important;border-color:#fff !important}
+.sources-page-price .price:not(.featured), html[data-theme="light"] .sources-page-price .price:not(.featured), html[data-theme="dark"] .sources-page-price .price:not(.featured){background:linear-gradient(180deg,#07170e,#031008) !important;color:#f5f8f6 !important;border-color:#1c402a !important;box-shadow:0 18px 50px rgba(0,0,0,.28) !important}
+.sources-page-price .price:not(.featured) ul, html[data-theme="light"] .sources-page-price .price:not(.featured) ul{color:#a9b9b1 !important}
+.sources-page-price .price:not(.featured) .money small, html[data-theme="light"] .sources-page-price .price:not(.featured) .money small{color:#899b92 !important}
+.sources-page-price .price.featured, html[data-theme="light"] .sources-page-price .price.featured, html[data-theme="dark"] .sources-page-price .price.featured{background:#fff !important;color:#061009 !important;border-color:#d7e3db !important;box-shadow:0 22px 65px rgba(0,0,0,.30) !important}
+.sources-page-price .price.featured ul, html[data-theme="light"] .sources-page-price .price.featured ul{color:#526158 !important}
+.sources-page-price .price.featured .money small, html[data-theme="light"] .sources-page-price .price.featured .money small{color:#708078 !important}
+.sources-page-price .price:not(.featured):hover{border-color:var(--lime) !important;box-shadow:0 20px 58px rgba(0,0,0,.34),0 0 0 1px rgba(42,238,97,.16) !important}
+.sources-page-price .price.featured:hover{border-color:#8fd5a5 !important;box-shadow:0 25px 70px rgba(0,0,0,.34) !important}
+html[data-theme="light"] .sources-hero{background:radial-gradient(ellipse at 76% 46%,rgba(20,149,62,.11) 0%,transparent 43%) !important}
+html[data-theme="light"] .sources-hero:before{display:none !important}
 </style>
 
 <style>
@@ -1019,7 +1051,7 @@ html[data-theme="light"] .sources-page-price .price.featured .btn-primary{
 <header class="topbar"><div class="wrap"><nav><a class="brand" href="/" aria-label="RevenueTrigger home">
       <img class="brand-logo brand-logo-dark" src="/assets/revenuetrigger-icon.svg" alt="RevenueTrigger">
       <img class="brand-logo brand-logo-light" src="/assets/RT-Logo-WHT-BG.svg" alt="RevenueTrigger">
-    </a><div class="navlinks"><a href="/#signals">Opportunities</a><a href="/#pipeline">Early Pipeline</a><a href="/competitors.html">Competitors</a><a href="/sources.html" class="nav-sources">Sources</a><a href="#pricing">Pricing</a></div><button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light theme" title="Switch to light theme" onclick="toggleTheme()">
+    </a><div class="navlinks"><a href="/#signals">Opportunities</a><a href="/#pipeline">Early Pipeline</a><a href="/competitors.html">Competitors</a><a href="/sources.html" class="nav-sources">Sources</a><a href="#pricing">Pricing</a></div><details class="mobile-nav"><summary><span>Navigate</span><span class="mobile-nav-icon" aria-hidden="true">☰</span></summary><div class="mobile-nav-panel"><a href="/#signals">Opportunities</a><a href="/#pipeline">Early Pipeline</a><a href="/competitors.html">Competitors</a><a href="/sources.html">Sources</a><a href="/#pricing" class="mobile-nav-pricing">Pricing</a></div></details><button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light theme" title="Switch to light theme" onclick="toggleTheme()">
         <span class="theme-toggle-icon" id="themeIcon">☀</span>
         <span class="theme-label theme-label-full" id="themeLabel">Light mode</span>
         <span class="theme-label theme-label-short" id="themeLabelShort">Light</span>

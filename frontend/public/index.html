@@ -1041,13 +1041,46 @@ html[data-theme="light"] .company-toggle-btn.active{
     border-color:#d7e3db;
   }
 }
+
+/* V93 — compact mobile navigation shared across all public pages. */
+.mobile-nav{display:none}
+@media(max-width:620px){
+  .topbar .navlinks{display:none !important}
+  .mobile-nav{display:block;grid-column:1 / -1;grid-row:2;width:100%;margin:0}
+  .mobile-nav summary{list-style:none;display:flex;align-items:center;justify-content:space-between;width:100%;min-height:46px;padding:0 15px;border:1px solid #234a34;border-radius:12px;background:linear-gradient(180deg,#081b11,#041109);color:#dce8e1;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+  .mobile-nav summary::-webkit-details-marker{display:none}
+  .mobile-nav[open] summary{border-color:#3e8b59;border-radius:12px 12px 8px 8px}
+  .mobile-nav-icon{color:var(--lime);font-size:17px;line-height:1}
+  .mobile-nav-panel{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:8px;margin-top:6px;border:1px solid #1e402d;border-radius:12px;background:#041009;box-shadow:0 18px 42px rgba(0,0,0,.26)}
+  .mobile-nav-panel a{display:flex;align-items:center;justify-content:center;min-height:42px;padding:8px 10px;border:1px solid #173825;border-radius:9px;background:#07170e;color:#cbd9d2;font-size:11px;font-weight:850;text-align:center}
+  .mobile-nav-panel a:active{border-color:var(--lime);color:var(--lime)}
+  .mobile-nav-pricing{grid-column:1 / -1}
+  html[data-theme="light"] .mobile-nav summary{background:#07120d;color:#f5f8f6;border-color:#07120d}
+  html[data-theme="light"] .mobile-nav-panel{background:#fff;border-color:#d5e1da;box-shadow:0 16px 34px rgba(20,55,34,.10)}
+  html[data-theme="light"] .mobile-nav-panel a{background:#f6f9f7;color:#203128;border-color:#d9e4dd}
+}
+
+/* V93 — final mobile card reset. Legacy nth-child rules previously left transforms on value/seller fields. */
+@media(max-width:620px){
+  #leadList .lead, #pipelineList .pipeline-lead{overflow:hidden !important}
+  #leadList .lead > *, #pipelineList .pipeline-lead > *{position:static !important;left:auto !important;right:auto !important;transform:none !important;margin-left:0 !important;margin-right:0 !important;box-sizing:border-box}
+  #leadList .lead .lead-seller, #pipelineList .pipeline-lead .pipeline-seller{width:100% !important;max-width:100% !important;padding:10px 11px !important;border:1px solid #193a28;border-radius:9px;background:rgba(8,27,17,.46);align-items:flex-start}
+  #leadList .lead .lead-seller:before, #pipelineList .pipeline-lead .pipeline-seller:before{padding-left:0 !important;margin-left:0 !important}
+  #leadList .lead .lead-value{grid-column:1 / -1 !important;grid-row:4 !important;width:100% !important;padding:2px 0 0 !important;font-size:22px !important}
+  #leadList .lead .lead-temperature{grid-column:1 !important;grid-row:5 !important;justify-self:start !important;align-self:center !important;font-size:16px !important}
+  #leadList .lead .lead-actions{grid-column:2 !important;grid-row:5 !important;justify-self:end !important;align-self:center !important}
+  #pipelineList .pipeline-lead .pipeline-temperature{grid-column:1 !important;grid-row:5 !important;justify-self:start !important;align-self:center !important;font-size:16px !important}
+  #pipelineList .pipeline-lead .pipeline-actions{grid-column:2 !important;grid-row:5 !important;justify-self:end !important;align-self:center !important}
+  #leadList .lead .chip, #pipelineList .pipeline-lead .chip{max-width:100%;white-space:normal;overflow-wrap:anywhere}
+  html[data-theme="light"] #leadList .lead .lead-seller, html[data-theme="light"] #pipelineList .pipeline-lead .pipeline-seller{background:#f7faf8;border-color:#d7e3db}
+}
 </style>
 </head>
 <body>
 <header class="topbar"><div class="wrap"><nav><a class="brand" href="#" aria-label="RevenueTrigger home">
       <img class="brand-logo brand-logo-dark" src="/assets/revenuetrigger-icon.svg" alt="RevenueTrigger">
       <img class="brand-logo brand-logo-light" src="/assets/RT-Logo-WHT-BG.svg" alt="RevenueTrigger">
-    </a><div class="navlinks"><a href="#signals">Opportunities</a><a href="#pipeline">Early Pipeline</a><a href="/competitors.html">Competitors</a><a href="/sources.html" class="nav-sources">Sources</a><a href="#pricing">Pricing</a></div><button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light theme" title="Switch to light theme" onclick="toggleTheme()">
+    </a><div class="navlinks"><a href="#signals">Opportunities</a><a href="#pipeline">Early Pipeline</a><a href="/competitors.html">Competitors</a><a href="/sources.html" class="nav-sources">Sources</a><a href="#pricing">Pricing</a></div><details class="mobile-nav"><summary><span>Navigate</span><span class="mobile-nav-icon" aria-hidden="true">☰</span></summary><div class="mobile-nav-panel"><a href="/#signals">Opportunities</a><a href="/#pipeline">Early Pipeline</a><a href="/competitors.html">Competitors</a><a href="/sources.html">Sources</a><a href="/#pricing" class="mobile-nav-pricing">Pricing</a></div></details><button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light theme" title="Switch to light theme" onclick="toggleTheme()">
         <span class="theme-toggle-icon" id="themeIcon">☀</span>
         <span class="theme-label theme-label-full" id="themeLabel">Light mode</span>
         <span class="theme-label theme-label-short" id="themeLabelShort">Light</span>
@@ -1136,7 +1169,7 @@ html[data-theme="light"] .company-toggle-btn.active{
     </div>
   </div>
 </section>
-<section class="section" id="signals"><div class="wrap"><div class="section-head"><div><span class="eyebrow">Opportunity feed</span><h2>Ranked Arizona money events.</h2></div><p id="feedExplainer">Public permit activity is translated into likely downstream buying needs. Sign in to personalize the feed and save opportunities.</p></div><div class="dashboard"><div class="dashbar"><div class="filters"><div class="company-toggle-wrap" aria-label="Company on permit filter"><span class="company-toggle-label">Company on permit</span><div class="company-toggle" id="permitCompanyToggle"><button type="button" class="company-toggle-btn active" data-value="listed">Listed</button><button type="button" class="company-toggle-btn" data-value="not-listed">Not Listed</button></div></div><select id="market"><option value="all">All live markets</option><option>Phoenix</option><option>Tempe</option><option>Tucson</option><option>Scottsdale</option><option>Mesa</option></select><select id="industry"><option value="all">All industries</option><option>Commercial services</option><option>HVAC</option><option>Electrical</option><option>Plumbing</option><option>Roofing</option><option>Landscaping</option><option>Security</option><option>Signage</option></select><select id="minScore"><option value="0">Any score</option><option value="40">40+ WATCH</option><option value="60">60+ WARM</option><option value="80">80+ HOT</option></select><select id="sortFeed" aria-label="Sort opportunities"><option value="score">Sort: highest score</option><option value="newest">Detected: newest first</option><option value="oldest">Detected: oldest first</option></select><select id="savedFilter" style="display:none"><option value="all">All matched</option><option value="saved">Saved only</option></select><input id="search" placeholder="Search project, address…" /><button class="score-help" type="button" onclick="openModal('scoreModal')"><span class="qmark">?</span>How scoring works</button></div><div class="status"><span class="spinner"></span><span id="feedStatus">Connecting…</span></div></div><div class="gridhead"><div>Score</div><div>Money event</div><div>Company on permit</div><div>Who should sell</div><div>Opportunity</div><div>Temperature</div><div></div></div><div id="leadList"><div class="empty">Loading opportunities…</div></div></div></div></section>
+<section class="section" id="signals"><div class="wrap"><div class="section-head"><div><span class="eyebrow">Opportunity feed</span><h2>Ranked Arizona money events.</h2></div><p id="feedExplainer">Public permit activity is translated into likely downstream buying needs. Sign in to personalize the feed and save opportunities.</p></div><div class="dashboard"><div class="dashbar"><div class="filters"><div class="company-toggle-wrap" aria-label="Company on permit filter"><span class="company-toggle-label">Company on permit</span><div class="company-toggle" id="permitCompanyToggle"><button type="button" class="company-toggle-btn" data-value="listed">Listed</button><button type="button" class="company-toggle-btn active" data-value="not-listed">Not Listed</button></div></div><select id="market"><option value="all">All live markets</option><option>Phoenix</option><option>Tempe</option><option>Tucson</option><option>Scottsdale</option><option>Mesa</option></select><select id="industry"><option value="all">All industries</option><option>Commercial services</option><option>HVAC</option><option>Electrical</option><option>Plumbing</option><option>Roofing</option><option>Landscaping</option><option>Security</option><option>Signage</option></select><select id="minScore"><option value="0">Any score</option><option value="40">40+ WATCH</option><option value="60">60+ WARM</option><option value="80">80+ HOT</option></select><select id="sortFeed" aria-label="Sort opportunities"><option value="score">Sort: highest score</option><option value="newest">Detected: newest first</option><option value="oldest">Detected: oldest first</option></select><select id="savedFilter" style="display:none"><option value="all">All matched</option><option value="saved">Saved only</option></select><input id="search" placeholder="Search project, address…" /><button class="score-help" type="button" onclick="openModal('scoreModal')"><span class="qmark">?</span>How scoring works</button></div><div class="status"><span class="spinner"></span><span id="feedStatus">Connecting…</span></div></div><div class="gridhead"><div>Score</div><div>Money event</div><div>Company on permit</div><div>Who should sell</div><div>Opportunity</div><div>Temperature</div><div></div></div><div id="leadList"><div class="empty">Loading opportunities…</div></div></div></div></section>
 
 <section class="section" id="pipeline">
   <div class="wrap">
@@ -1278,7 +1311,7 @@ const SAMPLE=[
 {id:'demo-2',name:'New commercial building',address:'North Phoenix',date:Date.now()-46800000,company:'Public permit signal',scope:'New commercial construction creates multiple downstream service needs.',score:90,categories:['Electrical','HVAC','Security','Landscaping','Commercial services'],value:65000,temperature:'HOT',permit:'DEMO-002',source:'Demo fallback'}
 ];
 let leads=[],user=null,currentLead=null,savedOnly=false;
-let permitCompanyFilter='listed',pipelineCompanyFilter='listed';
+let permitCompanyFilter='listed',pipelineCompanyFilter='not-listed';
 let heroRadarEntries=[],heroRadarSelected=0;
 const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
 const THEME_KEY='revenuetrigger_theme';
