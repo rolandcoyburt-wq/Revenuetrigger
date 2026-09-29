@@ -794,7 +794,7 @@ html[data-theme="light"] .company-toggle-btn.active{
 
     <div class="hero-console" id="heroRadar" aria-label="Interactive opportunity signal radar">
       <div class="console-header">
-        <div class="console-header-title"><span class="console-symbol" aria-hidden="true"></span><span>OPPORTUNITY RADAR <img class="opportunity-radar-title-logo" src="/assets/revenuetrigger-logo.svg" alt=""></span><span class="console-header-light" aria-hidden="true"></span></div>
+        <div class="console-header-title"><span class="console-symbol" aria-hidden="true"></span><span><img class="opportunity-radar-title-logo" src="/assets/revenuetrigger-logo.svg" alt=""> OPPORTUNITY RADAR</span><span class="console-header-light" aria-hidden="true"></span></div>
         <span class="console-frequency" id="heroRadarState">CONNECTING</span>
       </div>
       <div class="radar-surface" id="radarSurface">
@@ -1051,7 +1051,8 @@ async function openAccount(){renderAccount();await syncBilling();openModal('acco
 function planActive(){return user&&['active','trialing'].includes(user.subscriptionStatus)?user.plan:'Beta'}
 function render(){
   const market=$('#market').value,industry=$('#industry').value,min=+$(`#minScore`).value,q=$('#search').value.toLowerCase(),saved=$('#savedFilter').value==='saved',sort=$('#sortFeed')?.value||'score';
-  const filtered=leads.filter(x=>(market==='all'||(x.market||'Phoenix')===market)&&(industry==='all'||x.categories?.includes(industry))&&x.score>=min&&(!saved||x.saved)&&(permitCompanyFilter==='listed'?Boolean(String(x.company||'').trim()):!String(x.company||'').trim())&&(`${x.name} ${x.address} ${x.company} ${x.scope}`.toLowerCase().includes(q)));
+  const hasListedCompany=x=>{const c=String(x.company||'').trim();return Boolean(c)&&!/^(not listed|unknown|n\/a|none|null|-+)$/i.test(c);};
+  const filtered=leads.filter(x=>(market==='all'||(x.market||'Phoenix')===market)&&(industry==='all'||x.categories?.includes(industry))&&x.score>=min&&(!saved||x.saved)&&(permitCompanyFilter==='listed'?hasListedCompany(x):!hasListedCompany(x))&&(`${x.name} ${x.address} ${x.company} ${x.scope}`.toLowerCase().includes(q)));
   filtered.sort((a,b)=>{
     if(sort==='newest')return (new Date(b.date).getTime()||0)-(new Date(a.date).getTime()||0);
     if(sort==='oldest')return (new Date(a.date).getTime()||0)-(new Date(b.date).getTime()||0);
