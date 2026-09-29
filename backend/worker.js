@@ -600,6 +600,49 @@ async function fetchScottsdale(days=7,limit=500){
 }
 
 
+async function scottsdaleDebug(days=7){
+  const page=await fetch(SCOTTSDALE_REPORTS,{
+    redirect:'follow',
+    headers:{'user-agent':'RevenueTrigger/5.0 Scottsdale diagnostics','accept':'text/html,application/xhtml+xml'}
+  });
+  if(!page.ok)throw new Error(`Scottsdale reports page ${page.status}`);
+  await page.text();
+  const cookie=page.headers.get('set-cookie')||'';
+  const end=new Date();
+  const start=new Date(Date.now()-days*86400000);
+  const body=new URLSearchParams({permitTypeID:'',startDate:scottsdaleMmddyyyy(start),endDate:scottsdaleMmddyyyy(end),currentPage:'1'});
+  const headers={
+    'user-agent':'RevenueTrigger/5.0 Scottsdale diagnostics',
+    'accept':'text/csv,application/csv,text/plain,*/*',
+    'content-type':'application/x-www-form-urlencoded; charset=UTF-8',
+    'referer':SCOTTSDALE_REPORTS,
+    'origin':'https://eservices.scottsdaleaz.gov'
+  };
+  if(cookie)headers.cookie=cookie;
+  const r=await fetch(SCOTTSDALE_CSV,{method:'POST',redirect:'follow',headers,body:body.toString()});
+  const text=await r.text();
+  if(!r.ok)throw new Error(`Scottsdale CSV ${r.status}`);
+  const rows=parseScottsdaleCsv(text);
+  const headersFound=rows.length?Object.keys(rows[0]):[];
+  const issueDates={};
+  let withPermit=0,withBuilder=0,withOwner=0,withValuation=0;
+  for(const a of rows){
+    if(String(a.Permit||'').trim())withPermit++;
+    if(String(a.Builder||'').trim())withBuilder++;
+    if(String(a.Owner||'').trim())withOwner++;
+    if(Number(String(a.Valuation||'').replace(/[$,]/g,''))>0)withValuation++;
+    const d=String(a.IssueDate||'').trim()||'(missing)';
+    issueDates[d]=(issueDates[d]||0)+1;
+  }
+  return {
+    requested:{days,startDate:scottsdaleMmddyyyy(start),endDate:scottsdaleMmddyyyy(end)},
+    http:{status:r.status,contentType:r.headers.get('content-type')||null,bytes:text.length},
+    parsed:{rows:rows.length,headers:headersFound,withPermit,withBuilder,withOwner,withValuation},
+    issueDates:Object.entries(issueDates).sort((a,b)=>String(b[0]).localeCompare(String(a[0]))).slice(0,20),
+    sample:rows.slice(0,5).map(a=>({Permit:a.Permit||null,IssueDate:a.IssueDate||null,PermitType:a.PermitType||null,Address:a.Address||null,Valuation:a.Valuation||null,Builder:a.Builder||null,Owner:a.Owner||null}))
+  };
+}
+
 function mesaDateValue(v){
   if(!v)return null;
   const n=new Date(v).getTime();
@@ -738,23 +781,60 @@ async function fetchChandlerConstructionContractors(limit=500){
     };
   }).filter(x=>x.company);
 }
+function chandlerProjectTokens(v){
+  const stop=new Set(['and','the','of','at','for','to','a','an','new','project','phase','building','site','onsite','offsite','permit','development','improvements','improvement']);
+  return normalizeProjectName(v).split(' ').filter(x=>x.length>=3&&!stop.has(x));
+}
 function buildChandlerContractorIndex(rows=[]){
   const exact=new Map();
+  const prepared=[];
   for(const x of rows){
     const key=normalizeProjectName(x.project);
     if(key&&!exact.has(key))exact.set(key,x);
+    prepared.push({...x,_key:key,_tokens:chandlerProjectTokens(x.project)});
   }
-  return {rows,exact};
+  return {rows:prepared,exact};
 }
 function matchChandlerContractor(project,index){
   const key=normalizeProjectName(project);
   if(!key)return null;
-  if(index.exact.has(key))return index.exact.get(key);
-  if(key.length<6)return null;
-  return index.rows.find(x=>{
-    const other=normalizeProjectName(x.project);
-    return other && other.length>=6 && (other.includes(key)||key.includes(other));
-  })||null;
+  const exact=index.exact.get(key);
+  if(exact)return {...exact,matchType:'exact',matchConfidence:1};
+
+  const tokens=chandlerProjectTokens(project);
+  if(tokens.length<2)return null;
+  const tokenSet=new Set(tokens);
+  let best=null,bestScore=0,bestOverlap=0;
+
+  for(const x of index.rows){
+    const other=x._key||normalizeProjectName(x.project);
+    const otherTokens=x._tokens||chandlerProjectTokens(x.project);
+    if(!other||otherTokens.length<2)continue;
+
+    // Strong containment remains useful for projects that add/remove a phase or descriptor.
+    if(key.length>=8&&other.length>=8&&(other.includes(key)||key.includes(other))){
+      const lengthRatio=Math.min(key.length,other.length)/Math.max(key.length,other.length);
+      const score=.86+(.12*lengthRatio);
+      if(score>bestScore){best=x;bestScore=score;bestOverlap=Math.min(tokens.length,otherTokens.length);}
+      continue;
+    }
+
+    const otherSet=new Set(otherTokens);
+    let overlap=0;
+    for(const t of tokenSet)if(otherSet.has(t))overlap++;
+    if(overlap<2)continue;
+
+    const union=new Set([...tokenSet,...otherSet]).size||1;
+    const jaccard=overlap/union;
+    const coverage=overlap/Math.min(tokenSet.size,otherSet.size);
+    const score=(jaccard*.55)+(coverage*.45);
+    if(score>bestScore){best=x;bestScore=score;bestOverlap=overlap;}
+  }
+
+  // Conservative threshold: require at least two meaningful shared tokens and a strong score.
+  if(!best||bestOverlap<2||bestScore<.68)return null;
+  const { _key,_tokens,...clean }=best;
+  return {...clean,matchType:'fuzzy-project',matchConfidence:Number(bestScore.toFixed(2))};
 }
 
 async function chandlerLayer(id,stage,limit=250){
@@ -1856,6 +1936,13 @@ export default {
         const data=await tucsonDebug(env);
         return json({ok:true,now:nowIso(),...data},200,env);
       }
+      if(path==='/admin/scottsdale-debug'&&request.method==='GET'){
+        const token=(request.headers.get('authorization')||'').replace(/^Bearer\s+/i,'');
+        if(!env.ADMIN_TOKEN||token!==env.ADMIN_TOKEN)return json({error:'unauthorized'},401,env);
+        const days=clamp(Number(url.searchParams.get('days')||7),1,30);
+        const data=await scottsdaleDebug(days);
+        return json({ok:true,now:nowIso(),...data},200,env);
+      }
       if(path==='/sources'&&request.method==='GET')return json({markets:SOURCE_STATUS,liveMarkets:LIVE_MARKETS,plannedMarkets:MARKETS.filter(m=>!LIVE_MARKETS.includes(m)),generatedAt:nowIso()},200,env);
       if(path==='/pipeline'&&request.method==='GET'){
         const market=(url.searchParams.get('market')||'Chandler').trim();
@@ -1907,7 +1994,9 @@ export default {
             const participant=directParticipant || (matchedContractor?{
               company:matchedContractor.company,
               role:matchedContractor.role,
-              field:'GPS_CONTRACTOR_NAME'
+              field:'GPS_CONTRACTOR_NAME',
+              matchType:matchedContractor.matchType||'project',
+              matchConfidence:matchedContractor.matchConfidence||null
             }:null);
             const model=opportunityScore({
               text,
@@ -1930,6 +2019,8 @@ export default {
               company:participant?.company||null,
               companyRole:participant?.role||null,
               companySourceField:participant?.field||null,
+              companyMatchType:participant?.matchType||(directParticipant?'direct-source-field':null),
+              companyMatchConfidence:participant?.matchConfidence||(directParticipant?1:null),
               score:model.score,
               scoreBreakdown:model.breakdown,
               sellerFit:model.sellerFit,
