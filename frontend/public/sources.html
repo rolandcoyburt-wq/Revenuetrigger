@@ -1082,6 +1082,38 @@ html[data-theme="dark"] .sources-page-price .price:not(.featured){
   .pricing .price.featured.scroll-active{border-color:#b9c9bf !important;box-shadow:0 20px 52px rgba(0,0,0,.34) !important}
 }
 </style>
+
+<style>
+/* V95 — darker Sources console and a fully visible mobile processing animation. */
+.source-flow-console{
+  background:linear-gradient(150deg,#07170e 0%,#020a06 55%,#04130b 100%) !important;
+  border-color:rgba(63,155,88,.48) !important;
+}
+.source-flow-console:before{background:radial-gradient(300px circle at var(--fx) var(--fy),rgba(42,238,97,.075),transparent 74%) !important}
+html[data-theme="light"] .source-flow-console{
+  background:linear-gradient(150deg,#07170e 0%,#020906 58%,#03110a 100%) !important;
+  border-color:rgba(52,141,77,.58) !important;
+  box-shadow:0 34px 82px rgba(3,14,8,.34),0 0 0 1px rgba(42,238,97,.025),inset 0 1px 0 rgba(153,255,178,.06) !important;
+}
+html[data-theme="light"] .source-flow-console:before{background:radial-gradient(300px circle at var(--fx) var(--fy),rgba(42,238,97,.06),transparent 76%) !important}
+
+@media(max-width:620px){
+  .source-flow-stage{display:flex !important;flex-direction:column !important;min-height:0 !important;gap:16px !important;padding:17px 13px 18px !important}
+  .flow-sources{width:100% !important;display:grid !important;grid-template-columns:1fr 1fr !important;gap:8px !important}
+  .flow-source{width:100% !important;min-width:0 !important;transform:none !important}
+  .flow-source:hover,.flow-source.active{transform:none !important}
+  .flow-processor{
+    position:relative !important;left:auto !important;top:auto !important;transform:none !important;
+    width:100% !important;height:142px !important;min-height:142px !important;opacity:1 !important;overflow:visible !important;
+    display:grid !important;place-items:center !important;margin:0 !important
+  }
+  .flow-bus{left:0 !important;right:0 !important;top:50% !important}
+  .flow-core{width:106px !important;height:106px !important;border-radius:23px !important;transform:rotate(45deg) scale(.82) !important;opacity:.82 !important}
+  .flow-core img{width:66px !important;max-height:38px !important}
+  .flow-core-label{top:calc(50% + 58px) !important;font-size:7px !important;letter-spacing:.11em !important}
+  .flow-output{width:100% !important;box-sizing:border-box !important;padding:14px 15px !important}
+}
+</style>
 </head>
 <body>
 <header class="topbar"><div class="wrap"><nav><a class="brand" href="/" aria-label="RevenueTrigger home">
@@ -1213,3 +1245,35 @@ $$('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModa
 (()=>{const cards=[...document.querySelectorAll('.pricing .price')];if(!cards.length)return;let raf=0;const paint=()=>{raf=0;if(!matchMedia('(max-width:620px)').matches){cards.forEach(c=>c.classList.remove('scroll-active'));return}const mid=innerHeight/2;let best=null,d0=Infinity;cards.forEach(c=>{const r=c.getBoundingClientRect();if(r.bottom<=0||r.top>=innerHeight)return;const d=Math.abs((r.top+r.bottom)/2-mid);if(d<d0){d0=d;best=c}});cards.forEach(c=>c.classList.toggle('scroll-active',c===best&&d0<innerHeight*.46))};const q=()=>{if(!raf)raf=requestAnimationFrame(paint)};addEventListener('scroll',q,{passive:true});addEventListener('resize',q,{passive:true});paint()})();
 </script>
 </body></html>
+<style>
+/* V96 — Source pricing card/button refinement. */
+.sources-page-price .price:not(.featured),
+html[data-theme="light"] .sources-page-price .price:not(.featured),
+html[data-theme="dark"] .sources-page-price .price:not(.featured){
+  background:#000 !important;
+  background-image:none !important;
+  border-color:#1b2a22 !important;
+  box-shadow:none !important;
+}
+.sources-page-price .price:not(.featured) .btn-secondary,
+html[data-theme="light"] .sources-page-price .price:not(.featured) .btn-secondary,
+html[data-theme="dark"] .sources-page-price .price:not(.featured) .btn-secondary{
+  background:#fff !important;
+  border-color:#fff !important;
+  color:#050b07 !important;
+  box-shadow:none !important;
+}
+@media (hover:hover) and (pointer:fine){
+  .sources-page-price .price:not(.featured):hover,
+  html[data-theme="light"] .sources-page-price .price:not(.featured):hover,
+  html[data-theme="dark"] .sources-page-price .price:not(.featured):hover{
+    border-color:#2aee61 !important;
+    box-shadow:0 0 0 2px #2aee61,0 0 30px rgba(42,238,97,.32) !important;
+  }
+  .sources-page-price .price:not(.featured) .btn-secondary:hover{
+    background:#fff !important;
+    border-color:#fff !important;
+    color:#050b07 !important;
+  }
+}
+</style>
