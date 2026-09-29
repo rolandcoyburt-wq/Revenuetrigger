@@ -877,6 +877,72 @@ html[data-theme="light"] .sources-hero p{color:#526158}
 @media(max-width:860px){.sources-hero{padding:48px 0 30px}.sources-hero-grid{grid-template-columns:1fr;gap:34px}.sources-hero h1{font-size:clamp(48px,7vw,76px)}.source-flow-console{max-width:680px;width:100%;margin:0 auto}.sources-page-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:620px){.sources-hero{padding:34px 0 22px}.sources-hero h1{font-size:clamp(40px,10vw,56px);margin:20px 0}.sources-hero p{font-size:16px}.source-meta{gap:14px;font-size:9px;margin-top:25px}.source-flow-stage{min-height:380px;grid-template-columns:1fr 112px;gap:12px;padding:18px 14px}.flow-sources{grid-column:1}.flow-processor{position:absolute;left:46%;top:50%;transform:translate(-50%,-50%);opacity:.22;pointer-events:none}.flow-output{grid-column:2}.flow-source{padding:8px}.flow-head{padding:0 13px}.flow-head-title{font-size:8px}.flow-head-title img{width:22px;height:22px}.flow-live{font-size:7px;padding:5px 6px}.flow-foot{padding:9px 13px;font-size:7px}.flow-foot>span:last-child{display:none}.sources-page-grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.flow-live:before,.flow-bus:after,.flow-core:before,.flow-core:after{animation:none!important}.source-flow-console{transform:none!important}}
+
+/* V90: Pricing is intentionally theme-independent: black section, white Scout/Territory, green Hunter. */
+.sources-page-price,
+html[data-theme="light"] .sources-page-price,
+html[data-theme="dark"] .sources-page-price{
+  background:linear-gradient(180deg,#041009 0%,#020805 100%) !important;
+  color:#f5f8f6 !important;
+  border-color:#153722 !important;
+}
+.sources-page-price:before,
+html[data-theme="light"] .sources-page-price:before,
+html[data-theme="dark"] .sources-page-price:before{
+  background:radial-gradient(430px circle at var(--mouse-x,70vw) var(--mouse-y,50vh),rgba(42,238,97,.10),transparent 72%) !important;
+}
+.sources-page-price .section-head h2,
+html[data-theme="light"] .sources-page-price .section-head h2{color:#f5f8f6 !important}
+.sources-page-price .section-head p,
+html[data-theme="light"] .sources-page-price .section-head p{color:#92a69b !important}
+.sources-page-price .eyebrow,
+html[data-theme="light"] .sources-page-price .eyebrow{
+  background:#07170e !important;
+  border-color:#28513a !important;
+  color:#d7e6de !important;
+}
+.sources-page-price .price:not(.featured),
+html[data-theme="light"] .sources-page-price .price:not(.featured){
+  background:#ffffff !important;
+  border-color:#d8e2dc !important;
+  color:#07120d !important;
+  box-shadow:0 18px 45px rgba(0,0,0,.18) !important;
+}
+.sources-page-price .price:not(.featured) ul,
+html[data-theme="light"] .sources-page-price .price:not(.featured) ul{color:#526158 !important}
+.sources-page-price .price:not(.featured) .money small,
+html[data-theme="light"] .sources-page-price .price:not(.featured) .money small{color:#708078 !important}
+.sources-page-price .price:not(.featured) .btn-secondary,
+html[data-theme="light"] .sources-page-price .price:not(.featured) .btn-secondary{
+  background:#07120d !important;
+  border-color:#07120d !important;
+  color:#ffffff !important;
+}
+.sources-page-price .price.featured,
+html[data-theme="light"] .sources-page-price .price.featured{
+  background:linear-gradient(145deg,#35f56a 0%,#20e457 58%,#13cf47 100%) !important;
+  border-color:#65ff8d !important;
+  color:#031108 !important;
+  box-shadow:0 0 0 1px rgba(42,238,97,.16),0 24px 70px rgba(0,0,0,.28),0 0 52px rgba(42,238,97,.18) !important;
+}
+.sources-page-price .price.featured ul,
+html[data-theme="light"] .sources-page-price .price.featured ul{color:#0b3a1c !important}
+.sources-page-price .price.featured .money small,
+html[data-theme="light"] .sources-page-price .price.featured .money small{color:#145a2b !important}
+.sources-page-price .price.featured .badge,
+html[data-theme="light"] .sources-page-price .price.featured .badge{
+  background:#041009 !important;
+  color:#ffffff !important;
+}
+.sources-page-price .price.featured .btn-primary,
+html[data-theme="light"] .sources-page-price .price.featured .btn-primary{
+  background:#041009 !important;
+  border-color:#041009 !important;
+  color:#ffffff !important;
+  box-shadow:none !important;
+}
+.sources-page-price .price{transition:transform .22s,box-shadow .22s,border-color .22s}
+.sources-page-price .price:hover{transform:translateY(-4px)}
 </style>
 </head>
 <body>
