@@ -18,4 +18,5 @@ Source: last-known-good desktop deployment folder supplied September 2026.
 - `STRIPE_WEBHOOK_SECRET`
 
 The D1 binding and non-secret variables remain defined in `backend/wrangler.toml`.
+
 Backend automated deployment enabled.
