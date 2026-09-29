@@ -769,6 +769,278 @@ html[data-theme="light"] .company-toggle-btn.active{
 #pricing .price:hover{transform:translateY(-4px);border-color:#41b866}
 #pricing .price.featured:hover{box-shadow:0 24px 68px rgba(0,0,0,.22),0 0 36px rgba(42,238,97,.10)}
 
+
+
+/* V92 — mobile opportunity feed + early pipeline card layout */
+@media(max-width:620px){
+  #signals .dashboard,
+  #pipeline .dashboard{overflow:hidden}
+
+  #signals .dashbar,
+  #pipeline .pipeline-dashbar{
+    display:block;
+    padding:14px !important;
+  }
+
+  #signals .filters{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:9px !important;
+    width:100%;
+  }
+  #signals .filters > *{min-width:0;max-width:100%}
+  #signals .company-toggle-wrap,
+  #signals #savedFilter,
+  #signals #search,
+  #signals .score-help{grid-column:1 / -1;width:100%}
+  #signals .filters select,
+  #signals .filters input{
+    width:100%;
+    min-width:0;
+    box-sizing:border-box;
+    font-size:16px;
+    padding:12px 11px;
+  }
+  #signals .score-help{justify-content:center;min-height:48px}
+  #signals .status,
+  #pipeline .status{
+    width:100%;
+    margin-top:14px;
+    padding-top:13px;
+    border-top:1px solid #173324;
+    font-size:12px;
+    line-height:1.35;
+  }
+
+  /* Opportunity cards: every field owns a row; nothing can collide. */
+  #leadList .lead{
+    display:grid !important;
+    grid-template-columns:52px minmax(0,1fr) !important;
+    grid-auto-rows:auto;
+    column-gap:12px !important;
+    row-gap:10px !important;
+    align-items:start !important;
+    padding:18px 15px !important;
+    overflow:hidden;
+  }
+  #leadList .lead > *{min-width:0;max-width:100%}
+  #leadList .lead .score{
+    grid-column:1 !important;
+    grid-row:1 !important;
+    width:48px;height:48px;
+    align-self:start;justify-self:start;
+  }
+  #leadList .lead .lead-main{
+    grid-column:2 !important;
+    grid-row:1 !important;
+    min-width:0;
+  }
+  #leadList .lead .leadname{
+    font-size:16px;
+    line-height:1.2;
+    overflow-wrap:anywhere;
+  }
+  #leadList .lead .meta{
+    font-size:12px;
+    line-height:1.35;
+    overflow-wrap:anywhere;
+  }
+  #leadList .lead .permit-company{
+    grid-column:1 / -1 !important;
+    grid-row:2 !important;
+    display:block !important;
+    margin:0 !important;
+    padding:10px 11px;
+    border:1px solid #193a28;
+    border-radius:9px;
+    background:rgba(8,27,17,.5);
+    font-size:12px;
+    line-height:1.35;
+    overflow-wrap:anywhere;
+  }
+  #leadList .lead .permit-company:before{
+    content:"COMPANY ON PERMIT" !important;
+    display:block;
+    margin-bottom:4px;
+    color:#71877b;
+    font-size:8px;
+    line-height:1;
+    letter-spacing:.12em;
+    font-weight:900;
+  }
+  #leadList .lead .lead-seller{
+    grid-column:1 / -1 !important;
+    grid-row:3 !important;
+    display:flex !important;
+    flex-wrap:wrap;
+    gap:6px;
+    min-width:0;
+  }
+  #leadList .lead .lead-seller:before{
+    content:"WHO SHOULD SELL";
+    flex:0 0 100%;
+    color:#71877b;
+    font-size:8px;
+    line-height:1;
+    letter-spacing:.12em;
+    font-weight:900;
+    margin-bottom:1px;
+  }
+  #leadList .lead .chip{max-width:100%;overflow-wrap:anywhere}
+  #leadList .lead .lead-value{
+    grid-column:1 / -1 !important;
+    grid-row:4 !important;
+    justify-self:start;
+    display:block !important;
+    margin:0 !important;
+    font-size:20px;
+    line-height:1.1;
+  }
+  #leadList .lead .lead-value:before{
+    content:"EST. OPPORTUNITY" !important;
+    display:block;
+    margin-bottom:4px;
+    color:#71877b;
+    font-size:8px;
+    line-height:1;
+    letter-spacing:.12em;
+    font-weight:900;
+  }
+  #leadList .lead .lead-temperature{
+    grid-column:1 / -1 !important;
+    grid-row:4 !important;
+    justify-self:end !important;
+    align-self:end !important;
+    position:static !important;
+    left:auto !important;
+    transform:none !important;
+    width:auto !important;
+    margin:0 0 1px !important;
+    font-size:15px;
+    line-height:1.1;
+  }
+  #leadList .lead .lead-actions{
+    grid-column:1 / -1 !important;
+    grid-row:5 !important;
+    justify-self:end !important;
+    justify-content:flex-end !important;
+    margin:0 !important;
+  }
+  #leadList .lead .view,
+  #leadList .lead .save{min-height:44px;padding:10px 14px}
+
+  /* Early Pipeline filters become a predictable two-column mobile form. */
+  #pipeline .pipeline-controls{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:9px !important;
+    width:100%;
+  }
+  #pipeline .pipeline-controls > *{min-width:0;max-width:100%}
+  #pipeline .company-toggle-wrap,
+  #pipeline #pipelineRefresh{grid-column:1 / -1;width:100%}
+  #pipeline .pipeline-controls select{
+    width:100%;min-width:0;box-sizing:border-box;
+    font-size:16px;padding:12px 10px;
+  }
+  #pipeline #pipelineRefresh{min-height:48px}
+
+  /* Early Pipeline cards mirror the opportunity-feed rhythm. */
+  #pipelineList .pipeline-lead{
+    display:grid !important;
+    grid-template-columns:52px minmax(0,1fr) !important;
+    grid-auto-rows:auto;
+    column-gap:12px !important;
+    row-gap:9px !important;
+    align-items:start !important;
+    padding:18px 15px !important;
+    overflow:hidden;
+  }
+  #pipelineList .pipeline-lead > *{min-width:0;max-width:100%}
+  #pipelineList .pipeline-lead .score{
+    grid-column:1 !important;
+    grid-row:1 !important;
+    width:48px;height:48px;
+    align-self:start;justify-self:start;
+  }
+  #pipelineList .pipeline-main{
+    grid-column:2 !important;
+    grid-row:1 !important;
+    min-width:0;
+  }
+  #pipelineList .pipeline-main .leadname{
+    font-size:16px;line-height:1.2;overflow-wrap:anywhere;
+  }
+  #pipelineList .pipeline-copy{display:none}
+  #pipelineList .pipeline-permit{font-size:12px;margin-top:5px}
+  #pipelineList .pipeline-stage{
+    grid-column:2 !important;
+    grid-row:2 !important;
+    font-size:9px;
+    line-height:1.2;
+    margin-top:-2px;
+  }
+  #pipelineList .pipeline-company-cell{
+    grid-column:1 / -1 !important;
+    grid-row:3 !important;
+    display:flex !important;
+    flex-direction:column;
+    gap:3px;
+    padding:10px 11px !important;
+    border:1px solid #193a28;
+    border-radius:9px;
+    background:rgba(8,27,17,.5);
+    overflow-wrap:anywhere;
+  }
+  #pipelineList .pipeline-company-cell:before{
+    content:"COMPANY / PARTICIPANT";
+    color:#71877b;
+    font-size:8px;
+    line-height:1;
+    letter-spacing:.12em;
+    font-weight:900;
+    margin-bottom:3px;
+  }
+  #pipelineList .pipeline-seller{
+    grid-column:1 / -1 !important;
+    grid-row:4 !important;
+    display:flex !important;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  #pipelineList .pipeline-seller:before{
+    content:"WHO SHOULD SELL";
+    flex:0 0 100%;
+    color:#71877b;
+    font-size:8px;
+    line-height:1;
+    letter-spacing:.12em;
+    font-weight:900;
+    margin-bottom:1px;
+  }
+  #pipelineList .pipeline-seller .chip{max-width:100%;overflow-wrap:anywhere}
+  #pipelineList .pipeline-temperature{
+    grid-column:1 / -1 !important;
+    grid-row:5 !important;
+    justify-self:start;
+    align-self:center;
+    font-size:15px;
+    line-height:1.1;
+  }
+  #pipelineList .pipeline-actions{
+    grid-column:1 / -1 !important;
+    grid-row:5 !important;
+    justify-self:end;
+    align-self:center;
+  }
+  #pipelineList .pipeline-actions .view{min-height:44px;padding:10px 15px}
+
+  html[data-theme="light"] #leadList .lead .permit-company,
+  html[data-theme="light"] #pipelineList .pipeline-company-cell{
+    background:#f7faf8;
+    border-color:#d7e3db;
+  }
+}
 </style>
 </head>
 <body>
