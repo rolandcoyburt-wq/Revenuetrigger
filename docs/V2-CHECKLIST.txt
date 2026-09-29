@@ -1,0 +1,26 @@
+SIGNALHOUND V2 DEPLOYMENT CHECKLIST
+
+[ ] 1. Back up current working V1 folder.
+[ ] 2. Copy your existing D1 database_id into cloudflare/wrangler.toml.
+[ ] 3. Run: npx wrangler d1 execute signalhound --remote --file=./migration-v2.sql
+[ ] 4. Temporarily set DEV_AUTH_BYPASS = "true".
+[ ] 5. Run: npx wrangler deploy
+[ ] 6. Deploy the new index.html to signalhound-phoenix.
+[ ] 7. Test account creation / passwordless sign-in flow.
+[ ] 8. Set DEV_AUTH_BYPASS = "false" and redeploy.
+[ ] 9. Create/verify Resend sending domain.
+[ ] 10. Run: npx wrangler secret put RESEND_API_KEY
+[ ] 11. Set EMAIL_FROM to your verified sender and redeploy.
+[ ] 12. Test a real magic-link email.
+[ ] 13. Create Stripe monthly Prices: $49 / $149 / $499.
+[ ] 14. Paste the three price_ IDs into wrangler.toml.
+[ ] 15. Run: npx wrangler secret put STRIPE_SECRET_KEY
+[ ] 16. Add Stripe webhook: /api/stripe/webhook
+[ ] 17. Subscribe webhook to checkout.session.completed, customer.subscription.updated,
+       customer.subscription.deleted, invoice.payment_failed.
+[ ] 18. Run: npx wrangler secret put STRIPE_WEBHOOK_SECRET
+[ ] 19. Run: npx wrangler deploy
+[ ] 20. Test Stripe using test mode before using live mode.
+[ ] 21. Confirm /api/health reports billing:true and email:true.
+[ ] 22. Confirm existing hourly cron still shows "At 17 minutes past the hour".
+[ ] 23. Test Scout, Hunter and Territory entitlements with test subscriptions.

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" role="img" aria-labelledby="title desc">
+<title id="title">Revenue Trigger Symbol</title>
+<desc id="desc">Green diamond with a four-point negative-space activation star.</desc>
+<defs>
+  <linearGradient id="rtGreen" x1="0" y1="0" x2="0.82" y2="1">
+    <stop offset="0%" stop-color="#72FF82"/>
+    <stop offset="48%" stop-color="#38EF62"/>
+    <stop offset="100%" stop-color="#00C94C"/>
+  </linearGradient>
+</defs>
+<!--
+ Production vector reconstruction of the approved Revenue Trigger mark.
+ The star is transparent negative space; no raster images or font dependencies.
+-->
+<path fill="url(#rtGreen)" fill-rule="evenodd" d="
+M500 40 L960 500 L500 960 L40 500 Z
+
+M500 245
+C500 367 457 457 245 500
+C457 543 500 633 500 755
+C500 633 543 543 755 500
+C543 457 500 367 500 245
+Z"/>
+</svg>

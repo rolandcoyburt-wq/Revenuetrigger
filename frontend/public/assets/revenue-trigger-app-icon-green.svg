@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+  <stop offset="0" stop-color="#70ff7e"/><stop offset="1" stop-color="#00d850"/>
+ </linearGradient>
+</defs>
+<rect x="8" y="8" width="240" height="240" rx="50" fill="url(#bg)"/>
+<!-- Inverse treatment: the approved four-point activation star is the icon itself -->
+<path fill="#031009" d="
+M128 64
+C128 101 113 116 64 128
+C113 140 128 155 128 192
+C128 155 143 140 192 128
+C143 116 128 101 128 64 Z"/>
+</svg>

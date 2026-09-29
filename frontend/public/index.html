@@ -763,20 +763,6 @@ html[data-theme="light"] .company-toggle-btn.active{
   }
 }
 
-
-/* V84 — Opportunity Radar header logo placement */
-.console-header-title .console-symbol{display:none !important}
-.opportunity-radar-title-logo{
-  margin-left:0 !important;
-  margin-right:7px !important;
-}
-@media(max-width:620px){
-  .opportunity-radar-title-logo{
-    margin-left:0 !important;
-    margin-right:5px !important;
-  }
-}
-
 </style>
 </head>
 <body>
@@ -808,7 +794,7 @@ html[data-theme="light"] .company-toggle-btn.active{
 
     <div class="hero-console" id="heroRadar" aria-label="Interactive opportunity signal radar">
       <div class="console-header">
-        <div class="console-header-title"><img class="opportunity-radar-title-logo" src="/assets/revenuetrigger-logo.svg" alt=""><span>OPPORTUNITY RADAR</span><span class="console-header-light" aria-hidden="true"></span></div>
+        <div class="console-header-title"><span class="console-symbol" aria-hidden="true"></span><span>OPPORTUNITY RADAR <img class="opportunity-radar-title-logo" src="/assets/revenuetrigger-logo.svg" alt=""></span><span class="console-header-light" aria-hidden="true"></span></div>
         <span class="console-frequency" id="heroRadarState">CONNECTING</span>
       </div>
       <div class="radar-surface" id="radarSurface">

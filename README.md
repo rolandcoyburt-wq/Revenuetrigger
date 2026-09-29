@@ -1,25 +1,20 @@
-# RevenueTrigger
+# RevenueTrigger — Golden Production Baseline
 
-Canonical Git repository baseline: Production V84.
+Source: last-known-good desktop deployment folder supplied September 2026.
 
 ## Deployment targets
+- `frontend/` → Cloudflare Worker `signalhound-phoenix`
+- `backend/` → Cloudflare Worker `signalhound-api`
 
-- `frontend/` -> Cloudflare Worker `signalhound-phoenix` -> `revenuetrigger.ai`
-- `backend/` -> Cloudflare Worker `signalhound-api` -> `api.revenuetrigger.ai`
+## Production safety
+- Cloudflare secrets are NOT stored in this repository.
+- D1 migrations are versioned here but are NOT run automatically during deployment.
+- `.wrangler/` deployment cache/history is intentionally excluded.
 
-## Cloudflare build commands
+## Required backend Cloudflare secrets
+- `ADMIN_TOKEN`
+- `RESEND_API_KEY`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
 
-Frontend production deploy:
-`npx wrangler deploy --config frontend/wrangler.toml`
-
-Backend production deploy:
-`npx wrangler deploy --config backend/wrangler.toml`
-
-D1 migrations are intentionally NOT run automatically by either deploy command. Review and apply database migrations separately before deploying code that depends on them.
-
-## Safety
-
-Do not commit API secrets, Stripe secret keys, Resend keys, or authentication secrets. Runtime secrets remain in Cloudflare.
-## Deployment status
-
-GitHub → Cloudflare automated deployment pipeline enabled.
+The D1 binding and non-secret variables remain defined in `backend/wrangler.toml`.
