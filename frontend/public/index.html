@@ -1139,6 +1139,16 @@ html[data-theme="light"] .gridhead,html[data-theme="light"] .kpi small,html[data
 
 .status.source-degraded{color:#d6b37f}
 .status.source-degraded .spinner{background:var(--warm-tier,#f2a14b);box-shadow:0 0 14px rgba(242,161,75,.45)}
+
+/* V130 — scan-friendly headlines + truthful signed-out change teaser */
+.lead-main{min-width:0}
+.leadname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.changed-locked-preview{display:flex;gap:8px;margin-top:10px;align-items:center}
+.changed-locked-preview span{display:block;height:9px;border-radius:999px;background:linear-gradient(90deg,#1a3225,#284334,#1a3225);filter:blur(1.8px);opacity:.72}
+.changed-locked-preview span:nth-child(1){width:92px}
+.changed-locked-preview span:nth-child(2){width:135px}
+.changed-signin{margin-top:10px;border:0;background:transparent;color:var(--lime);padding:0;font:inherit;font-weight:650;cursor:pointer}
+html[data-theme="light"] .changed-locked-preview span{background:linear-gradient(90deg,#d7e3db,#bcd0c3,#d7e3db)}
 </style>
 
 <style>
@@ -1587,14 +1597,61 @@ function displayCompanyName(v=''){
   const keepUpper=new Set(['LLC','LLP','LP','PLLC','USA','US','HVAC','GC','DBA','AZ','II','III','IV']);
   return raw.toLowerCase().replace(/\b[a-z0-9][a-z0-9'&.-]*\b/g,w=>{const u=w.toUpperCase();return keepUpper.has(u)?u:w.charAt(0).toUpperCase()+w.slice(1)});
 }
-function displayEventTitle(x={}){
-  const raw=String(x.name||'').replace(/\s+/g,' ').trim();
+function cleanPermitText(v=''){
+  return String(v||'')
+    .replace(/[\r\n]+/g,' ')
+    .replace(/^\s*(?:\d+[.)]|[-•])\s*/,'')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+function sentenceCasePermit(v=''){
+  let s=cleanPermitText(v);
+  if(!s)return s;
+  const letters=(s.match(/[A-Za-z]/g)||[]);
+  const uppers=(s.match(/[A-Z]/g)||[]);
+  if(letters.length>=8&&uppers.length/letters.length>.72){
+    s=s.toLowerCase();
+    s=s.charAt(0).toUpperCase()+s.slice(1);
+    const acronyms=['HVAC','FACP','EV','ADA','LED','CCTV','CMU','PVC','RTU','VAV','AHU','CO2'];
+    for(const a of acronyms)s=s.replace(new RegExp('\\b'+a.toLowerCase()+'\\b','g'),a);
+  }
+  return s;
+}
+function truncateAtWord(v,max=62){
+  const s=String(v||'').trim();
+  if(s.length<=max)return s;
+  const cut=s.slice(0,max+1);
+  const at=cut.lastIndexOf(' ');
+  return (at>Math.floor(max*.6)?cut.slice(0,at):s.slice(0,max)).replace(/[,:;\-\s]+$/,'')+'…';
+}
+function permitDescriptionText(x={}){
   const generic=/^(other\s+commercial|commercial|commercial building|permit activity|building permit|other)$/i;
-  if(raw&&!generic.test(raw))return raw;
-  const parts=String(x.scope||'').split(/\s+[—–-]\s+/).map(v=>v.trim()).filter(Boolean);
-  const useful=parts.find(v=>v.length>=5&&!generic.test(v)&&!/^com$/i.test(v));
-  if(useful)return useful.length>96?useful.slice(0,93)+'…':useful;
-  return raw||((x.market||'Arizona')+' permit activity');
+  const parts=String(x.scope||'').split(/\s+[—–-]\s+/).map(cleanPermitText).filter(Boolean);
+  const useful=parts.find(v=>v.length>=5&&!generic.test(v)&&!/^com$/i.test(v)&&!/^\d{3}\s*-/.test(v));
+  return useful||'';
+}
+function feedHeadline(x={}){
+  const generic=/^(other\s+commercial|commercial|commercial building|permit activity|building permit|other)$/i;
+  const raw=cleanPermitText(x.name||'');
+  let text=(!raw||generic.test(raw))?permitDescriptionText(x):raw;
+  const source=(permitDescriptionText(x)||text||'').toLowerCase();
+
+  if(/magnetic\s+(?:lock|locking)|access control/.test(source)&&/fire alarm/.test(source))return 'Magnetic door lock + fire alarm tie-in';
+  if(/fire alarm/.test(source)&&/(facp|panel)/.test(source)&&/(replace|replacement|new)/.test(source))return 'Fire alarm panel replacement';
+  if(/(?:hvac|chiller)/.test(source)&&/(breaker|wiring|electrical|feeder)/.test(source))return 'HVAC chiller electrical upgrade';
+  if(/gas line/.test(source)&&/(repair|replace|new)/.test(source))return 'Commercial gas line repair';
+  if(/(?:ev charging|ev charger|charging station)/.test(source))return 'EV charger installation';
+  if(/solar|photovoltaic/.test(source)&&/(install|installation|new)/.test(source))return 'Commercial solar installation';
+  if(/tenant improvement|tenant build.?out/.test(source))return 'Commercial tenant improvement';
+  if(/roof/.test(source)&&/(replace|replacement|reroof|re-roof)/.test(source))return 'Commercial roof replacement';
+  if(/(?:water heater|boiler)/.test(source)&&/(replace|replacement|install)/.test(source))return 'Water-heating equipment upgrade';
+
+  text=sentenceCasePermit(text||((x.market||'Arizona')+' permit activity'));
+  text=text.replace(/^\s*\d+[.)]\s*/,'');
+  return truncateAtWord(text,62);
+}
+function displayEventTitle(x={}){
+  return feedHeadline(x);
 }
 function setKpiValue(id,rawValue,displayValue){
   const el=document.getElementById(id);if(!el)return;
@@ -1741,7 +1798,7 @@ function openLead(id){
   const whyNow=ai.whyNow?`<div class="action-callout"><b>WHY NOW</b><span class="action-reason">${esc(ai.whyNow)}</span></div>`:'';
   const nextAction=ai.nextBestAction?`<div class="action-callout"><b>RECOMMENDED ACTION — ${esc(ai.nextBestAction.action)}</b><span class="action-reason">${esc(ai.nextBestAction.reason)}</span></div>`:'';
 
-  $('#mWhy').innerHTML=`<strong>Why RevenueTrigger flagged it:</strong><br>${esc(x.scope||'Recent permit activity suggests an upcoming spend event.')}<br>${actionGrid}${whyNow}${nextAction}<br>${lines?`<strong>Score breakdown</strong><br>${lines}`:''}${confidence}${lifecycle}${cluster}<br><span style="color:#8fa59b">Action Intelligence is a RevenueTrigger inference from observed public activity, not a guarantee of vendor selection or project timing.</span>`;
+  $('#mWhy').innerHTML=`<strong>Full permit description:</strong><br>${esc(x.scope||'Recent permit activity suggests an upcoming spend event.')}<br>${actionGrid}${whyNow}${nextAction}<br>${lines?`<strong>Score breakdown</strong><br>${lines}`:''}${confidence}${lifecycle}${cluster}<br><span style="color:#8fa59b">Action Intelligence is a RevenueTrigger inference from observed public activity, not a guarantee of vendor selection or project timing.</span>`;
   $('#mSave').style.display=user?'inline-block':'none';$('#mSave').textContent=x.saved?'★ Saved':'☆ Save opportunity';
   currentFeedback={relevance:null,outcome:null};renderLeadFeedback();openModal('leadModal');loadLeadFeedback()
 }
@@ -1829,8 +1886,25 @@ async function loadChanges(){
   if(!user){
     ['chgOpp','chgHot','chgMajor','chgComp'].forEach(id=>{const tile=document.getElementById(id)?.closest('.changed-stat');if(tile)tile.hidden=true;});
     document.querySelector('.changed-shell')?.setAttribute('data-visible-stats','0');
-    msg.textContent='Sign in to see the activity that deserves your attention today.';
     $('#changedMoves').innerHTML='';
+    try{
+      const r=await fetch(`${CONFIG.apiBase}/changes-teaser`);
+      const d=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error();
+      const count=Number(d.opportunities||0);
+      if(count>0){
+        const tile=document.getElementById('chgOpp')?.closest('.changed-stat');
+        if(tile)tile.hidden=false;
+        $('#chgOpp').textContent=String(count);
+        document.querySelector('.changed-shell')?.setAttribute('data-visible-stats','1');
+        msg.textContent=`${count} new ${count===1?'opportunity':'opportunities'} since yesterday — sign in to see the details.`;
+        $('#changedMoves').innerHTML='<div class="changed-locked-preview" aria-hidden="true"><span></span><span></span></div><button class="changed-signin" type="button" onclick="openSignin()">Sign in to view changes →</button>';
+      }else{
+        msg.textContent='No new WATCH+ opportunities since yesterday. Sign in to personalize what RevenueTrigger watches for you.';
+      }
+    }catch{
+      msg.textContent='Sign in to see the activity that deserves your attention today.';
+    }
     return;
   }
   try{

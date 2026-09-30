@@ -3489,6 +3489,86 @@ export default {
         const data=await tucsonDebug(env);
         return json({ok:true,now:nowIso(),...data},200,env);
       }
+      if(path==='/changes-teaser'&&request.method==='GET'){
+        const r=await env.DB.prepare(`
+          SELECT * FROM leads
+          WHERE date(event_date,'-7 hours') >= date('now','-7 hours','-1 day')
+            AND score>=40
+          ORDER BY event_date DESC
+          LIMIT 1500
+        `).all();
+        const clustered=clusterLeads((r.results||[]).map(hydrateStoredLead));
+        const byMarket={};
+        for(const x of clustered){
+          const market=x.market||marketFromSource(x.source)||'Unknown';
+          byMarket[market]=(byMarket[market]||0)+1;
+        }
+        return json({
+          ok:true,
+          window:'since_yesterday_arizona',
+          minimumScore:40,
+          opportunities:clustered.length,
+          hot:clustered.filter(x=>Number(x.score)>=80).length,
+          markets:byMarket,
+          message:'Aggregate public teaser only. Sign-in is required for personalized change details.',
+          generatedAt:nowIso()
+        },200,env);
+      }
+      if(path==='/temperature-calibration'&&request.method==='GET'){
+        const days=clamp(Number(url.searchParams.get('days')||7),1,30);
+        const limit=clamp(Number(url.searchParams.get('limit')||300),25,500);
+        const candidateHot=clamp(Number(url.searchParams.get('candidateHot')||75),65,79);
+        const rows=(await stored(env,limit,days))||[];
+        const production={HOT:0,WARM:0,WATCH:0,LOW:0};
+        const candidate={HOT:0,WARM:0,WATCH:0,LOW:0};
+        const promoted=[];
+        let promotedTotal=0;
+        const byMarket={};
+        for(const x of rows){
+          const score=Number(x.score||0);
+          const p=score>=80?'HOT':score>=60?'WARM':score>=40?'WATCH':'LOW';
+          const c=score>=candidateHot?'HOT':score>=60?'WARM':score>=40?'WATCH':'LOW';
+          production[p]++;
+          candidate[c]++;
+          const market=x.market||marketFromSource(x.source)||'Unknown';
+          byMarket[market] ||= {count:0,productionHot:0,candidateHot:0,promoted:0};
+          byMarket[market].count++;
+          if(p==='HOT')byMarket[market].productionHot++;
+          if(c==='HOT')byMarket[market].candidateHot++;
+          if(p!=='HOT'&&c==='HOT'){
+            promotedTotal++;
+            byMarket[market].promoted++;
+            if(promoted.length<20)promoted.push({
+              id:x.id,
+              market,
+              score,
+              name:x.name,
+              company:cleanCompanyName(x.company),
+              confidence:Number(x.dataConfidence?.score||0),
+              status:x.permitStatus||x.permit_status||null
+            });
+          }
+        }
+        return json({
+          ok:true,
+          mode:'shadow_only',
+          productionUnchanged:true,
+          days,
+          sampleCount:rows.length,
+          productionThresholds:{HOT:80,WARM:60,WATCH:40},
+          candidateThresholds:{HOT:candidateHot,WARM:60,WATCH:40},
+          production,
+          candidate,
+          productionHotShare:rows.length?Number((production.HOT/rows.length).toFixed(3)):0,
+          candidateHotShare:rows.length?Number((candidate.HOT/rows.length).toFixed(3)):0,
+          promotedCount:promotedTotal,
+          byMarket,
+          promotedExamples:promoted,
+          caution:'This endpoint compares labels only. It does not alter scores, rankings, production temperatures, alerts, or user feeds.',
+          generatedAt:nowIso()
+        },200,env);
+      }
+
       if(path==='/score-audit'&&request.method==='GET'){
         const days=clamp(Number(url.searchParams.get('days')||30),1,90);
         const limit=clamp(Number(url.searchParams.get('limit')||300),25,500);
