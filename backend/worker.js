@@ -835,13 +835,14 @@ function parseTempeCitizenDetail(html,permit){
     source:'City of Tempe Citizen Access — public Building record'
   };
 }
+
 async function fetchTempeCitizenDetailByPermit(permit){
   const record=String(permit||'').trim().toUpperCase();
   if(!/^BP\d{6}$/i.test(record))throw new Error('Tempe permit must look like BP261214');
 
   const start=await fetch(TEMPE_CITIZEN_SEARCH,{
     headers:{
-      'user-agent':'RevenueTrigger/6.1 Tempe public permit enrichment',
+      'user-agent':'RevenueTrigger/6.2 Tempe public permit enrichment',
       'accept':'text/html,application/xhtml+xml'
     },
     redirect:'follow'
@@ -850,42 +851,106 @@ async function fetchTempeCitizenDetailByPermit(permit){
   if(!start.ok)throw new Error('Tempe Citizen Access search '+start.status);
   const cookie=tempeCookieHeader(start);
 
-  const body=new URLSearchParams();
+  const hidden={};
   for(const field of ['__VIEWSTATE','__VIEWSTATEGENERATOR','__EVENTVALIDATION','__EVENTTARGET','__EVENTARGUMENT','__LASTFOCUS','__VIEWSTATEENCRYPTED','ACA_CS_FIELD']){
-    const value=tempeHiddenInput(startHtml,field);
-    if(value||['__EVENTTARGET','__EVENTARGUMENT','__LASTFOCUS','__VIEWSTATEENCRYPTED'].includes(field))body.set(field,value||'');
+    hidden[field]=tempeHiddenInput(startHtml,field)||'';
   }
-  body.set('ctl00$ScriptManager1','');
-  body.set('ctl00$PlaceHolderMain$generalSearchForm$txtGSPermitNumber',record);
-  body.set('ctl00$PlaceHolderMain$btnNewSearch','Search');
 
-  const search=await fetch(TEMPE_CITIZEN_SEARCH,{
-    method:'POST',
-    headers:{
-      'user-agent':'RevenueTrigger/6.1 Tempe public permit enrichment',
-      'accept':'text/html,application/xhtml+xml',
-      'content-type':'application/x-www-form-urlencoded',
-      ...(cookie?{'cookie':cookie}:{})
+  const now=new Date();
+  const mm=String(now.getUTCMonth()+1).padStart(2,'0');
+  const dd=String(now.getUTCDate()).padStart(2,'0');
+  const yyyy=now.getUTCFullYear();
+  const endDate=mm+'/'+dd+'/'+yyyy;
+
+  const common={
+    ...hidden,
+    'ctl00$PlaceHolderMain$ddlSearchType':'0',
+    'ctl00$PlaceHolderMain$generalSearchForm$txtGSPermitNumber':record,
+    'ctl00$PlaceHolderMain$generalSearchForm$ddlGSPermitType':'',
+    'ctl00$PlaceHolderMain$generalSearchForm$txtGSProjectName':'',
+    'ctl00$PlaceHolderMain$generalSearchForm$txtGSStartDate':'01/01/2015',
+    'ctl00$PlaceHolderMain$generalSearchForm$txtGSEndDate':endDate,
+    'ctl00$PlaceHolderMain$generalSearchForm$txtGSAppZipSearchPermit_ZipFromAA':'0',
+    'ctl00$HeaderNavigation$hdnShowReportLink':'N'
+  };
+
+  const variants=[
+    {
+      ...common,
+      'ctl00$ScriptManager1':'ctl00$PlaceHolderMain$updatePanel|ctl00$PlaceHolderMain$btnNewSearch',
+      '__ASYNCPOST':'true',
+      'Submit':'Submit'
     },
-    body:body.toString(),
-    redirect:'follow'
-  });
-  const searchHtml=await search.text();
-  if(!search.ok)throw new Error('Tempe Citizen Access result '+search.status);
+    {
+      ...common,
+      '__EVENTTARGET':'ctl00$PlaceHolderMain$btnNewSearch',
+      'ctl00$ScriptManager1':'ctl00$PlaceHolderMain$updatePanel|ctl00$PlaceHolderMain$btnNewSearch',
+      '__ASYNCPOST':'true'
+    },
+    {
+      ...common,
+      'ctl00$PlaceHolderMain$btnNewSearch':'Search'
+    }
+  ];
 
-  let detailUrl=/\/Cap\/CapDetail\.aspx/i.test(search.url||'')?search.url:tempeCapDetailUrl(searchHtml,TEMPE_CITIZEN_SEARCH);
+  let searchHtml='',searchUrl=TEMPE_CITIZEN_SEARCH,detailUrl=null,matchedVariant=null;
+  const errors=[];
+
+  for(let i=0;i<variants.length;i++){
+    const body=new URLSearchParams();
+    for(const [k,v] of Object.entries(variants[i]))body.set(k,String(v??''));
+
+    try{
+      const search=await fetch(TEMPE_CITIZEN_SEARCH,{
+        method:'POST',
+        headers:{
+          'user-agent':'RevenueTrigger/6.2 Tempe public permit enrichment',
+          'accept':'text/html,application/xhtml+xml,*/*',
+          'content-type':'application/x-www-form-urlencoded; charset=UTF-8',
+          ...(cookie?{'cookie':cookie}:{}),
+          ...(i<2?{
+            'x-microsoftajax':'Delta=true',
+            'x-requested-with':'XMLHttpRequest'
+          }:{})
+        },
+        body:body.toString(),
+        redirect:'follow'
+      });
+      const html=await search.text();
+      if(!search.ok){
+        errors.push('variant '+(i+1)+' HTTP '+search.status);
+        continue;
+      }
+
+      const text=stripTucsonHtml(html);
+      const containsRecord=text.toUpperCase().includes(record);
+      const candidate=/\/Cap\/CapDetail\.aspx/i.test(search.url||'')
+        ?search.url
+        :tempeCapDetailUrl(html,TEMPE_CITIZEN_SEARCH);
+
+      if(containsRecord||candidate){
+        searchHtml=html;
+        searchUrl=search.url||TEMPE_CITIZEN_SEARCH;
+        detailUrl=candidate;
+        matchedVariant=i+1;
+        break;
+      }
+      errors.push('variant '+(i+1)+' returned search form without permit');
+    }catch(e){
+      errors.push('variant '+(i+1)+' '+String(e?.message||e));
+    }
+  }
+
+  if(!searchHtml)throw new Error('Tempe Citizen Access search postback did not return permit. '+errors.join(' | '));
   if(!detailUrl){
     const text=stripTucsonHtml(searchHtml);
-    if(!text.toUpperCase().includes(record)){
-      const hasValidation=/event validation|invalid postback|viewstate/i.test(text);
-      throw new Error(hasValidation?'Tempe Citizen Access rejected the search postback':'Tempe permit not found in Citizen Access search response');
-    }
-    throw new Error('Tempe record found but detail URL could not be resolved');
+    if(!text.toUpperCase().includes(record))throw new Error('Tempe permit not found in Citizen Access search response');
+    throw new Error('Tempe permit found but CapDetail link could not be resolved');
   }
 
   const detail=await fetch(detailUrl,{
     headers:{
-      'user-agent':'RevenueTrigger/6.1 Tempe public permit enrichment',
+      'user-agent':'RevenueTrigger/6.2 Tempe public permit enrichment',
       'accept':'text/html,application/xhtml+xml',
       ...(cookie?{'cookie':cookie}:{})
     },
@@ -894,8 +959,14 @@ async function fetchTempeCitizenDetailByPermit(permit){
   const detailHtml=await detail.text();
   if(!detail.ok)throw new Error('Tempe Citizen Access detail '+detail.status);
   const parsed=parseTempeCitizenDetail(detailHtml,record);
-  return {...parsed,detailUrl:detail.url||detailUrl};
+  return {
+    ...parsed,
+    detailUrl:detail.url||detailUrl,
+    searchVariant:matchedVariant,
+    searchUrl
+  };
 }
+
 
 async function fetchTempe(days=7,limit=500){
   const d=new Date(Date.now()-days*86400000).toISOString().slice(0,10);
