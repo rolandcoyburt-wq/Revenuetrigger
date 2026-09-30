@@ -3439,26 +3439,50 @@ export default {
         const market=(url.searchParams.get('market')||'').trim();
         const days=clamp(Number(url.searchParams.get('days')||7),1,90);
         if(market==='Chandler'){
-          const d=await chandlerAccelaDebug(days);
-          const permitSignals=await fetchChandlerAccelaPermits(days,500);
-          const clustered=clusterLeads(permitSignals);
-          const genericAddressSignals=permitSignals.filter(x=>!usableClusterAddress(x)).length;
-          const listedSignals=permitSignals.filter(x=>cleanCompanyName(x.company)).length;
-          const listedOpportunities=clustered.filter(x=>cleanCompanyName(x.company)).length;
-          return json({
-            ok:true,market:'Chandler',status:SOURCE_STATUS.Chandler.status,days,
-            source:'City of Chandler Accela permit layer — official ArcGIS',
-            fetched:d.fetched,recent:d.recent,newest:d.newest,oldestFetched:d.oldestFetched,coverage:d.coverage,
-            opportunityView:{
-              permitSignals:permitSignals.length,
-              genericAddressSignals,
-              clusteredOpportunities:clustered.length,
-              listedSignals,
-              listedOpportunities,
-              notListedOpportunities:Math.max(0,clustered.length-listedOpportunities)
-            },
-            generatedAt:nowIso()
-          },200,env);
+          try{
+            const d=await chandlerAccelaDebug(days);
+            const permitSignals=await fetchChandlerAccelaPermits(days,500);
+            const clustered=clusterLeads(permitSignals);
+            const genericAddressSignals=permitSignals.filter(x=>!usableClusterAddress(x)).length;
+            const listedSignals=permitSignals.filter(x=>cleanCompanyName(x.company)).length;
+            const listedOpportunities=clustered.filter(x=>cleanCompanyName(x.company)).length;
+            return json({
+              ok:true,market:'Chandler',status:'live',days,
+              source:'City of Chandler Accela permit layer — official ArcGIS',
+              fetched:d.fetched,recent:d.recent,newest:d.newest,oldestFetched:d.oldestFetched,coverage:d.coverage,
+              opportunityView:{
+                permitSignals:permitSignals.length,
+                genericAddressSignals,
+                clusteredOpportunities:clustered.length,
+                listedSignals,
+                listedOpportunities,
+                notListedOpportunities:Math.max(0,clustered.length-listedOpportunities)
+              },
+              generatedAt:nowIso()
+            },200,env);
+          }catch(e){
+            const storedStats=env.DB?await env.DB.prepare(`
+              SELECT COUNT(*) AS rows,COUNT(DISTINCT permit) AS permits,MAX(updated_at) AS last_refresh,MAX(event_date) AS newest_activity
+              FROM leads
+              WHERE market='Chandler' AND datetime(event_date)>=datetime('now',?)
+            `).bind(`-${days} days`).first():null;
+            return json({
+              ok:false,
+              market:'Chandler',
+              status:'degraded',
+              days,
+              source:'City of Chandler Accela permit layer — official ArcGIS',
+              error:String(e?.message||e),
+              storedFallback:{
+                rows:Number(storedStats?.rows||0),
+                permits:Number(storedStats?.permits||0),
+                lastRefresh:storedStats?.last_refresh||null,
+                newestActivity:storedStats?.newest_activity||null
+              },
+              message:'The City of Chandler ArcGIS query service is temporarily unavailable. RevenueTrigger is preserving the last successfully stored permit snapshot rather than inventing fresh source data.',
+              generatedAt:nowIso()
+            },200,env);
+          }
         }
         if(market==='Scottsdale'){
           const d=await scottsdaleDebug(days);
@@ -3600,6 +3624,39 @@ export default {
             });
           }
         });
+
+        const availableStageCount=Object.values(stages).filter(x=>x?.ok).length;
+        const pipelineSourceStatus=availableStageCount===0?'unavailable':availableStageCount<2?'degraded':'live';
+        const pipelineSourceMessage=pipelineSourceStatus==='unavailable'
+          ?'City of Chandler Early Pipeline is temporarily unavailable because the city\'s ArcGIS query service is failing. RevenueTrigger will not substitute live permit records for pre-construction pipeline signals.'
+          :pipelineSourceStatus==='degraded'
+            ?'One City of Chandler Early Pipeline stage is temporarily unavailable; available stage data is shown below.'
+            :null;
+
+        if(pipelineSourceStatus==='unavailable'){
+          return json({
+            ok:false,
+            market:'Chandler',
+            sourceStatus:pipelineSourceStatus,
+            count:0,
+            stages,
+            contractorSource:{
+              ok:contractorResult.ok,
+              count:(contractorResult.rows||[]).length,
+              error:contractorResult.error||null
+            },
+            accelaPermitSource:{
+              ok:accelaResult.ok,
+              requestedStageReferences:permitNumbers.length,
+              uniqueRequestedPermits:new Set(permitNumbers.map(x=>String(x||'').trim()).filter(Boolean)).size,
+              matchedRecords:(accelaResult.rows||[]).length,
+              error:accelaResult.error||null
+            },
+            message:pipelineSourceMessage,
+            pipeline:[],
+            generatedAt:nowIso()
+          },200,env);
+        }
 
         const seen=new Map();
         for(const x of pipeline){
@@ -3764,6 +3821,8 @@ export default {
         return json({
           ok:true,
           market:'Chandler',
+          sourceStatus:pipelineSourceStatus,
+          sourceMessage:pipelineSourceMessage,
           count:rows.length,
           stages,
           accelaPermitSource:{

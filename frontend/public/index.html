@@ -1127,6 +1127,15 @@ html[data-theme="light"] .gridhead,html[data-theme="light"] .kpi small,html[data
   .changed-shell[data-visible-stats="0"]{grid-template-columns:1fr}
   .changed-shell[data-visible-stats="0"] .changed-intro{grid-column:1}
 }
+
+/* V129 — source coverage and degraded-state clarity */
+.pipeline-source-alert{
+  border:1px solid rgba(242,161,75,.38);
+  background:rgba(242,161,75,.065);
+  color:#d8c4a8;
+  line-height:1.6;
+}
+.company-toggle-btn{font-variant-numeric:tabular-nums}
 </style>
 
 <style>
@@ -1609,13 +1618,22 @@ function planActive(){return user&&['active','trialing'].includes(user.subscript
 function render(){
   const market=$('#market').value,industry=$('#industry').value,min=+$(`#minScore`).value,q=$('#search').value.toLowerCase(),saved=$('#savedFilter').value==='saved',sort=$('#sortFeed')?.value||'score';
   const hasListedCompany=x=>{const c=String(x.company||'').trim();return Boolean(c)&&!/^(not listed|unknown|n\/a|none|null|-+)$/i.test(c);};
-  const filtered=leads.filter(x=>(market==='all'||(x.market||'Phoenix')===market)&&(industry==='all'||x.categories?.includes(industry))&&x.score>=min&&(!saved||x.saved)&&(permitCompanyFilter==='listed'?hasListedCompany(x):!hasListedCompany(x))&&(`${x.name} ${x.address} ${x.company} ${x.scope}`.toLowerCase().includes(q)));
+  const baseFiltered=leads.filter(x=>(market==='all'||(x.market||'Phoenix')===market)&&(industry==='all'||x.categories?.includes(industry))&&x.score>=min&&(!saved||x.saved)&&(`${x.name} ${x.address} ${x.company} ${x.scope}`.toLowerCase().includes(q)));
+  const listedCount=baseFiltered.filter(hasListedCompany).length;
+  const notListedCount=Math.max(0,baseFiltered.length-listedCount);
+  const listedBtn=$('#permitCompanyToggle [data-value="listed"]');
+  const notListedBtn=$('#permitCompanyToggle [data-value="not-listed"]');
+  if(listedBtn)listedBtn.textContent=`Listed (${listedCount})`;
+  if(notListedBtn)notListedBtn.textContent=`Not Listed (${notListedCount})`;
+  const filtered=baseFiltered.filter(x=>permitCompanyFilter==='listed'?hasListedCompany(x):!hasListedCompany(x));
   filtered.sort((a,b)=>{
     if(sort==='newest')return (new Date(b.date).getTime()||0)-(new Date(a.date).getTime()||0);
     if(sort==='oldest')return (new Date(a.date).getTime()||0)-(new Date(b.date).getTime()||0);
     return (Number(b.score)||0)-(Number(a.score)||0)||((new Date(b.date).getTime()||0)-(new Date(a.date).getTime()||0));
   });
-  $('#leadList').innerHTML=filtered.length?filtered.map(x=>`<div class="lead"><div class="score">${x.score}</div><div class="lead-main"><div class="leadname">${esc(displayEventTitle(x))}</div><div class="meta">${esc(x.address||'Phoenix, AZ')} • ${age(x.date)}</div></div><div class="permit-company">${hasListedCompany(x)?esc(displayCompanyName(x.company)):'<span class="company-missing">Not listed</span>'}</div><div class="chips lead-seller">${(x.categories||[]).slice(0,4).map(c=>`<span class="chip">${esc(c)}</span>`).join('')}</div><div class="value lead-value">${approxMoney(x.value)}</div><div class="lead-temperature ${x.temperature==='HOT'?'hot':x.temperature==='WARM'?'warm':x.temperature==='WATCH'?'watch':'low'}">${esc(x.temperature||'LOW')}</div><div class="row-actions lead-actions">${user?`<button class="save ${x.saved?'active':''}" onclick="toggleSave('${esc(x.id)}')">${x.saved?'★':'☆'}</button>`:''}<button class="view" onclick="openLead('${esc(x.id)}')">View</button></div></div>`).join(''):'<div class="empty">No signals match these filters.</div>';
+  $('#leadList').innerHTML=filtered.length?filtered.map(x=>`<div class="lead"><div class="score">${x.score}</div><div class="lead-main"><div class="leadname">${esc(displayEventTitle(x))}</div><div class="meta">${esc(x.address||'Phoenix, AZ')} • ${age(x.date)}</div></div><div class="permit-company">${hasListedCompany(x)?esc(displayCompanyName(x.company)):'<span class="company-missing">Not listed</span>'}</div><div class="chips lead-seller">${(x.categories||[]).slice(0,4).map(c=>`<span class="chip">${esc(c)}</span>`).join('')}</div><div class="value lead-value">${approxMoney(x.value)}</div><div class="lead-temperature ${x.temperature==='HOT'?'hot':x.temperature==='WARM'?'warm':x.temperature==='WATCH'?'watch':'low'}">${esc(x.temperature||'LOW')}</div><div class="row-actions lead-actions">${user?`<button class="save ${x.saved?'active':''}" onclick="toggleSave('${esc(x.id)}')">${x.saved?'★':'☆'}</button>`:''}<button class="view" onclick="openLead('${esc(x.id)}')">View</button></div></div>`).join(''):`<div class="empty">${permitCompanyFilter==='listed'&&baseFiltered.length&&listedCount===0
+    ?`None of the current ${baseFiltered.length} opportunities include a published company name. Switch to Not Listed to view them.`
+    :'No signals match these filters.'}</div>`;
   const hotCount=filtered.filter(x=>Number(x.score)>=80).length;
   const totalValue=filtered.reduce((s,x)=>s+Number(x.value||0),0);
   const avgScore=filtered.length?Math.round(filtered.reduce((s,x)=>s+Number(x.score||0),0)/filtered.length):0;
@@ -2007,17 +2025,24 @@ let pipelineRows=[];
 
 async function loadPipeline(){
   const status=$('#pipelineStatus');
+  const list=$('#pipelineList');
   if(status)status.textContent='Loading Chandler early pipeline…';
   try{
     const r=await fetch(`${CONFIG.apiBase}/pipeline?market=Chandler`);
-    if(!r.ok)throw new Error();
-    const d=await r.json();
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok||d.ok===false||d.sourceStatus==='unavailable'){
+      pipelineRows=[];
+      if(status)status.textContent='Chandler source temporarily unavailable';
+      if(list)list.innerHTML=`<div class="pipeline-empty pipeline-source-alert">${esc(d.message||'The City of Chandler Early Pipeline source is temporarily unavailable. RevenueTrigger will not substitute live permit records for pre-construction signals.')}</div>`;
+      return;
+    }
     pipelineRows=d.pipeline||[];
     renderPipeline();
+    if(d.sourceStatus==='degraded'&&status)status.textContent=`Source degraded • ${pipelineRows.length} Chandler early-pipeline opportunities`;
   }catch{
-    if(status)status.textContent='Pipeline unavailable.';
-    const list=$('#pipelineList');
-    if(list)list.innerHTML='';
+    pipelineRows=[];
+    if(status)status.textContent='Chandler source temporarily unavailable';
+    if(list)list.innerHTML='<div class="pipeline-empty pipeline-source-alert">The City of Chandler Early Pipeline source could not be reached. Try Refresh pipeline again shortly.</div>';
   }
 }
 
@@ -2084,11 +2109,17 @@ function renderPipeline(){
   const stage=$('#pipelineStage')?.value||'all';
   const minScore=Number($('#pipelineMinScore')?.value||0);
 
-  const rows=pipelineRows.filter(x=>
+  const baseRows=pipelineRows.filter(x=>
     (stage==='all'||x.stage===stage) &&
-    Number(x.score||0)>=minScore &&
-    (pipelineCompanyFilter==='listed'?Boolean(String(x.company||'').trim()):!String(x.company||'').trim())
+    Number(x.score||0)>=minScore
   );
+  const pipelineListedCount=baseRows.filter(x=>Boolean(String(x.company||'').trim())).length;
+  const pipelineNotListedCount=Math.max(0,baseRows.length-pipelineListedCount);
+  const pipelineListedBtn=$('#pipelineCompanyToggle [data-value="listed"]');
+  const pipelineNotListedBtn=$('#pipelineCompanyToggle [data-value="not-listed"]');
+  if(pipelineListedBtn)pipelineListedBtn.textContent=`Listed (${pipelineListedCount})`;
+  if(pipelineNotListedBtn)pipelineNotListedBtn.textContent=`Not Listed (${pipelineNotListedCount})`;
+  const rows=baseRows.filter(x=>pipelineCompanyFilter==='listed'?Boolean(String(x.company||'').trim()):!String(x.company||'').trim());
 
   $('#pipelineStatus').textContent=`${rows.length} Chandler early-pipeline opportunities`;
 
