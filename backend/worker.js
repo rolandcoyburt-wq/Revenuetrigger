@@ -775,6 +775,124 @@ async function fetchPhoenix(days=7,limit=500){
   const features=await fetchArcGIS(PHX_PERMITS,{where:`PER_ISSUE_DATE >= DATE '${d}'`,outFields:'OBJECTID,PER_TYPE,PER_NUM,PROJECT,PERMIT_NAME,PERMIT_STAT,PER_ENT_DATE,PER_ISSUE_DATE,STREET_FULL_NAME,PROFESS_NAME,PER_TYPE_DESC,MOD_DESC,SCOPE_CODE,SCOPE_DESC',orderByFields:'PER_ISSUE_DATE DESC',resultRecordCount:String(Math.min(limit,1000)),returnGeometry:'false',f:'json'},'Phoenix');
   return features.map(normalizePhoenix);
 }
+
+const TEMPE_CITIZEN_SEARCH='https://epermits.tempe.gov/citizenaccess/Cap/CapHome.aspx?module=Building&TabName=Building';
+
+function decodeTempeHtml(v=''){
+  return String(v||'')
+    .replace(/&nbsp;/gi,' ')
+    .replace(/&amp;/gi,'&')
+    .replace(/&quot;/gi,'"')
+    .replace(/&#39;|&#x27;/gi,"'")
+    .replace(/&lt;/gi,'<')
+    .replace(/&gt;/gi,'>');
+}
+function tempeHiddenInput(html,name){
+  const safe=String(name||'');
+  const p1=new RegExp("<input[^>]+name=[\"']"+safe+"[\"'][^>]+value=[\"']([^\"']*)[\"'][^>]*>","i");
+  const p2=new RegExp("<input[^>]+value=[\"']([^\"']*)[\"'][^>]+name=[\"']"+safe+"[\"'][^>]*>","i");
+  for(const p of [p1,p2]){
+    const m=String(html||'').match(p);
+    if(m&&m[1]!==undefined)return decodeTempeHtml(m[1]);
+  }
+  return '';
+}
+function tempeCookieHeader(response){
+  try{
+    const all=typeof response?.headers?.getSetCookie==='function'?response.headers.getSetCookie():[];
+    if(all&&all.length)return all.map(x=>String(x).split(';')[0]).filter(Boolean).join('; ');
+  }catch{}
+  const raw=response?.headers?.get?.('set-cookie')||'';
+  if(!raw)return '';
+  return raw.split(/,(?=\s*[^;,=]+=[^;,]*)/).map(x=>x.trim().split(';')[0]).filter(Boolean).join('; ');
+}
+function tempeCapDetailUrl(html,baseUrl=TEMPE_CITIZEN_SEARCH){
+  const raw=String(html||'');
+  const matches=[...raw.matchAll(/href=["']([^"']*Cap\/CapDetail\.aspx\?[^"']+)["']/gi)];
+  const href=matches.map(m=>decodeTempeHtml(m[1])).find(Boolean);
+  if(!href)return null;
+  try{return new URL(href,baseUrl).toString()}catch{return null}
+}
+function parseTempeCitizenDetail(html,permit){
+  const text=stripTucsonHtml(html);
+  const contractor=(text.match(/Contractor's Name:\s*(.*?)\s*Contractor's Lic\. No\.:/i)?.[1]||'').trim()||null;
+  const license=(text.match(/Contractor's Lic\. No\.:\s*([A-Za-z0-9-]+)/i)?.[1]||'').trim()||null;
+  const valuationRaw=(text.match(/Project Valuation\(\$\):\s*\$?([\d,]+(?:\.\d+)?)/i)?.[1]||'').trim();
+  const valuation=valuationRaw?Number(valuationRaw.replace(/,/g,'')):null;
+  const status=(text.match(/Record Status:\s*(.*?)\s*Create a New Collection/i)?.[1]||'').trim()||null;
+  const issued=(text.match(/Permit Issued:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i)?.[1]||'').trim()||null;
+  const applied=(text.match(/Applied Date:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i)?.[1]||'').trim()||null;
+  const project=(text.match(/Project Description:\s*(.*?)\s*More Details/i)?.[1]||'').trim()||null;
+  return {
+    permit:String(permit||'').trim(),
+    contractor,
+    contractorLicense:license,
+    officialValuation:Number.isFinite(valuation)?valuation:null,
+    status,
+    appliedDate:applied,
+    issuedDate:issued,
+    projectDescription:project,
+    source:'City of Tempe Citizen Access — public Building record'
+  };
+}
+async function fetchTempeCitizenDetailByPermit(permit){
+  const record=String(permit||'').trim().toUpperCase();
+  if(!/^BP\d{6}$/i.test(record))throw new Error('Tempe permit must look like BP261214');
+
+  const start=await fetch(TEMPE_CITIZEN_SEARCH,{
+    headers:{
+      'user-agent':'RevenueTrigger/6.1 Tempe public permit enrichment',
+      'accept':'text/html,application/xhtml+xml'
+    },
+    redirect:'follow'
+  });
+  const startHtml=await start.text();
+  if(!start.ok)throw new Error('Tempe Citizen Access search '+start.status);
+  const cookie=tempeCookieHeader(start);
+
+  const body=new URLSearchParams();
+  for(const field of ['__VIEWSTATE','__VIEWSTATEGENERATOR','__EVENTTARGET','__EVENTARGUMENT','__LASTFOCUS','__VIEWSTATEENCRYPTED','ACA_CS_FIELD']){
+    const value=tempeHiddenInput(startHtml,field);
+    if(value||['__EVENTTARGET','__EVENTARGUMENT','__LASTFOCUS','__VIEWSTATEENCRYPTED'].includes(field))body.set(field,value||'');
+  }
+  body.set('ctl00$PlaceHolderMain$generalSearchForm$txtGSPermitNumber',record);
+  body.set('ctl00$PlaceHolderMain$btnNewSearch','Search');
+
+  const search=await fetch(TEMPE_CITIZEN_SEARCH,{
+    method:'POST',
+    headers:{
+      'user-agent':'RevenueTrigger/6.1 Tempe public permit enrichment',
+      'accept':'text/html,application/xhtml+xml',
+      'content-type':'application/x-www-form-urlencoded',
+      ...(cookie?{'cookie':cookie}:{})
+    },
+    body:body.toString(),
+    redirect:'follow'
+  });
+  const searchHtml=await search.text();
+  if(!search.ok)throw new Error('Tempe Citizen Access result '+search.status);
+
+  let detailUrl=/\/Cap\/CapDetail\.aspx/i.test(search.url||'')?search.url:tempeCapDetailUrl(searchHtml,TEMPE_CITIZEN_SEARCH);
+  if(!detailUrl){
+    const text=stripTucsonHtml(searchHtml);
+    if(!text.toUpperCase().includes(record))throw new Error('Tempe permit not found in Citizen Access');
+    throw new Error('Tempe record found but detail URL could not be resolved');
+  }
+
+  const detail=await fetch(detailUrl,{
+    headers:{
+      'user-agent':'RevenueTrigger/6.1 Tempe public permit enrichment',
+      'accept':'text/html,application/xhtml+xml',
+      ...(cookie?{'cookie':cookie}:{})
+    },
+    redirect:'follow'
+  });
+  const detailHtml=await detail.text();
+  if(!detail.ok)throw new Error('Tempe Citizen Access detail '+detail.status);
+  const parsed=parseTempeCitizenDetail(detailHtml,record);
+  return {...parsed,detailUrl:detail.url||detailUrl};
+}
+
 async function fetchTempe(days=7,limit=500){
   const d=new Date(Date.now()-days*86400000).toISOString().slice(0,10);
   const features=await fetchArcGIS(TEMPE_PERMITS,{where:`IssuedDateDtm >= DATE '${d}'`,outFields:'OBJECTID,PermitNum,Description,AppliedDateDtm,IssuedDateDtm,Type,StatusCurrent,OriginalAddress1,OriginalAddress2,OriginalCity,OriginalState,OriginalZip,PermitClass,PermitType,PermitTypeDesc,StatusDateDtm,EstProjectCost,ContractorCompanyName,ProjectName',orderByFields:'IssuedDateDtm DESC',resultRecordCount:String(Math.min(limit,1800)),returnGeometry:'false',f:'json'},'Tempe');
@@ -3578,6 +3696,49 @@ export default {
         const limit=clamp(Number(url.searchParams.get('limit')||300),25,500);
         const audit=await scoringAudit(env,{days,limit});
         return json({ok:true,...audit},200,env);
+      }
+
+      if(path==='/tempe-enrichment-preview'&&request.method==='GET'){
+        const permit=(url.searchParams.get('permit')||'').trim().toUpperCase();
+        if(!permit)return json({error:'permit is required',example:'BP261214'},400,env);
+        try{
+          const detail=await fetchTempeCitizenDetailByPermit(permit);
+          const rows=await fetchTempe(30,700);
+          const sourceRow=rows.find(x=>String(x.permit||'').trim().toUpperCase()===permit)||null;
+          return json({
+            ok:true,
+            mode:'preview_only',
+            market:'Tempe',
+            permit,
+            openData:{
+              found:Boolean(sourceRow),
+              company:sourceRow?.company||'Not listed',
+              estimatedOpportunity:sourceRow?.value||null,
+              status:sourceRow?.permitStatus||null,
+              name:sourceRow?.name||null
+            },
+            citizenAccess:{
+              contractor:detail.contractor,
+              contractorLicense:detail.contractorLicense,
+              officialValuation:detail.officialValuation,
+              status:detail.status,
+              appliedDate:detail.appliedDate,
+              issuedDate:detail.issuedDate,
+              projectDescription:detail.projectDescription,
+              detailUrl:detail.detailUrl
+            },
+            enrichmentDecision:{
+              canPromoteCompany:Boolean(detail.contractor&&isMeaningfulCompanyName(detail.contractor)),
+              canUseOfficialValuation:Number.isFinite(Number(detail.officialValuation))&&Number(detail.officialValuation)>0,
+              proposedCompany:detail.contractor&&isMeaningfulCompanyName(detail.contractor)?detail.contractor:null,
+              proposedOfficialValuation:Number.isFinite(Number(detail.officialValuation))&&Number(detail.officialValuation)>0?Number(detail.officialValuation):null
+            },
+            caution:'Preview only. No D1 rows, scores, temperatures, or opportunity values are changed by this endpoint. Contractor and valuation are taken from the City of Tempe public Citizen Access record.',
+            generatedAt:nowIso()
+          },200,env);
+        }catch(e){
+          return json({ok:false,mode:'preview_only',market:'Tempe',permit,error:String(e?.message||e),generatedAt:nowIso()},200,env);
+        }
       }
       if(path==='/attribution-health'&&request.method==='GET'){
         const market=(url.searchParams.get('market')||'').trim();
