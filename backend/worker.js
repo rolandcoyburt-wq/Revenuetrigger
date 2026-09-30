@@ -47,7 +47,7 @@ const cors=(env)=>({
   'Access-Control-Allow-Methods':'GET,POST,OPTIONS',
   'Access-Control-Max-Age':'86400'
 });
-const json=(body,status=200,env={})=>new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json;charset=utf-8',...cors(env)}});
+const json=(body,status=200,env={},extraHeaders={})=>new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json;charset=utf-8',...cors(env),...extraHeaders}});
 const nowIso=()=>new Date().toISOString();
 const normalizeEmail=(v)=>String(v||'').trim().toLowerCase();
 const validEmail=(v)=>/^\S+@\S+\.\S+$/.test(v);
@@ -1854,6 +1854,104 @@ async function stored(env,limit=120,days=7){
   if(!env.DB)return null;
   const r=await env.DB.prepare(`SELECT * FROM leads WHERE datetime(event_date) >= datetime('now', ?) ORDER BY score DESC,event_date DESC LIMIT ?`).bind(`-${days} days`,limit).all();
   return clusterLeads((r.results||[]).map(hydrateStoredLead));
+}
+
+
+const FEED_CACHE_CONTROL='public, max-age=30, s-maxage=120, stale-while-revalidate=300';
+const FEED_FRESH_MAX_MINUTES=180;
+
+function feedTimestampMs(v){
+  const raw=String(v||'').trim();
+  if(!raw)return null;
+  const normalized=/^\d{4}-\d{2}-\d{2}\s/.test(raw)?raw.replace(' ','T')+'Z':raw;
+  const ms=new Date(normalized).getTime();
+  return Number.isFinite(ms)?ms:null;
+}
+function feedMarketState(row,nowMs=Date.now()){
+  const storedCount=Number(row?.stored_count||0);
+  const windowCount=Number(row?.window_count||0);
+  const latestStoredAt=row?.latest_stored_at||null;
+  const latestEventAt=row?.latest_event_at||null;
+  if(!storedCount){
+    return {
+      state:'empty',
+      storedRecordCount:0,
+      windowRecordCount:0,
+      latestStoredAt:null,
+      latestEventAt:null,
+      ageMinutes:null
+    };
+  }
+  const latestMs=feedTimestampMs(latestStoredAt);
+  const ageMinutes=latestMs===null?null:Math.max(0,Math.round((nowMs-latestMs)/60000));
+  const state=ageMinutes!==null&&ageMinutes<=FEED_FRESH_MAX_MINUTES?'fresh':'stale';
+  return {state,storedRecordCount:storedCount,windowRecordCount:windowCount,latestStoredAt,latestEventAt,ageMinutes};
+}
+function feedOverallState(states){
+  const values=Object.values(states||{}).map(x=>x.state);
+  if(!values.length||values.every(x=>x==='empty'))return 'empty';
+  if(values.every(x=>x==='fresh'))return 'fresh';
+  if(values.every(x=>x==='stale'))return 'stale';
+  return 'partial';
+}
+async function readStoredFeed(env,{days=7,limit=120,markets=LIVE_MARKETS}={}){
+  if(!env.DB)throw new Error('D1 unavailable');
+
+  const placeholders=markets.map(()=>'?').join(',');
+  const windowArg=`-${days} days`;
+
+  // Intentionally no SQL LIMIT here: clustering must happen over the complete
+  // stored window before the public response limit is applied.
+  const rowsQuery=`
+    SELECT *
+    FROM leads
+    WHERE datetime(event_date)>=datetime('now',?)
+      AND market IN (${placeholders})
+    ORDER BY score DESC,event_date DESC
+  `;
+  const healthQuery=`
+    SELECT
+      market,
+      COUNT(*) AS stored_count,
+      SUM(CASE WHEN datetime(event_date)>=datetime('now',?) THEN 1 ELSE 0 END) AS window_count,
+      MAX(updated_at) AS latest_stored_at,
+      MAX(event_date) AS latest_event_at
+    FROM leads
+    WHERE market IN (${placeholders})
+    GROUP BY market
+  `;
+
+  const [rowsResult,healthResult]=await Promise.all([
+    env.DB.prepare(rowsQuery).bind(windowArg,...markets).all(),
+    env.DB.prepare(healthQuery).bind(windowArg,...markets).all()
+  ]);
+
+  const rawRows=rowsResult?.results||[];
+  const hydrated=rawRows.map(hydrateStoredLead);
+  const clustered=clusterLeads(hydrated);
+  const healthRows=new Map((healthResult?.results||[]).map(x=>[x.market,x]));
+  const marketStates={};
+  const nowMs=Date.now();
+  for(const market of markets)marketStates[market]=feedMarketState(healthRows.get(market),nowMs);
+
+  const state=feedOverallState(marketStates);
+  return {
+    ok:true,
+    readOnly:true,
+    source:'stored_d1',
+    state,
+    opportunityState:clustered.length?'available':'empty',
+    requested:{days,limit,markets},
+    count:Math.min(clustered.length,limit),
+    totalClusteredInWindow:clustered.length,
+    rawStoredRecordsInWindow:rawRows.length,
+    freshness:{
+      freshWithinMinutes:FEED_FRESH_MAX_MINUTES,
+      markets:marketStates
+    },
+    leads:clustered.slice(0,limit),
+    generatedAt:nowIso()
+  };
 }
 
 
@@ -4528,6 +4626,41 @@ export default {
           pipeline:rows
         },200,env);
       }
+      if(path==='/feed'&&request.method==='GET'){
+        const daysRaw=Number(url.searchParams.get('days')||7);
+        const limitRaw=Number(url.searchParams.get('limit')||120);
+        const days=clamp(Number.isFinite(daysRaw)?Math.trunc(daysRaw):7,1,30);
+        const limit=clamp(Number.isFinite(limitRaw)?Math.trunc(limitRaw):120,1,200);
+        const marketParam=url.searchParams.get('markets');
+        const requested=marketParam===null?[]:marketParam.split(',').map(x=>x.trim()).filter(Boolean);
+        const invalid=requested.filter(x=>!LIVE_MARKETS.includes(x));
+        if(invalid.length){
+          return json({
+            ok:false,
+            state:'unavailable',
+            error:'invalid market',
+            invalidMarkets:invalid,
+            allowedMarkets:LIVE_MARKETS
+          },400,env,{'cache-control':'no-store'});
+        }
+        const markets=requested.length?[...new Set(requested)]:LIVE_MARKETS;
+        try{
+          const data=await readStoredFeed(env,{days,limit,markets});
+          return json(data,200,env,{'cache-control':FEED_CACHE_CONTROL});
+        }catch(e){
+          return json({
+            ok:false,
+            readOnly:true,
+            source:'stored_d1',
+            state:'unavailable',
+            opportunityState:'unavailable',
+            requested:{days,limit,markets},
+            error:'stored feed unavailable',
+            generatedAt:nowIso()
+          },503,env,{'cache-control':'no-store'});
+        }
+      }
+
       if(path==='/leads'&&request.method==='GET'){
         const days=clamp(Number(url.searchParams.get('days')||7),1,30);
         const limit=clamp(Number(url.searchParams.get('limit')||120),1,500);
