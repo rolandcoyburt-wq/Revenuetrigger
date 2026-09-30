@@ -39,7 +39,7 @@ Every source is normalized before it is mapped into the existing `leadFrom()` co
 - metadata/schema validation (required fields, Query capability, and pagination where required)
 - freshness validation using a server-side count over a bounded lookback window
 
-The permit feed currently expects activity within 7 days and the CO feed within 30 days. Current zoning is schema/query checked but does not fail solely because no zoning case was filed inside its 180-day lookback. The health result is diagnostic only; it does not mutate shared market state or core scoring.
+The permit feed currently expects activity within 7 days and the CO feed within 30 days. Freshness windows are bounded on both ends so implausible future municipal dates cannot make a stale source appear healthy. Current zoning is schema/query checked but does not fail solely because no zoning case was filed inside its 180-day lookback. The health result is diagnostic only; it does not mutate shared market state or core scoring.
 
 ## Fort Worth adapter behavior
 
