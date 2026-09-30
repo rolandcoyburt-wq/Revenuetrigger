@@ -1870,22 +1870,24 @@ function feedTimestampMs(v){
 function feedMarketState(row,nowMs=Date.now()){
   const storedCount=Number(row?.stored_count||0);
   const windowCount=Number(row?.window_count||0);
-  const latestStoredAt=row?.latest_stored_at||null;
+  const latestStoredAt=row?.latest_window_stored_at||null;
+  const latestAnyStoredAt=row?.latest_any_stored_at||null;
   const latestEventAt=row?.latest_event_at||null;
-  if(!storedCount){
+  if(!windowCount){
     return {
       state:'empty',
-      storedRecordCount:0,
+      storedRecordCount:storedCount,
       windowRecordCount:0,
       latestStoredAt:null,
-      latestEventAt:null,
+      latestAnyStoredAt,
+      latestEventAt,
       ageMinutes:null
     };
   }
   const latestMs=feedTimestampMs(latestStoredAt);
   const ageMinutes=latestMs===null?null:Math.max(0,Math.round((nowMs-latestMs)/60000));
   const state=ageMinutes!==null&&ageMinutes<=FEED_FRESH_MAX_MINUTES?'fresh':'stale';
-  return {state,storedRecordCount:storedCount,windowRecordCount:windowCount,latestStoredAt,latestEventAt,ageMinutes};
+  return {state,storedRecordCount:storedCount,windowRecordCount:windowCount,latestStoredAt,latestAnyStoredAt,latestEventAt,ageMinutes};
 }
 function feedOverallState(states){
   const values=Object.values(states||{}).map(x=>x.state);
@@ -1914,7 +1916,8 @@ async function readStoredFeed(env,{days=7,limit=120,markets=LIVE_MARKETS}={}){
       market,
       COUNT(*) AS stored_count,
       SUM(CASE WHEN datetime(event_date)>=datetime('now',?) THEN 1 ELSE 0 END) AS window_count,
-      MAX(updated_at) AS latest_stored_at,
+      MAX(CASE WHEN datetime(event_date)>=datetime('now',?) THEN updated_at ELSE NULL END) AS latest_window_stored_at,
+      MAX(updated_at) AS latest_any_stored_at,
       MAX(event_date) AS latest_event_at
     FROM leads
     WHERE market IN (${placeholders})
@@ -1923,7 +1926,7 @@ async function readStoredFeed(env,{days=7,limit=120,markets=LIVE_MARKETS}={}){
 
   const [rowsResult,healthResult]=await Promise.all([
     env.DB.prepare(rowsQuery).bind(windowArg,...markets).all(),
-    env.DB.prepare(healthQuery).bind(windowArg,...markets).all()
+    env.DB.prepare(healthQuery).bind(windowArg,windowArg,...markets).all()
   ]);
 
   const rawRows=rowsResult?.results||[];
@@ -4637,7 +4640,6 @@ export default {
         if(invalid.length){
           return json({
             ok:false,
-            state:'unavailable',
             error:'invalid market',
             invalidMarkets:invalid,
             allowedMarkets:LIVE_MARKETS
