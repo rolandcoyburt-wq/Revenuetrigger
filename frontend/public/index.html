@@ -1350,6 +1350,220 @@ html[data-theme="light"] #pipeline .pipeline-stage{color:#4c6758}
   }
 }
 </style>
+
+<style>
+/* V132 — final mobile Early Pipeline card hierarchy */
+.pipeline-inline-stage{display:none}
+
+@media(max-width:620px){
+  #pipeline .pipeline-dashbar{
+    padding:13px 14px !important;
+  }
+  #pipeline .pipeline-controls{
+    gap:8px !important;
+  }
+  #pipeline .company-toggle-label{
+    font-size:8px !important;
+    letter-spacing:.07em !important;
+  }
+  #pipeline .company-toggle-btn{
+    font-size:9px !important;
+    padding:7px 8px !important;
+  }
+  #pipeline .pipeline-controls select{
+    min-height:46px;
+    font-size:15px !important;
+    padding:0 11px !important;
+  }
+  #pipeline #pipelineRefresh{
+    min-height:48px;
+    font-size:14px;
+  }
+  #pipeline .status{
+    margin-top:12px !important;
+    padding-top:11px !important;
+    font-size:11px !important;
+  }
+
+  #pipelineList .pipeline-lead{
+    display:grid !important;
+    grid-template-columns:52px minmax(0,1fr) auto !important;
+    grid-auto-rows:auto !important;
+    column-gap:11px !important;
+    row-gap:10px !important;
+    align-items:start !important;
+    padding:17px 15px !important;
+    min-height:0 !important;
+    overflow:hidden !important;
+  }
+  #pipelineList .pipeline-lead > *{
+    min-width:0 !important;
+    max-width:100% !important;
+    position:static !important;
+    left:auto !important;
+    right:auto !important;
+    transform:none !important;
+    margin-left:0 !important;
+    margin-right:0 !important;
+    box-sizing:border-box !important;
+  }
+
+  #pipelineList .pipeline-lead .score{
+    grid-column:1 !important;
+    grid-row:1 !important;
+    width:48px !important;
+    height:48px !important;
+    justify-self:center !important;
+    align-self:start !important;
+  }
+
+  #pipelineList .pipeline-main{
+    grid-column:2 / 4 !important;
+    grid-row:1 !important;
+    min-width:0 !important;
+  }
+  #pipelineList .pipeline-main .leadname{
+    display:-webkit-box !important;
+    -webkit-box-orient:vertical !important;
+    -webkit-line-clamp:2 !important;
+    white-space:normal !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+    font-size:17px !important;
+    line-height:1.18 !important;
+    font-weight:800 !important;
+    letter-spacing:-.01em !important;
+  }
+  #pipelineList .pipeline-copy{
+    display:none !important;
+  }
+  #pipelineList .pipeline-permit{
+    margin-top:6px !important;
+    font-size:11px !important;
+    line-height:1.25 !important;
+    color:#748a7e !important;
+    letter-spacing:.04em !important;
+  }
+  #pipelineList .pipeline-inline-stage{
+    display:inline !important;
+    color:#9caf9f !important;
+    font-weight:600 !important;
+  }
+
+  #pipelineList .pipeline-stage{
+    display:none !important;
+  }
+
+  #pipelineList .pipeline-temperature{
+    grid-column:1 !important;
+    grid-row:2 !important;
+    width:48px !important;
+    justify-self:center !important;
+    align-self:start !important;
+    text-align:center !important;
+    font-size:14px !important;
+    line-height:1.15 !important;
+    margin-top:3px !important;
+  }
+
+  #pipelineList .pipeline-company-cell{
+    grid-column:2 / 4 !important;
+    grid-row:2 !important;
+    display:block !important;
+    padding:0 !important;
+    border:0 !important;
+    border-radius:0 !important;
+    background:transparent !important;
+    line-height:1.25 !important;
+    overflow:hidden !important;
+  }
+  #pipelineList .pipeline-company-cell:before{
+    content:"COMPANY / PARTICIPANT" !important;
+    display:block !important;
+    margin:0 0 5px !important;
+    color:#72877b !important;
+    font-size:8px !important;
+    line-height:1 !important;
+    letter-spacing:.11em !important;
+    font-weight:600 !important;
+  }
+  #pipelineList .pipeline-company-cell strong{
+    display:block !important;
+    font-size:13px !important;
+    line-height:1.25 !important;
+    font-weight:500 !important;
+    color:#d9e5df !important;
+    overflow-wrap:anywhere !important;
+  }
+  #pipelineList .pipeline-company-cell small{
+    display:block !important;
+    margin-top:4px !important;
+    color:#73877d !important;
+    font-size:8px !important;
+    line-height:1.2 !important;
+    letter-spacing:.07em !important;
+    font-weight:600 !important;
+  }
+
+  #pipelineList .pipeline-seller{
+    grid-column:2 !important;
+    grid-row:3 !important;
+    display:flex !important;
+    flex-wrap:wrap !important;
+    gap:5px !important;
+    width:auto !important;
+    max-width:100% !important;
+    padding:0 !important;
+    border:0 !important;
+    border-radius:0 !important;
+    background:transparent !important;
+    align-items:flex-start !important;
+  }
+  #pipelineList .pipeline-seller:before{
+    content:"WHO SHOULD SELL" !important;
+    flex:0 0 100% !important;
+    margin:0 0 2px !important;
+    padding:0 !important;
+    color:#72877b !important;
+    font-size:8px !important;
+    line-height:1 !important;
+    letter-spacing:.11em !important;
+    font-weight:600 !important;
+  }
+  #pipelineList .pipeline-seller .chip{
+    padding:4px 7px !important;
+    font-size:9px !important;
+    line-height:1.1 !important;
+    font-weight:500 !important;
+    white-space:nowrap !important;
+  }
+
+  #pipelineList .pipeline-actions{
+    grid-column:3 !important;
+    grid-row:3 !important;
+    justify-self:end !important;
+    align-self:end !important;
+    margin:0 !important;
+  }
+  #pipelineList .pipeline-actions .view{
+    min-width:66px !important;
+    min-height:40px !important;
+    padding:8px 12px !important;
+    font-size:12px !important;
+  }
+
+  html[data-theme="light"] #pipelineList .pipeline-company-cell{
+    background:transparent !important;
+    border:0 !important;
+  }
+  html[data-theme="light"] #pipelineList .pipeline-company-cell strong{
+    color:#274335 !important;
+  }
+  html[data-theme="light"] #pipelineList .pipeline-inline-stage{
+    color:#5f7568 !important;
+  }
+}
+</style>
 </head>
 <body>
 <header class="topbar"><div class="wrap"><nav><a class="brand" href="#" aria-label="RevenueTrigger home">
@@ -2194,7 +2408,14 @@ function pipelineStageLabel(stage=''){
 function pipelineHeadline(x={}){
   let title=displayEventTitle(x);
   title=title.replace(/\s*\/\s*/g,' · ').replace(/\s*-\s*TI\b/gi,' · Tenant improvement');
-  return truncateAtWord(title,58);
+  const words=title.split(/\s+/).map((w,i)=>{
+    const bare=w.replace(/[^A-Za-z0-9&'-]/g,'');
+    if(/^(e|w|n|s)$/i.test(bare))return w.toUpperCase();
+    if(/^(llc|inc|corp|hvac|ev|ada|ti)$/i.test(bare))return w.toUpperCase();
+    if(i>0&&/^(and|or|the|of|at|in|on|for|to)$/i.test(bare))return w.toLowerCase();
+    return w.charAt(0).toUpperCase()+w.slice(1);
+  }).join(' ');
+  return truncateAtWord(words,70);
 }
 function pipelineSummary(x){
   const raw=permitDescriptionText(x)||cleanPermitText(x.scope||'');
@@ -2271,7 +2492,8 @@ function renderPipeline(){
   if(pipelineNotListedBtn)pipelineNotListedBtn.textContent=`Not Listed (${pipelineNotListedCount})`;
   const rows=baseRows.filter(x=>pipelineCompanyFilter==='listed'?Boolean(String(x.company||'').trim()):!String(x.company||'').trim());
 
-  $('#pipelineStatus').textContent=`${rows.length} shown · ${baseRows.length} matching stage/score`;
+  const coverageLabel=pipelineCompanyFilter==='listed'?'Listed':'Not Listed';
+  $('#pipelineStatus').textContent=`${rows.length} ${coverageLabel} · ${baseRows.length} total at current stage/score`;
 
   list.innerHTML=rows.slice(0,120).map(x=>`
     <div class="pipeline-lead">
@@ -2279,7 +2501,7 @@ function renderPipeline(){
       <div class="pipeline-main">
         <div class="leadname">${esc(displayEventTitle(x))}</div>
         <div class="pipeline-copy">${esc(pipelineSummary(x))}</div>
-        <div class="pipeline-permit">${esc(x.permit||'—')}</div>
+        <div class="pipeline-permit">${esc(x.permit||'—')}<span class="pipeline-inline-stage"> · ${esc(pipelineStageLabel(x.stage))}</span></div>
       </div>
       <div class="pipeline-stage">${esc(pipelineStageLabel(x.stage))}</div>
       <div class="pipeline-company-cell">${x.company?`<strong>${esc(displayCompanyName(x.company))}</strong><small>${esc(x.companyRole||'Participant')}</small>`:'<span class="company-missing">Not listed</span>'}</div>
