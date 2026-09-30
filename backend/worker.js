@@ -3953,30 +3953,49 @@ export default {
       if(path==='/changes'&&request.method==='GET'){
         if(!user)return json({error:'unauthorized'},401,env);
         const p=await env.DB.prepare('SELECT * FROM preferences WHERE user_id=?').bind(user.id).first();
-        const ent=PLANS[userPlanActive(user)]||PLANS.Beta;
+        const activePlan=userPlanActive(user);
+        const ent=PLANS[activePlan]||PLANS.Beta;
         const markets=cleanMarkets(parseJson(p?.markets,['Phoenix']),ent.marketLimit);
         const industries=cleanIndustries(parseJson(p?.industries,['Commercial services']),ent.industryLimit);
         const minScore=Number(p?.min_score||70);
+
+        // "Since yesterday" is a Phoenix/Arizona calendar window, not a rolling
+        // 24-hour timestamp. Municipal feeds often publish a permit date at or
+        // near midnight, which caused valid same-day activity to disappear by
+        // the evening. Filter market + score in SQL before applying the limit so
+        // activity in a busy market cannot crowd out the user's selected market.
+        const marketPlaceholders=markets.map(()=>'?').join(',');
         const r=await env.DB.prepare(`
           SELECT * FROM leads
-          WHERE datetime(event_date)>=datetime('now','-1 day')
+          WHERE date(event_date,'-7 hours') >= date('now','-7 hours','-1 day')
+            AND market IN (${marketPlaceholders})
+            AND score>=?
           ORDER BY event_date DESC
-          LIMIT 250
-        `).all();
-        let recent=(r.results||[]).map(hydrateStoredLead).filter(x=>
-          markets.includes(x.market) &&
-          x.score>=minScore &&
+          LIMIT 1500
+        `).bind(...markets,minScore).all();
+
+        const candidateRows=(r.results||[]).map(hydrateStoredLead);
+        const recent=candidateRows.filter(x=>
           (x.categories||[]).some(c=>industries.includes(c))
         );
         const clustered=clusterLeads(recent);
         const hot=clustered.filter(x=>x.score>=80).length;
         const major=clustered.filter(x=>Number(x.officialPermitValue||0)>=500000).length;
         const movedIntoExecution=clustered.filter(x=>['PERMIT ISSUED','CONSTRUCTION'].includes(x.lifecycle?.stage)).length;
-        const watchlist=userPlanActive(user)==='Territory'?await listWatchlist(env,user):[];
+        const watchlist=activePlan==='Territory'?await listWatchlist(env,user):[];
         const competitorMoves=watchlist.flatMap(x=>(x.events||[]).map(e=>({company:x.company,...e}))).slice(0,5);
+
         return json({
           ok:true,
-          window:'24h',
+          window:'since_yesterday_arizona',
+          windowLabel:'Since yesterday',
+          plan:activePlan,
+          filters:{markets,industries,minScore},
+          diagnostics:{
+            rowsAfterMarketAndScore:candidateRows.length,
+            rowsAfterIndustryFilter:recent.length,
+            clusteredOpportunities:clustered.length
+          },
           summary:{
             opportunities:clustered.length,
             hot,
@@ -3984,6 +4003,7 @@ export default {
             movedIntoExecution,
             competitorMoves:competitorMoves.length
           },
+          competitorMovesAvailable:activePlan==='Territory',
           competitorMoves,
           top:clustered.slice(0,5).map(x=>({id:x.id,name:x.name,market:x.market,score:x.score,temperature:x.temperature,actionIntelligence:x.actionIntelligence}))
         },200,env);

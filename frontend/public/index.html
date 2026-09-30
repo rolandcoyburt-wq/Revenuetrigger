@@ -1719,8 +1719,14 @@ async function loadChanges(){
     const d=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(d.error||'Could not load changes');
     const s=d.summary||{};
-    $('#chgOpp').textContent=s.opportunities??0;$('#chgHot').textContent=s.hot??0;$('#chgMajor').textContent=s.majorProjects??0;$('#chgComp').textContent=s.competitorMoves??0;
-    msg.textContent=s.opportunities?`${s.opportunities} matched opportunities changed in the last 24 hours.`:'No new matched opportunities in the last 24 hours.';
+    $('#chgOpp').textContent=s.opportunities??0;
+    $('#chgHot').textContent=s.hot??0;
+    $('#chgMajor').textContent=s.majorProjects??0;
+    $('#chgComp').textContent=d.competitorMovesAvailable?(s.competitorMoves??0):'—';
+    const filterText=d.filters?.markets?.length?` in ${d.filters.markets.join(', ')}`:'';
+    msg.textContent=s.opportunities
+      ? `${s.opportunities} matched opportunities since yesterday${filterText}.`
+      : `No opportunities matched your current market, industry and score filters since yesterday.`;
     $('#changedMoves').innerHTML=(d.competitorMoves||[]).slice(0,2).map(x=>`<div class="watch-move">• ${esc(x.title)}</div>`).join('');
   }catch(e){
     msg.textContent='Could not load today’s change summary.';
