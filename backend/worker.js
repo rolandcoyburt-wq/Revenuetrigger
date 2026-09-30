@@ -80,7 +80,7 @@ function classify(text=''){
 }
 
 function temperatureForScore(score){
-  if(score>=80)return 'HOT';
+  if(score>=75)return 'HOT';
   if(score>=60)return 'WARM';
   if(score>=40)return 'WATCH';
   return 'LOW';
@@ -1672,7 +1672,7 @@ async function scoringAudit(env,{days=30,limit=300}={}){
     sample:{days,requestedLimit:limit,count:combined.length,sourceMode:'D1 production leads for established markets + live City of Chandler Accela records'},
     production:{scoreBuckets:buckets,byMarket:markets,componentAverages,quality},
     scorerChecks:{
-      maxWeights,maxPossible,configuredTemperatureThresholds:{HOT:80,WARM:60,WATCH:40},
+      maxWeights,maxPossible,configuredTemperatureThresholds:{HOT:75,WARM:60,WATCH:40},
       missingDateProbe:{score:missingDateProbe.score,recencyPoints:missingDateProbe.breakdown.recency,note:'Production currently awards a null date full recency.'},
       stageOverlapProbe:{preTech:{score:preTechProbe.score,projectStage:preTechProbe.breakdown.projectStage,prePermit:preTechProbe.breakdown.prePermit},issued:{score:issuedProbe.score,projectStage:issuedProbe.breakdown.projectStage,prePermit:issuedProbe.breakdown.prePermit}}
     },
@@ -3492,7 +3492,11 @@ export default {
       if(path==='/changes-teaser'&&request.method==='GET'){
         const r=await env.DB.prepare(`
           SELECT * FROM leads
-          WHERE date(event_date,'-7 hours') >= date('now','-7 hours','-1 day')
+          WHERE (
+            (market='Phoenix' AND datetime(event_date) >= datetime(date('now','-7 hours','-1 day'),'+7 hours'))
+            OR
+            (market<>'Phoenix' AND date(event_date) >= date('now','-7 hours','-1 day'))
+          )
             AND score>=40
           ORDER BY event_date DESC
           LIMIT 1500
@@ -3508,7 +3512,7 @@ export default {
           window:'since_yesterday_arizona',
           minimumScore:40,
           opportunities:clustered.length,
-          hot:clustered.filter(x=>Number(x.score)>=80).length,
+          hot:clustered.filter(x=>Number(x.score)>=75).length,
           markets:byMarket,
           message:'Aggregate public teaser only. Sign-in is required for personalized change details.',
           generatedAt:nowIso()
@@ -3526,7 +3530,7 @@ export default {
         const byMarket={};
         for(const x of rows){
           const score=Number(x.score||0);
-          const p=score>=80?'HOT':score>=60?'WARM':score>=40?'WATCH':'LOW';
+          const p=score>=75?'HOT':score>=60?'WARM':score>=40?'WATCH':'LOW';
           const c=score>=candidateHot?'HOT':score>=60?'WARM':score>=40?'WATCH':'LOW';
           production[p]++;
           candidate[c]++;
@@ -3555,7 +3559,7 @@ export default {
           productionUnchanged:true,
           days,
           sampleCount:rows.length,
-          productionThresholds:{HOT:80,WARM:60,WATCH:40},
+          productionThresholds:{HOT:75,WARM:60,WATCH:40},
           candidateThresholds:{HOT:candidateHot,WARM:60,WATCH:40},
           production,
           candidate,
@@ -4230,7 +4234,11 @@ export default {
         const marketPlaceholders=markets.map(()=>'?').join(',');
         const r=await env.DB.prepare(`
           SELECT * FROM leads
-          WHERE date(event_date,'-7 hours') >= date('now','-7 hours','-1 day')
+          WHERE (
+            (market='Phoenix' AND datetime(event_date) >= datetime(date('now','-7 hours','-1 day'),'+7 hours'))
+            OR
+            (market<>'Phoenix' AND date(event_date) >= date('now','-7 hours','-1 day'))
+          )
             AND market IN (${marketPlaceholders})
             AND score>=?
           ORDER BY event_date DESC
@@ -4242,7 +4250,7 @@ export default {
           (x.categories||[]).some(c=>industries.includes(c))
         );
         const clustered=clusterLeads(recent);
-        const hot=clustered.filter(x=>x.score>=80).length;
+        const hot=clustered.filter(x=>x.score>=75).length;
         const major=clustered.filter(x=>Number(x.officialPermitValue||0)>=500000).length;
         const movedIntoExecution=clustered.filter(x=>['PERMIT ISSUED','CONSTRUCTION'].includes(x.lifecycle?.stage)).length;
         const watchlist=activePlan==='Territory'?await listWatchlist(env,user):[];
