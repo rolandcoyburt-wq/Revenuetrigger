@@ -1857,6 +1857,130 @@ async function stored(env,limit=120,days=7){
 }
 
 
+const FEED_FRESHNESS_MINUTES=180;
+const FEED_CACHE_CONTROL='public, max-age=30, s-maxage=120, stale-while-revalidate=300';
+
+function feedJson(body,status=200,env={}){
+  const response=json(body,status,env);
+  response.headers.set('Cache-Control',status===200?FEED_CACHE_CONTROL:'no-store');
+  response.headers.set('Vary','Origin');
+  response.headers.set('X-RevenueTrigger-Read-Only','true');
+  return response;
+}
+
+function feedInt(value,fallback,min,max){
+  if(value===null||value===undefined||value==='')return fallback;
+  const n=Number(value);
+  return Number.isFinite(n)?clamp(Math.trunc(n),min,max):fallback;
+}
+
+function feedMarkets(raw){
+  if(raw===null)return {ok:true,markets:[...LIVE_MARKETS],invalid:[]};
+  const requested=String(raw).split(',').map(x=>x.trim()).filter(Boolean);
+  if(!requested.length)return {ok:false,markets:[],invalid:['(empty)']};
+  const unique=[...new Set(requested)];
+  const invalid=unique.filter(x=>!LIVE_MARKETS.includes(x));
+  if(invalid.length)return {ok:false,markets:[],invalid};
+  return {ok:true,markets:unique,invalid:[]};
+}
+
+function feedOverallState(marketStates=[]){
+  if(!marketStates.length)return 'empty';
+  const states=marketStates.map(x=>x.state);
+  if(states.every(x=>x==='empty'))return 'empty';
+  if(states.every(x=>x==='fresh'))return 'fresh';
+  if(states.every(x=>x==='stale'))return 'stale';
+  return 'partial';
+}
+
+async function readStoredFeed(env,{days=7,limit=120,markets=LIVE_MARKETS}={}){
+  if(!env.DB)throw new Error('D1 binding unavailable');
+
+  const safeDays=feedInt(days,7,1,30);
+  const safeLimit=feedInt(limit,120,1,200);
+  const safeMarkets=[...new Set((markets||[]).filter(x=>LIVE_MARKETS.includes(x)))];
+  if(!safeMarkets.length)return {
+    ok:true,state:'empty',leads:[],markets:[],
+    query:{days:safeDays,limit:safeLimit,markets:[]},
+    counts:{returned:0,clusteredAvailable:0,rawRowsScanned:0},
+    freshness:{thresholdMinutes:FEED_FRESHNESS_MINUTES,markets:[]},
+    generatedAt:nowIso()
+  };
+
+  // Read more raw rows than the requested opportunity limit so hydration and
+  // clustering happen before the final response limit is applied.
+  const rawScanLimit=clamp(Math.max(500,safeLimit*12),500,5000);
+  const placeholders=safeMarkets.map(()=>'?').join(',');
+  const window=`-${safeDays} days`;
+
+  const rowsSql=`
+    SELECT *
+    FROM leads
+    WHERE datetime(event_date)>=datetime('now',?)
+      AND market IN (${placeholders})
+    ORDER BY score DESC,event_date DESC
+    LIMIT ?
+  `;
+  const statsSql=`
+    SELECT
+      market,
+      COUNT(*) AS stored_count,
+      MAX(updated_at) AS last_stored_at,
+      MAX(event_date) AS latest_event_at,
+      CAST((julianday('now')-julianday(MAX(updated_at)))*1440 AS INTEGER) AS age_minutes
+    FROM leads
+    WHERE datetime(event_date)>=datetime('now',?)
+      AND market IN (${placeholders})
+    GROUP BY market
+  `;
+
+  const rowResult=await env.DB.prepare(rowsSql).bind(window,...safeMarkets,rawScanLimit).all();
+  const statsResult=await env.DB.prepare(statsSql).bind(window,...safeMarkets).all();
+
+  const hydrated=(rowResult.results||[]).map(hydrateStoredLead);
+  const clustered=clusterLeads(hydrated);
+  const leads=clustered.slice(0,safeLimit);
+
+  const statsMap=new Map((statsResult.results||[]).map(row=>[String(row.market||''),row]));
+  const marketStates=safeMarkets.map(market=>{
+    const row=statsMap.get(market);
+    const storedCount=Number(row?.stored_count||0);
+    const ageMinutes=Number.isFinite(Number(row?.age_minutes))?Math.max(0,Number(row.age_minutes)):null;
+    let state='empty';
+    if(storedCount>0)state=ageMinutes!==null&&ageMinutes<=FEED_FRESHNESS_MINUTES?'fresh':'stale';
+    return {
+      market,
+      state,
+      storedCount,
+      lastStoredAt:row?.last_stored_at||null,
+      latestEventAt:row?.latest_event_at||null,
+      ageMinutes
+    };
+  });
+
+  return {
+    ok:true,
+    state:feedOverallState(marketStates),
+    leads,
+    markets:safeMarkets,
+    source:'RevenueTrigger stored D1 opportunity feed',
+    query:{days:safeDays,limit:safeLimit,markets:safeMarkets},
+    counts:{
+      returned:leads.length,
+      clusteredAvailable:clustered.length,
+      rawRowsScanned:hydrated.length,
+      rawScanLimit
+    },
+    freshness:{
+      basis:'stored D1 updated_at only; municipal source health is not polled',
+      thresholdMinutes:FEED_FRESHNESS_MINUTES,
+      markets:marketStates
+    },
+    generatedAt:nowIso()
+  };
+}
+
+
 async function scoringAudit(env,{days=30,limit=300}={}){
   days=clamp(Number(days||30),1,90);
   limit=clamp(Number(limit||300),25,500);
@@ -4527,6 +4651,36 @@ export default {
           },
           pipeline:rows
         },200,env);
+      }
+      if(path==='/feed'&&request.method==='GET'){
+        const days=feedInt(url.searchParams.get('days'),7,1,30);
+        const limit=feedInt(url.searchParams.get('limit'),120,1,200);
+        const parsedMarkets=feedMarkets(url.searchParams.has('markets')?url.searchParams.get('markets'):null);
+        if(!parsedMarkets.ok){
+          return feedJson({
+            ok:false,
+            state:'unavailable',
+            error:'invalid_market',
+            invalidMarkets:parsedMarkets.invalid,
+            allowedMarkets:LIVE_MARKETS,
+            generatedAt:nowIso()
+          },400,env);
+        }
+        try{
+          const data=await readStoredFeed(env,{days,limit,markets:parsedMarkets.markets});
+          return feedJson(data,200,env);
+        }catch(e){
+          return feedJson({
+            ok:false,
+            state:'unavailable',
+            leads:[],
+            markets:parsedMarkets.markets,
+            query:{days,limit,markets:parsedMarkets.markets},
+            error:'stored_feed_unavailable',
+            message:'Stored opportunity data is temporarily unavailable.',
+            generatedAt:nowIso()
+          },503,env);
+        }
       }
       if(path==='/leads'&&request.method==='GET'){
         const days=clamp(Number(url.searchParams.get('days')||7),1,30);
