@@ -2,7 +2,7 @@
 
 **NOT DEPLOYED TO PRODUCTION.** This is an isolated frontend review branch. Nothing has been merged to `main`. Live-data and real email/Stripe verification remain outstanding, so this is not a production-release sign-off.
 
-- Branch: `redesign/signal-command-v7`
+- Local branch: `redesign/signal-command-v7` — committed; push blocked pending explicit authorization.
 - Repository: `rolandcoyburt-wq/Revenuetrigger`
 - Baseline: `db5260fe16e0b9f81b36df71a50797a8b69cc7f3` (matches the Core handoff)
 - Backend changes: **none**
@@ -115,6 +115,8 @@ Phoenix, Tempe, Tucson, Scottsdale, Mesa and Chandler were each exercised with s
 **Current counts, source health and real API response shapes were not validated.** The shape inventory was taken from the checked-in frontend and backend, not a production response snapshot.
 
 ## Outstanding gates and Core review
+
+The GitHub push was also rejected by automatic approval review: it requires explicit authorization to publish repository changes. The review branch is committed locally and has not been pushed.
 
 1. Automatic approval review rejected the attempted read-only production `/leads` download because the API was not verified and the records could be sensitive. The request was not retried through another route. Roland's explicit authorization is needed before retrying production API validation.
 2. Run read-only real data checks for all six Arizona markets and source health, then compare the baseline and redesign against the same responses.

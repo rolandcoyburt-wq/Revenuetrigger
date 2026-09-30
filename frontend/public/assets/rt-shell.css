@@ -20,3 +20,4 @@ html body .source-flow-console,html body .source-flow-console:before{background:
 /* Keep long profiles inside the viewport on both existing modal implementations. */
 body .modal{grid-template-columns:minmax(0,1fr);place-items:center;align-content:center;overflow:hidden}body .modal-card{min-width:0;max-height:calc(100dvh - 40px)!important;overflow:auto}
 html:has(.modal.open,.modal.show){overflow:hidden;scroll-behavior:auto}body .modal-card{scroll-behavior:auto}
+body .modal-card .close{background:transparent!important}
