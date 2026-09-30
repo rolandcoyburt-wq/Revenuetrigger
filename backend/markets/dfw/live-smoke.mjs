@@ -1,5 +1,6 @@
 import {
   checkDallasSupplementalSourceHealth,
+  checkDallasZoningSourceHealth,
   checkFortWorthSourceHealth,
   summarizeSourceHealth,
 } from './health.js';
@@ -7,6 +8,7 @@ import {
   fetchDallasRightOfWayPermits,
   dallasLiveSourceReadiness,
 } from './dallas.js';
+import { fetchDallasZoningAtPoint } from './dallas-zoning.js';
 import {
   fetchFortWorthPermits,
   fetchFortWorthOccupancy,
@@ -15,6 +17,10 @@ import {
 import { toLeadInput } from './normalize.js';
 
 const now = Date.now();
+const DALLAS_ZONING_PROBE = Object.freeze({
+  latitude: 32.7767,
+  longitude: -96.7970,
+});
 
 async function sample(label, loader, count = 3) {
   const rows = await loader();
@@ -26,9 +32,10 @@ async function sample(label, loader, count = 3) {
 }
 
 async function main() {
-  const [fortWorthHealth, dallasHealth] = await Promise.all([
+  const [fortWorthHealth, dallasHealth, dallasZoningHealth] = await Promise.all([
     checkFortWorthSourceHealth({ now }),
     checkDallasSupplementalSourceHealth({ now }),
+    checkDallasZoningSourceHealth({ now }),
   ]);
 
   const output = {
@@ -36,8 +43,13 @@ async function main() {
     health: {
       fortWorth: summarizeSourceHealth(fortWorthHealth),
       dallasSupplemental: summarizeSourceHealth(dallasHealth),
+      dallasZoning: summarizeSourceHealth(dallasZoningHealth),
     },
     dallasPrimaryReadiness: dallasLiveSourceReadiness(),
+    dallasZoningProbe: await fetchDallasZoningAtPoint({
+      ...DALLAS_ZONING_PROBE,
+      now,
+    }),
     samples: [],
   };
 
@@ -60,7 +72,7 @@ async function main() {
 
   console.log(JSON.stringify(output, null, 2));
 
-  if (!fortWorthHealth.healthy || !dallasHealth.healthy) {
+  if (!fortWorthHealth.healthy || !dallasHealth.healthy || !dallasZoningHealth.healthy) {
     process.exitCode = 1;
   }
 }
