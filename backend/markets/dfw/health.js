@@ -36,6 +36,27 @@ export const FORT_WORTH_HEALTH_SPECS = Object.freeze([
   }),
 ]);
 
+export const DALLAS_SUPPLEMENTAL_HEALTH_SPECS = Object.freeze([
+  Object.freeze({
+    source: DFW_SOURCES.dallasRightOfWayPermits,
+    requiredFields: [
+      'OBJECTID','EXTERNALFILENUM','PERMITTYPE','COMMERCIALORRESIDENTIAL','STATUSDESCRIPTION','CREATEDDATE','ISSUEDATE',
+      'ROWREASONFORJOB','ROWIMPROVEMENTREPAIR','SPECIFICLOCATION','WORKDESCRIPTION','APPLICANTNAMESTORED',
+      'APPLICANTCOMPANYNAMESTORED','ALLCONTRACTORSNAME',
+    ],
+    dateField: 'CREATEDDATE',
+    lookbackDays: 30,
+    requireRecentRows: true,
+    requirePagination: true,
+  }),
+  Object.freeze({
+    source: DFW_SOURCES.dallasRightOfWayLocations,
+    requiredFields: ['OBJECTID','EXTERNALFILENUM','HOUSENUM','PREFIX','NAME','TYPE','LOCATIONNAME','CASEID'],
+    requireRecentRows: false,
+    requirePagination: true,
+  }),
+]);
+
 function isoDay(ms) {
   return new Date(ms).toISOString().slice(0, 10);
 }
@@ -62,6 +83,7 @@ export async function checkArcGISSourceHealth({
   lookbackDays = null,
   requireRecentRows = false,
   requirePagination = false,
+  maxFutureDays = 1,
   fetchFn = fetch,
   now = Date.now(),
 } = {}) {
@@ -91,9 +113,10 @@ export async function checkArcGISSourceHealth({
 
   if (metadata && queryable && dateField && Number.isFinite(lookbackDays)) {
     const start = now - lookbackDays * 86_400_000;
+    const end = now + maxFutureDays * 86_400_000;
     const params = new URLSearchParams({
       f: 'json',
-      where: `${dateField} >= DATE '${isoDay(start)}'`,
+      where: `${dateField} >= DATE '${isoDay(start)}' AND ${dateField} <= DATE '${isoDay(end)}'`,
       returnCountOnly: 'true',
     });
     try {
@@ -133,12 +156,20 @@ export async function checkArcGISSourceHealth({
 }
 
 export async function checkFortWorthSourceHealth({ fetchFn = fetch, now = Date.now() } = {}) {
+  return checkSpecs('Fort Worth', FORT_WORTH_HEALTH_SPECS, { fetchFn, now });
+}
+
+export async function checkDallasSupplementalSourceHealth({ fetchFn = fetch, now = Date.now() } = {}) {
+  return checkSpecs('Dallas', DALLAS_SUPPLEMENTAL_HEALTH_SPECS, { fetchFn, now });
+}
+
+async function checkSpecs(market, specs, { fetchFn, now }) {
   const results = [];
-  for (const spec of FORT_WORTH_HEALTH_SPECS) {
+  for (const spec of specs) {
     results.push(await checkArcGISSourceHealth({ ...spec, fetchFn, now }));
   }
   return {
-    market: 'Fort Worth',
+    market,
     checkedAt: new Date(now).toISOString(),
     healthy: results.every((result) => result.healthy),
     sources: results,
