@@ -41,7 +41,10 @@ export const DFW_SOURCES = Object.freeze({
     kind: 'accela-public-portal',
     url: 'https://aca-prod.accela.com/DALLASTX/Cap/CapHome.aspx?TabName=Building&module=Building',
     reports: ['Building Active', 'Building Issued', 'Building Submitted'],
-    note: 'Public current building-permit system. Stable machine-readable export path still requires validation before production enablement.',
+    reportIds: Object.freeze({ buildingActive: 'report8278', buildingIssued: 'report8279', buildingSubmitted: 'report8280' }),
+    portalTransport: 'ASP.NET WebForms postback via ctl00$HeaderNavigation$btnPostForReport',
+    accelaAgency: 'DALLASTX',
+    note: 'Public current building-permit system. Report IDs are known, but the portal executes them through stateful ASP.NET postbacks. Accela public API access requires a registered citizen-app id plus agency/environment headers, so primary ingestion remains disabled until a durable machine-readable transport is validated.',
   }),
   dallasCommercialDashboard: Object.freeze({
     key: 'dallas_commercial_permit_dashboard',
