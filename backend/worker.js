@@ -2399,6 +2399,103 @@ async function buildRelationshipIntelligence(env,rawCompany,{days=365,rowLimit=5
 }
 
 
+async function previewPhoenixHistoricalBackfill(env,{days=180,limit=5000}={}){
+  days=Math.max(30,Math.min(730,Number(days)||180));
+  limit=Math.max(100,Math.min(8000,Number(limit)||5000));
+  const startDate=new Date(Date.now()-days*86400000).toISOString().slice(0,10);
+  const pageSize=1000;
+  const raw=[];
+  const seen=new Set();
+
+  for(let offset=0;offset<limit;offset+=pageSize){
+    const take=Math.min(pageSize,limit-offset);
+    const features=await fetchArcGIS(PHX_PERMITS,{
+      where:`PER_ISSUE_DATE >= DATE '${startDate}'`,
+      outFields:'OBJECTID,PER_TYPE,PER_NUM,PROJECT,PERMIT_NAME,PERMIT_STAT,PER_ENT_DATE,PER_ISSUE_DATE,STREET_FULL_NAME,PROFESS_NAME,PER_TYPE_DESC,MOD_DESC,SCOPE_CODE,SCOPE_DESC',
+      orderByFields:'PER_ISSUE_DATE DESC,OBJECTID DESC',
+      resultOffset:String(offset),
+      resultRecordCount:String(take),
+      returnGeometry:'false',
+      f:'json'
+    },'Phoenix historical preview');
+
+    if(!features.length)break;
+    for(const f of features){
+      const a=f.attributes||{};
+      const key=String(a.PER_NUM||a.OBJECTID||'').trim();
+      if(!key||seen.has(key))continue;
+      seen.add(key);
+      raw.push(f);
+      if(raw.length>=limit)break;
+    }
+    if(features.length<take||raw.length>=limit)break;
+  }
+
+  const leads=raw.map(normalizePhoenix).filter(x=>Number.isFinite(new Date(x.date).getTime()));
+  const listed=leads.filter(x=>isListedCompanyName(canonicalCompanyName(x.company||'')));
+  const companies=new Map();
+  for(const x of listed){
+    const c=canonicalCompanyName(x.company||'');
+    companies.set(c,(companies.get(c)||0)+1);
+  }
+  const projectKeys=new Set();
+  for(const x of leads){
+    const addr=usableClusterAddress({address:x.address,market:'Phoenix'});
+    if(addr)projectKeys.add(`Phoenix|${addr}`);
+  }
+
+  const dates=leads.map(x=>new Date(x.date).getTime()).filter(Number.isFinite);
+  const earliest=dates.length?Math.min(...dates):null;
+  const latest=dates.length?Math.max(...dates):null;
+
+  let existingPermits=new Set();
+  if(env.DB){
+    const r=(await env.DB.prepare(`
+      SELECT permit FROM leads
+      WHERE market='Phoenix'
+        AND datetime(event_date)>=datetime('now',?)
+        AND permit IS NOT NULL
+        AND TRIM(permit)<>''
+    `).bind(`-${days} days`).all()).results||[];
+    existingPermits=new Set(r.map(x=>String(x.permit||'').trim()).filter(Boolean));
+  }
+  const previewPermitSet=new Set(leads.map(x=>String(x.permit||'').trim()).filter(Boolean));
+  const estimatedNewPermits=[...previewPermitSet].filter(x=>!existingPermits.has(x)).length;
+
+  const topCompanies=[...companies.entries()]
+    .sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))
+    .slice(0,15)
+    .map(([company,count])=>({company,count}));
+
+  return {
+    ok:true,
+    market:'Phoenix',
+    mode:'preview_only',
+    requested:{days,limit,startDate},
+    fetched:{
+      rawFeatures:raw.length,
+      normalizedLeads:leads.length,
+      listedCompanyRecords:listed.length,
+      listedShare:leads.length?Math.round((listed.length/leads.length)*1000)/1000:0,
+      distinctCompanies:companies.size,
+      distinctProjectAddresses:projectKeys.size,
+      distinctPermits:previewPermitSet.size,
+      earliestActivity:earliest?new Date(earliest).toISOString():null,
+      latestActivity:latest?new Date(latest).toISOString():null,
+      actualSpanDays:earliest&&latest?Math.round((latest-earliest)/86400000):0,
+      hitPreviewLimit:raw.length>=limit
+    },
+    existingStoredPermitsInWindow:existingPermits.size,
+    estimatedNewPermits,
+    topCompanies,
+    recommendation:estimatedNewPermits>0
+      ?'Historical source coverage is available. If the counts and company attribution look reasonable, the next step is a controlled Phoenix backfill into D1 with deduplication by market + permit.'
+      :'No additional Phoenix permit IDs were found beyond the current stored snapshot in this preview window.',
+    caution:'Preview does not write to D1 or alter production scores. Phoenix PROFess_NAME is source-published participant/professional attribution and should not be interpreted as proof of award or contractor role.'
+  };
+}
+
+
 async function historicalCoverageReadiness(env,{days=730,rowLimit=12000}={}){
   days=Math.max(90,Math.min(730,Number(days)||730));
   rowLimit=Math.max(1000,Math.min(12000,Number(rowLimit)||12000));
@@ -2841,6 +2938,14 @@ export default {
         return json({ok:true,count:data.results.length,meta:data.meta,results:data.results},200,env);
       }
 
+      if(path==='/backfill-preview'&&request.method==='GET'){
+        const market=(url.searchParams.get('market')||'Phoenix').trim();
+        const days=Math.max(30,Math.min(730,Number(url.searchParams.get('days')||180)));
+        const limit=Math.max(100,Math.min(8000,Number(url.searchParams.get('limit')||5000)));
+        if(market!=='Phoenix')return json({error:'Historical preview currently supports Phoenix first.',supportedMarkets:['Phoenix']},400,env);
+        const data=await previewPhoenixHistoricalBackfill(env,{days,limit});
+        return json(data,200,env);
+      }
       if(path==='/historical-coverage'&&request.method==='GET'){
         const days=Math.max(90,Math.min(730,Number(url.searchParams.get('days')||730)));
         const data=await historicalCoverageReadiness(env,{days,rowLimit:12000});
