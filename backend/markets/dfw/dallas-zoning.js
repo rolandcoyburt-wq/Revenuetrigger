@@ -1,5 +1,5 @@
 import { DFW_SOURCES } from './sources.js';
-import { cleanText, parseDate } from './normalize.js';
+import { cleanText } from './normalize.js';
 
 const BASE_ZONING_FIELDS = [
   'OBJECTID','ZONE_DIST','PD_NUM','CD_NUM','CASE_NUMBER','COUNCIL_DATE','COMMON_NAME',
@@ -27,6 +27,22 @@ function requireCoordinate(value, min, max, label) {
     throw new Error(`${label} must be a finite number between ${min} and ${max}`);
   }
   return n;
+}
+
+function parseZoningDate(value, { now = Date.now(), maxFutureDays = 30 } = {}) {
+  if (value === null || value === undefined || value === '') return null;
+  let ms = null;
+  if (typeof value === 'number' || /^\d{12,13}$/.test(String(value))) {
+    ms = Number(value);
+  } else {
+    const parsed = Date.parse(String(value).trim());
+    if (Number.isFinite(parsed)) ms = parsed;
+  }
+  if (!Number.isFinite(ms)) return null;
+  const minDate = Date.UTC(1900, 0, 1);
+  const maxDate = now + maxFutureDays * 86_400_000;
+  if (ms < minDate || ms > maxDate) return null;
+  return new Date(ms).toISOString();
 }
 
 async function fetchDallasPointFeatures(url, {
@@ -68,8 +84,8 @@ function commonEnvelope(source, kind, raw, { latitude, longitude, now }) {
       latitude: Number(latitude),
       longitude: Number(longitude),
     },
-    councilDate: parseDate(raw.COUNCIL_DATE, { now, maxFutureDays: 30 }),
-    effectiveDate: parseDate(raw.EFFECTIVEDATE, { now, maxFutureDays: 30 }),
+    councilDate: parseZoningDate(raw.COUNCIL_DATE, { now }),
+    effectiveDate: parseZoningDate(raw.EFFECTIVEDATE, { now }),
     caseNumber: cleanText(raw.CASE_NUMBER),
     ordinanceNumber: cleanText(raw.ORD_NUM),
     resolutionNumber: cleanText(raw.RES_NUM),
