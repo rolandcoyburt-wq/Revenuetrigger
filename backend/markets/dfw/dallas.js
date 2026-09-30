@@ -288,8 +288,9 @@ export async function fetchDallasHistoricalPermits({ limit = 5000, offset = 0, c
 export function dallasLiveSourceReadiness() {
   return {
     enabled: false,
-    reason: 'Primary Dallas building permits remain publicly visible in DallasNow and the official Commercial Permit Activity Dashboard, but a stable machine-readable export/request contract has not yet been validated. Keep the primary building feed disabled rather than deploy brittle browser scraping.',
+    reason: 'Primary Dallas building permits remain publicly visible in DallasNow. The public Building Active/Issued/Submitted reports are identified, but they execute through stateful ASP.NET WebForms postbacks; Accela anonymous REST access still requires a registered citizen-app id plus agency/environment headers. Keep the primary building feed disabled rather than deploy brittle browser scraping or session-dependent report automation.',
     candidateSources: [DFW_SOURCES.dallasNow, DFW_SOURCES.dallasCommercialDashboard],
+    reportIds: DFW_SOURCES.dallasNow.reportIds,
     normalizerReady: true,
     supplementalCurrentReady: true,
     supplementalSources: [DFW_SOURCES.dallasRightOfWayPermits],
