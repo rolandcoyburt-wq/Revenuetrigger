@@ -2,11 +2,49 @@
 
 **NOT DEPLOYED TO PRODUCTION.** This is an isolated frontend review branch. Nothing has been merged to `main`. Live-data and real email/Stripe verification remain outstanding, so this is not a production-release sign-off.
 
-- Local branch: `redesign/signal-command-v7` — committed; push blocked pending explicit authorization.
+- Local branch: `redesign/signal-command-v7`
+- Approved commit: `2b0c4bbbd6168a8d893fda3fc77647eaaad99a8c`
+- GitHub publication: **not pushed**. Authorized push failed because command-line Git has no GitHub credentials. The connected GitHub API confirmed that this exact commit is not present remotely. No replacement commit or alternate branch was published.
 - Repository: `rolandcoyburt-wq/Revenuetrigger`
 - Baseline: `db5260fe16e0b9f81b36df71a50797a8b69cc7f3` (matches the Core handoff)
 - Backend changes: **none**
 - D1, adapters, scoring, temperature, auth contracts, billing contracts, cron, DFW, and Cloudflare configuration: **unchanged**
+
+## Phase 1 closure update — account preference correction
+
+**Current status: PASS for isolated review-branch continuation; NOT approved for production deployment.** This section supersedes earlier handoff plans where they conflict, including the earlier request for a SELECT-only Chandler Early Pipeline fixture.
+
+Core independently verified the exact reviewed commit `2b0c4bbbd6168a8d893fda3fc77647eaaad99a8c` against baseline `db5260fe16e0b9f81b36df71a50797a8b69cc7f3`. Core reported preserved feed/pipeline/Saved/auth/Stripe callback architecture, accurate planned DFW labeling, no backend/schema/adapter/DFW changes and no obvious mobile regression in the supplied artifacts. This is review approval only.
+
+### Isolated correction
+
+A new commit immediately after the reviewed commit changes only:
+
+- `frontend/public/signals.html`: account `prefScore` now includes `75+ HOT` (numeric value 75), with 80 relabeled `80+ HOT · strict`; existing 40/60 options remain.
+- `docs/redesign/REVIEW.md`: records the correction, accumulated handoff findings, verification and current blockers.
+
+The correction commit is identifiable as the commit containing this section, titled `Fix account HOT preference options and record Phase 1 gates`. No backend score/temperature thresholds, JavaScript preference persistence behavior, Arizona adapters, DFW code or deployment configuration were changed.
+
+### Focused verification
+
+**8/8 synthetic/local browser cases passed**: each of 40, 60, 75 and 80 at 390px and 1366px. Each case verified account initialization from the stored mock preference, exact option labels/values, numeric preference-save payload, retention after reload, no horizontal page overflow and no page JavaScript errors. All external requests were fulfilled or aborted by local test interception; mock preference saves and billing-sync responses did not contact production or modify real accounts. The initial harness returned the default mock score through billing sync; aligning that mock response with the test account resolved the harness mismatch. No application change beyond the selector was needed.
+
+The earlier **41 passing checks remain synthetic/local validation** and were not rerun for this two-option HTML correction. Genuine fixture validation has not occurred and must not be represented as live API or production integration validation.
+
+### Publication
+
+The authenticated GitHub connector was checked again: fetching the reviewed parent SHA returned `422: No commit found`. Exposed connector operations do not import exact local Git history. The branch remains local, with no replacement-SHA reconstruction, credential request, push, merge or deployment in this closure step. Repository publication will be resolved separately.
+
+### Current deployment blockers
+
+1. **Genuine Arizona production-shape validation:** pending authorized SELECT-only D1 access for Phoenix, Tempe, Tucson, Scottsdale, Mesa and Chandler. Core has an extraction kit but no genuine records have been supplied. Synthetic records must not be relabeled genuine.
+2. **`/leads` architecture decision:** the homepage currently consumes `/leads`, which can refresh/persist when stored records are absent. Core will decide the architecture separately. No behavior change or `/leads` call was made for this correction.
+3. **Real passwordless authentication:** authorized end-to-end Resend/magic-link validation remains outstanding.
+4. **Stripe:** test-mode Checkout → callback → webhook/entitlement → Portal validation remains outstanding.
+5. **Cloudflare clean routes:** `/signals`, `/competitors` and `/sources` require validation in an actual Cloudflare preview environment.
+6. **Chandler Early Pipeline real-data integration:** Core confirms these records are not stored in D1; SELECT-only extraction cannot provide them. Real-data validation is a separate integration requirement, not part of the D1 fixture gate.
+
+No production API requests, production data modifications, backend edits, adapter edits, DFW edits or Cloudflare security changes occurred during this correction. Nothing was merged or deployed. Codex Phase 2 has not begun. Work stops after this isolated correction and report.
 
 ## What changed
 
@@ -116,16 +154,103 @@ Phoenix, Tempe, Tucson, Scottsdale, Mesa and Chandler were each exercised with s
 
 ## Outstanding gates and Core review
 
-The GitHub push was also rejected by automatic approval review: it requires explicit authorization to publish repository changes. The review branch is committed locally and has not been pushed.
+Roland explicitly authorized publication of commit `2b0c4bb` and read-only production validation on September 30, 2026. The earlier approval gate is resolved. Core will receive the exact local commit as an archive and Git bundle because authenticated exact-commit push is unavailable. Core has selected sanitized D1 fixtures for the next validation stage; direct production validation is not authorized by this handoff.
 
-1. Automatic approval review rejected the attempted read-only production `/leads` download because the API was not verified and the records could be sensitive. The request was not retried through another route. Roland's explicit authorization is needed before retrying production API validation.
-2. Run read-only real data checks for all six Arizona markets and source health, then compare the baseline and redesign against the same responses.
+1. The first-turn automatic approval rejection is superseded by Roland's explicit authorization. However, source inspection now confirms that `GET /leads` can call `refresh(env,days)` when its stored result set is empty. `refresh()` can delete Chandler rows and calls `persist()` to write leads. There is no read-only flag in this route. Accordingly, `/leads` was not called during this validation attempt. Core has selected sanitized stored-record fixtures under the current no-mutation restriction. No backend change was made.
+
+2. Await Core’s sanitized genuine Arizona fixtures, then validate the frontend with all external requests intercepted. Label those results sanitized real-production-shape validation. Live API/production integration validation remains a separate pre-deployment requirement.
 3. Complete an authorized end-to-end email/magic-link flow and Stripe test-mode flow in a suitable environment. Do not use live charges to fill this gap.
 4. Core should review frontend auth/billing callback continuity, public failure behavior, the Saved route and the shared card/timeline field mapping before approving deployment.
 5. Existing Sources content identifies integrated markets; it is not a live operational health dashboard. That baseline behavior was retained.
 6. Existing page-specific auth and pricing handlers remain in Competitors/Sources. A larger deduplication can follow after production parity is signed off. The first pass deliberately retains the original layout CSS beneath the new presentation layer.
 
 No backend/API change is proposed or required for this build. Tucson enrichment and DFW work remain outside this branch.
+
+
+## Authorized production validation attempt — September 30, 2026
+
+**Status: blocked; real-record frontend validation is not complete.** The 41 previously passing checks remain synthetic local tests and must not be treated as real-data results.
+
+### Read-only safety review
+
+Before sending API requests, the checked-in Worker route handlers and relevant helpers were reviewed. `/sources`, `/changes-teaser`, `/pipeline?market=Chandler` and the Scottsdale/Chandler `/source-health` paths use source reads and/or SQL SELECTs in the reviewed implementation. The `/leads` route has a conditional refresh/persistence path and was excluded. No authentication, account, Saved, preference, watchlist, billing, email, admin refresh or other mutation endpoint was exercised.
+
+### Requests attempted
+
+At approximately 2026-09-30 09:00 UTC (02:00 Arizona time), five unauthenticated GET requests were attempted. No credentials, cookies, customer session or authorization header were sent. Each returned HTTP 403 through the available execution environment. These responses do not establish whether the underlying municipal sources are healthy, degraded or unavailable.
+
+| Endpoint | Method | Result |
+| --- | --- | --- |
+| `/sources` | GET | HTTP 403; coverage metadata not retrieved |
+| `/changes-teaser` | GET | HTTP 403; aggregate activity not retrieved |
+| `/pipeline?market=Chandler` | GET | HTTP 403; pipeline data/source status not retrieved |
+| `/source-health?market=Chandler&days=7` | GET | HTTP 403; source health not retrieved |
+| `/source-health?market=Scottsdale&days=7` | GET | HTTP 403; source health not retrieved |
+| `/leads` (any market or limit) | Not called | Conditional D1 write path conflicts with the authorized scope |
+
+No access-control workaround or authenticated customer session was used after these failures.
+
+### Results by Arizona market
+
+| Market | Real opportunity/filter/detail validation | Source check | Count and attribution comparison |
+| --- | --- | --- | --- |
+| Phoenix | Blocked: `/leads` may mutate | Shared `/sources` returned 403 | Not performed |
+| Tempe | Blocked: `/leads` may mutate | Shared `/sources` returned 403 | Not performed |
+| Tucson | Blocked: `/leads` may mutate | Shared `/sources` returned 403 | Not performed |
+| Scottsdale | Blocked: `/leads` may mutate | `/source-health` returned 403 | Not performed |
+| Mesa | Blocked: `/leads` may mutate | Shared `/sources` returned 403 | Not performed |
+| Chandler | Blocked: even its direct-source lead path can fall through to the stored/refresh path | `/source-health` and `/pipeline` returned 403 | Not performed |
+
+### Frontend findings and missing-field coverage
+
+No production opportunity payload was obtained. Therefore market/trade filtering, HOT/WARM/score presentation, Listed/Not Listed, search/sorting, details, actual lifecycle timelines, Decision Intelligence, valuation distinctions and company provenance remain **unverified with real records**. No new real-record frontend defect can be established from this attempt.
+
+Homepage ticker and three-opportunity preview remain verified only against synthetic responses. Static inspection confirms DFW is labeled planned/not live and no illustrative DFW record was introduced into the production frontend. Failure and missing-field behavior passed the previous synthetic tests; real API degraded/empty/partial payloads were not available to compare.
+
+The synthetic fixtures provide successful JSON responses. The actual attempted reads returned HTTP 403 instead, so no production JSON schema comparison was possible. Production record counts and source attribution were neither obtained nor compared. The backend/adapters remain unchanged, but this is not a substitute for a runtime count comparison.
+
+### Scope and privacy confirmations
+
+- All **attempted** Revenue Trigger API requests were GETs to paths reviewed as read-only; `/leads` was intentionally not called.
+- No production mutation endpoint was called. No D1 write, customer-data change, email, Stripe checkout/charge, account action, Saved/preference/watchlist change, backend edit or adapter edit was performed.
+- No production/customer record was retrieved, included in a screenshot or exposed in this report.
+- No code was merged into `main`. **Nothing was deployed.**
+- The approved commit remains unchanged. This report update is a local documentation change outside that commit and has not been published.
+
+### Remaining requirements
+
+Authenticated Git push access is needed to publish the exact approved commit. The available GitHub connector can create commits but cannot import the local commit with its exact original identity through its exposed methods; publishing a different SHA was not attempted.
+
+Core will supply sanitized genuine stored-record fixtures for Phoenix, Tempe, Tucson, Scottsdale, Mesa, Chandler and Chandler Early Pipeline. No fixtures have been received; fixture validation has not started. No new endpoint, direct API retry, authenticated request or access-control workaround is part of this handoff.
+
+## Core architectural findings and safe handoff — September 30, 2026
+
+The following findings were supplied by Core and govern the next stage:
+
+- `/leads` is not guaranteed read-only: absent stored records can invoke refresh/persist behavior.
+- Tucson refresh behavior can update market cursor state.
+- Authenticated GET endpoints can update session `last_seen_at`; GET alone does not guarantee zero mutation.
+- No existing endpoint provides the complete stored Opportunity shape while guaranteeing both zero mutation and zero upstream polling.
+- The five public-endpoint 403 responses appear specific to the Work environment/access path. They are an access limitation, **not evidence that the Revenue Trigger Worker is unavailable**.
+- Sanitized D1 fixtures were selected as the safe validation method. A permanent validation endpoint was deliberately deferred.
+
+### Package identity and documentation boundary
+
+The exact committed build remains branch `redesign/signal-command-v7`, commit `2b0c4bbbd6168a8d893fda3fc77647eaaad99a8c`. No new commit was created. The source ZIP and Git bundle preserve that identity. The outer handoff includes this updated REVIEW separately from the committed source archive, plus the minimized request-attempt log, changed-file list, screenshots and synthetic test artifacts. Post-commit documentation is explicitly supplemental and does not represent a modified build.
+
+The available authenticated GitHub integration cannot import this exact local commit through its exposed methods; the earlier CLI push lacked credentials. No replacement commit was created. Core can inspect the bundle and push only the review branch using its existing authorized access. No credential creation or request is needed.
+
+### Fixture validation status and acceptance scope
+
+All six Arizona markets and Chandler Early Pipeline are **awaiting fixtures**. The existing **41 passing checks are synthetic/local validation only**. No sanitized real-production-shape result, production JSON difference, real-record missing-field defect or market count comparison is claimed yet.
+
+Once supplied, fixtures will exercise cards, score/temperature (HOT/WARM/WATCH), Listed/Not Listed, short/long titles, long descriptions/company names, company present/missing and provenance, participant roles, multiple trades, official valuation present/absent, estimated opportunity present/absent, project clusters, lifecycle/timeline, Data Confidence, Action Intelligence, Why Now, Next Best Action, Buying Window, First-Mover, sparse records, search/filter/sort and desktop/mobile layouts. They will also cover homepage real-opportunity mappings and Chandler Early Pipeline degradation. Unavailable intelligence must be omitted; official permit/project valuation must remain distinct from estimated trade/service opportunity.
+
+Core’s fixture request is included as `CORE-FIXTURE-REQUEST.md` in the handoff. Selection targets approximately 5–10 genuine stored records per market, prioritizing edge cases and excluding subscriber/account/session/billing/customer information. SELECT-only extraction is requested from Core; Work has not performed extraction.
+
+### Stop point and scope confirmation
+
+Packaging and documentation only were performed for this handoff. No additional production API requests were made. The previous five attempted requests remain documented above; `/leads` was not called. No production data was modified, nothing was deployed, and nothing was merged. Backend Worker behavior, Arizona adapters, DFW and Cloudflare security remain unchanged. Fixture validation is pending receipt of Core’s sanitized records. Do not open the un-intercepted frontend against production during this phase, since its existing feed calls use `/leads`.
 
 ## Reproduce local tests
 
