@@ -4659,7 +4659,6 @@ export default {
         if(!parsedMarkets.ok){
           return feedJson({
             ok:false,
-            state:'unavailable',
             error:'invalid_market',
             invalidMarkets:parsedMarkets.invalid,
             allowedMarkets:LIVE_MARKETS,
