@@ -2399,6 +2399,115 @@ async function buildRelationshipIntelligence(env,rawCompany,{days=365,rowLimit=5
 }
 
 
+const PHOENIX_BACKFILL_V1={
+  cursorMarket:'PhoenixBackfillV1',
+  startDate:'2026-04-03',
+  endDate:'2026-09-29',
+  batchSize:1000,
+  expectedSourcePermits:4984
+};
+
+async function phoenixBackfillState(env){
+  const cfg=PHOENIX_BACKFILL_V1;
+  const row=env.DB?await env.DB.prepare(`SELECT market,cursor_key,cursor_value,updated_at FROM market_cursors WHERE market=?`).bind(cfg.cursorMarket).first():null;
+  const offset=Math.max(0,Number(row?.cursor_value)||0);
+  const done=row?.cursor_key==='done';
+  let storedPhoenixRows=null,storedPhoenixPermits=null,earliestStoredActivity=null,latestStoredActivity=null;
+  if(env.DB){
+    const stats=await env.DB.prepare(`
+      SELECT COUNT(*) AS rows,
+             COUNT(DISTINCT permit) AS permits,
+             MIN(event_date) AS earliest,
+             MAX(event_date) AS latest
+      FROM leads
+      WHERE market='Phoenix'
+        AND datetime(event_date)>=datetime(?)
+        AND datetime(event_date)<datetime(?,'+1 day')
+    `).bind(cfg.startDate,cfg.endDate).first();
+    storedPhoenixRows=Number(stats?.rows||0);
+    storedPhoenixPermits=Number(stats?.permits||0);
+    earliestStoredActivity=stats?.earliest||null;
+    latestStoredActivity=stats?.latest||null;
+  }
+  return {
+    market:'Phoenix',
+    version:'V1',
+    status:done?'complete':offset>0?'running':'queued',
+    sourceWindow:{startDate:cfg.startDate,endDate:cfg.endDate},
+    sourceCursorOffset:offset,
+    batchSize:cfg.batchSize,
+    expectedSourcePermits:cfg.expectedSourcePermits,
+    approximateSourceProgressPct:done?100:Math.min(99,Math.round((offset/cfg.expectedSourcePermits)*1000)/10),
+    storedPhoenixRows,
+    storedPhoenixPermits,
+    earliestStoredActivity,
+    latestStoredActivity,
+    updatedAt:row?.updated_at||null,
+    note:'Historical rows are stored in the existing leads table but normal opportunity and alert views continue to filter by event_date. Backfill progress is source-page based; stored counts include already-present live Phoenix permits.'
+  };
+}
+
+async function setPhoenixBackfillCursor(env,status,offset){
+  if(!env.DB)return;
+  await env.DB.prepare(`
+    INSERT INTO market_cursors (market,cursor_key,cursor_value,updated_at)
+    VALUES (?,?,?,datetime('now'))
+    ON CONFLICT(market) DO UPDATE SET
+      cursor_key=excluded.cursor_key,
+      cursor_value=excluded.cursor_value,
+      updated_at=datetime('now')
+  `).bind(PHOENIX_BACKFILL_V1.cursorMarket,status,String(Math.max(0,Number(offset)||0))).run();
+}
+
+async function runPhoenixHistoricalBackfillBatch(env){
+  if(!env.DB)return {ok:false,skipped:'D1 unavailable'};
+  const cfg=PHOENIX_BACKFILL_V1;
+  const state=await phoenixBackfillState(env);
+  if(state.status==='complete')return {ok:true,skipped:'already complete',state};
+
+  const offset=state.sourceCursorOffset||0;
+  const features=await fetchArcGIS(PHX_PERMITS,{
+    where:`PER_ISSUE_DATE >= DATE '${cfg.startDate}' AND PER_ISSUE_DATE <= DATE '${cfg.endDate}'`,
+    outFields:'OBJECTID,PER_TYPE,PER_NUM,PROJECT,PERMIT_NAME,PERMIT_STAT,PER_ENT_DATE,PER_ISSUE_DATE,STREET_FULL_NAME,PROFESS_NAME,PER_TYPE_DESC,MOD_DESC,SCOPE_CODE,SCOPE_DESC',
+    orderByFields:'PER_ISSUE_DATE ASC,OBJECTID ASC',
+    resultOffset:String(offset),
+    resultRecordCount:String(cfg.batchSize),
+    returnGeometry:'false',
+    f:'json'
+  },'Phoenix historical backfill');
+
+  const seen=new Set();
+  const leads=[];
+  for(const f of features){
+    const lead=normalizePhoenix(f);
+    const permit=String(lead.permit||'').trim();
+    const dateMs=new Date(lead.date).getTime();
+    if(!permit||!Number.isFinite(dateMs))continue;
+    const key=permit.toLowerCase();
+    if(seen.has(key))continue;
+    seen.add(key);
+    leads.push(lead);
+  }
+
+  if(leads.length)await persist(env,leads);
+
+  const nextOffset=offset+features.length;
+  const done=features.length<cfg.batchSize || nextOffset>=cfg.expectedSourcePermits;
+  await setPhoenixBackfillCursor(env,done?'done':'running',nextOffset);
+
+  const after=await phoenixBackfillState(env);
+  return {
+    ok:true,
+    fetchedFeatures:features.length,
+    persistedNormalizedLeads:leads.length,
+    previousOffset:offset,
+    nextOffset,
+    complete:done,
+    state:after
+  };
+}
+
+
 async function previewPhoenixHistoricalBackfill(env,{days=180,limit=5000}={}){
   days=Math.max(30,Math.min(730,Number(days)||180));
   limit=Math.max(100,Math.min(8000,Number(limit)||5000));
@@ -2938,6 +3047,12 @@ export default {
         return json({ok:true,count:data.results.length,meta:data.meta,results:data.results},200,env);
       }
 
+      if(path==='/backfill-status'&&request.method==='GET'){
+        const market=(url.searchParams.get('market')||'Phoenix').trim();
+        if(market!=='Phoenix')return json({error:'Backfill status currently supports Phoenix.',supportedMarkets:['Phoenix']},400,env);
+        const state=await phoenixBackfillState(env);
+        return json({ok:true,...state},200,env);
+      }
       if(path==='/backfill-preview'&&request.method==='GET'){
         const market=(url.searchParams.get('market')||'Phoenix').trim();
         const days=Math.max(30,Math.min(730,Number(url.searchParams.get('days')||180)));
@@ -3886,5 +4001,13 @@ export default {
       return json({error:'not found'},404,env);
     }catch(e){return json({error:e.message||'server error'},500,env);}
   },
-  async scheduled(event,env,ctx){ctx.waitUntil((async()=>{const d=new Date(event.scheduledTime||Date.now());await refresh(env,7);await runAlerts(env,d);await runCompetitorWatchAlerts(env,d);})());}
+  async scheduled(event,env,ctx){ctx.waitUntil((async()=>{
+    const d=new Date(event.scheduledTime||Date.now());
+    await refresh(env,7);
+    await runAlerts(env,d);
+    await runCompetitorWatchAlerts(env,d);
+    // V126 — controlled one-time Phoenix history backfill.
+    // Run after customer-facing refresh/alerts so historical ingestion cannot delay them.
+    try{await runPhoenixHistoricalBackfillBatch(env)}catch(e){console.error('Phoenix backfill batch failed',e)}
+  })());}
 };
