@@ -86,10 +86,6 @@
       "status": "PASS"
     },
     {
-      "name": "Layout / at 390px",
-      "status": "PASS"
-    },
-    {
       "name": "Layout /signals at 390px",
       "status": "PASS"
     },
@@ -99,10 +95,6 @@
     },
     {
       "name": "Layout /sources at 390px",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout / at 430px",
       "status": "PASS"
     },
     {
@@ -118,10 +110,6 @@
       "status": "PASS"
     },
     {
-      "name": "Layout / at 768px",
-      "status": "PASS"
-    },
-    {
       "name": "Layout /signals at 768px",
       "status": "PASS"
     },
@@ -131,10 +119,6 @@
     },
     {
       "name": "Layout /sources at 768px",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout / at 1366px",
       "status": "PASS"
     },
     {
@@ -150,10 +134,6 @@
       "status": "PASS"
     },
     {
-      "name": "Layout / at 1920px",
-      "status": "PASS"
-    },
-    {
       "name": "Layout /signals at 1920px",
       "status": "PASS"
     },
@@ -163,6 +143,26 @@
     },
     {
       "name": "Layout /sources at 1920px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout / at 390px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout / at 430px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout / at 768px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout / at 1366px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout / at 1920px",
       "status": "PASS"
     }
   ]

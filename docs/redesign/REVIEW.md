@@ -10,6 +10,23 @@
 - Backend changes: **none**
 - D1, adapters, scoring, temperature, auth contracts, billing contracts, cron, DFW, and Cloudflare configuration: **unchanged**
 
+## Homepage visual pass — September 30, 2026
+
+Parent: `cf08fa51619eb813559d6424598c9e599a684d81`. Presentation-only homepage update; all existing deployment blockers below remain open.
+
+- Kept the header, hero and ticker unchanged. Moved “Signals worth your attention” immediately below “How Revenue Trigger Works,” preserving both sections’ original markup and styling.
+- Matched the supplied v7 prototype’s Decision Intelligence palette: `#143b2a` band, `#1a4934` introduction panel and pale record panel. Its record/intelligence content remains populated by the existing `/feed` consumer, with no invented metrics.
+- Removed the paired bottom feature cards. Early Pipeline now has its own dark section explaining visibility before ordinary issued permits, a clearly labeled conceptual stage guide and the existing Chandler Pipeline link.
+- Added a separate green Competitor Intelligence section covering activity, territory, project mix, momentum and competitive movement. Its visual is labeled “Product overview · not live metrics”; it introduces no fabricated competitor records, metrics or new API calls.
+- Preserved Built for Your Trade. Markets now uses a dark theme with “Phoenix Metro + Dallas–Fort Worth” and “Built market by market. Designed nationally.” Phoenix Metro is distinguished from Tucson; DFW remains explicitly planned/not live.
+- Hunter’s middle pricing card now uses deep green. Pricing, plan features and checkout handlers are unchanged. Final CTA/footer unchanged.
+
+Verification: all five homepage responsive layout checks passed (390, 430, 768, 1366 and 1920px), with no horizontal overflow or page JavaScript errors. Original hero/ticker/product/opportunity/trade/final-CTA markup was compared byte-for-byte with the parent, and requested section order was checked. Desktop/mobile theme colors, product navigation targets and planned DFW disclosure passed. Section screenshots were visually reviewed; isolated section crops hide the sticky header during capture, while full-page images retain it. All browser network traffic used synthetic/local interception.
+
+The prior 41-check regression and 27-check `/feed` results remain historical passing evidence; only the relevant five layout checks were rerun for this HTML/CSS-only change. No consumer/controller, signed-in dashboard, backend, Arizona adapter, DFW ingestion, scoring, auth/billing or Cloudflare configuration change. No genuine-production validation was performed. Nothing merged or deployed.
+
+Current screenshots: `screenshots/after-home-1366.png`, `screenshots/after-home-390.png`, and ten desktop/mobile section crops in `screenshots/home-visual-pass/`.
+
 ## Current review: read-only `/feed` consumer integration
 
 **Review only. Not approved for deployment.** This section supersedes earlier pending `/feed` architecture notes. Parent Work commit: `4d2884a1d828c357f03eae2c1b7517ec4797161f`. Core contract inspected through authenticated GitHub source access at branch `core/read-only-feed`, commit `e1ce8d50544944caef5453ba46812b441fa37d57`. Core’s backend branch was not merged into Work and the local backend remains untouched.
