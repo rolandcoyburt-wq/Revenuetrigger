@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { normalizeFortWorthPermit, normalizeFortWorthOccupancy } from './fort-worth.js';
-import { normalizeDallasHistoricalPermit } from './dallas.js';
+import {
+  dallasLiveSourceReadiness,
+  normalizeDallasHistoricalPermit,
+  normalizeDallasRightOfWayPermit,
+} from './dallas.js';
 import { canonicalLifecycle, parseDate, parseMoney, toLeadInput } from './normalize.js';
 import { checkArcGISSourceHealth, summarizeSourceHealth } from './health.js';
 
@@ -31,12 +35,60 @@ const co = normalizeFortWorthOccupancy({
 assert.equal(co.statusCanonical, 'final');
 assert.equal(co.address.city, 'Fort Worth');
 
-const d = normalizeDallasHistoricalPermit({permit_number:'191',permit_type:'Building (BU) Commercial Renovation',issued_date:'12/31/19',contractor:'ACME CONSTRUCTION LLC 123 MAIN ST, DALLAS, TX 75201 (214) 555-1212',value:'100000',area:'2000',work_description:'INTERIOR REMODEL ONLY',land_use:'OFFICE BUILDING',street_address:'100 ELM ST',zip_code:'75201'}, { now });
+const badFutureCo = normalizeFortWorthOccupancy({
+  PermitID:'PO05-01852', ApplicationType:'Occupancy', ApplicationSubType:'Existing Ordinance', Status:'Finaled',
+  CODate:Date.parse('2055-05-01T00:00:00Z'), HouseNumber:4307, StreetName:'CAMP BOWIE', Type:'BLVD',
+  Occupant:'J SAUNDERS', JobUse:'Office'
+}, { now });
+assert.equal(badFutureCo.eventDate, null);
+
+const d = normalizeDallasHistoricalPermit({
+  permit_number:'191',
+  permit_type:'Building (BU) Commercial Renovation',
+  issued_date:'12/31/19',
+  contractor:'ACME CONSTRUCTION LLC 123 MAIN ST, DALLAS, TX 75201 (214) 555-1212',
+  value:'100000',
+  area:'2000',
+  work_description:'INTERIOR REMODEL ONLY',
+  land_use:'OFFICE BUILDING',
+  street_address:'100 ELM ST',
+  zip_code:'75201'
+}, { now });
 assert.equal(d.eventDate, '2019-12-31T00:00:00.000Z');
 assert.equal(d.companyCandidate, 'ACME CONSTRUCTION LLC');
 assert.equal(d.address.display, '100 ELM ST, Dallas TX 75201');
-console.log('DFW normalization tests passed');
 
+const row = normalizeDallasRightOfWayPermit({
+  OBJECTID:178211873,
+  EXTERNALFILENUM:'ROW-2026-504384',
+  PERMITTYPE:'Right of Way Permit',
+  COMMERCIALORRESIDENTIAL:'Commercial',
+  STATUSDESCRIPTION:'Issued',
+  CREATEDDATE:Date.parse('2026-09-25T00:00:00Z'),
+  ISSUEDATE:Date.parse('2026-09-28T00:00:00Z'),
+  ROWREASONFORJOB:'Repair Existing Service',
+  ROWIMPROVEMENTREPAIR:'Drive Approach',
+  WORKDESCRIPTION:'Expanding Drive Approach',
+  APPLICANTCOMPANYNAMESTORED:'Fabian Pinzon',
+  ALLCONTRACTORSNAME:'Milan Builders',
+}, [{
+  EXTERNALFILENUM:'ROW-2026-504384',
+  HOUSENUM:4441,
+  NAME:'LOGISTICS',
+  TYPE:'DR',
+  LOCATIONNAME:'4441 LOGISTICS DR',
+}], { now });
+assert.equal(row.address.display, '4441 LOGISTICS DR, Dallas TX');
+assert.equal(row.companyCandidate, 'Milan Builders');
+assert.equal(row.specificUse, 'Drive Approach');
+assert.equal(row.statusCanonical, 'issued');
+assert.equal(toLeadInput(row).permit, 'ROW-2026-504384');
+
+const readiness = dallasLiveSourceReadiness();
+assert.equal(readiness.enabled, false);
+assert.equal(readiness.normalizerReady, true);
+assert.equal(readiness.supplementalCurrentReady, true);
+assert.equal(readiness.supplementalSources[0].key, 'dallas_right_of_way_permits');
 
 const healthSource = {
   key: 'mock_arcgis',
@@ -44,11 +96,15 @@ const healthSource = {
   jurisdiction: 'City of Fort Worth',
   url: 'https://example.test/FeatureServer/0',
 };
+let healthQueryUrl = null;
 const healthyFetch = async (url) => ({
   ok: true,
   status: 200,
   async json() {
-    if (String(url).includes('/query?')) return { count: 12 };
+    if (String(url).includes('/query?')) {
+      healthQueryUrl = String(url);
+      return { count: 12 };
+    }
     return {
       capabilities: 'Query,Extract',
       objectIdField: 'ObjectId',
@@ -71,6 +127,7 @@ const health = await checkArcGISSourceHealth({
 assert.equal(health.healthy, true);
 assert.equal(health.recentCount, 12);
 assert.deepEqual(health.missingFields, []);
+assert.match(decodeURIComponent(healthQueryUrl), /File_Date <= DATE '2026-09-30'/);
 
 const driftFetch = async (url) => ({
   ok: true,
@@ -97,7 +154,15 @@ const drift = await checkArcGISSourceHealth({
 assert.equal(drift.healthy, false);
 assert.equal(drift.status, 'degraded');
 assert.deepEqual(drift.missingFields, ['Permit_No','File_Date']);
-const summary = summarizeSourceHealth({ market:'Fort Worth', healthy:false, checkedAt:new Date(now).toISOString(), sources:[health, drift] });
+
+const summary = summarizeSourceHealth({
+  market:'Fort Worth',
+  healthy:false,
+  checkedAt:new Date(now).toISOString(),
+  sources:[health, drift],
+});
 assert.equal(summary.healthySources, 1);
 assert.equal(summary.sourceCount, 2);
 assert.equal(summary.degradedSources.length, 1);
+
+console.log('DFW normalization and source-health tests passed');
