@@ -32,6 +32,15 @@ Every source is normalized before it is mapped into the existing `leadFrom()` co
 
 `toLeadInput()` maps a normalized record to the current Revenue Trigger `leadFrom()` input shape without changing scoring or shared platform behavior.
 
+## Source health and schema drift
+
+`health.js` defines explicit field contracts for the three Fort Worth sources and performs two independent checks before production wiring:
+
+- metadata/schema validation (required fields, Query capability, and pagination where required)
+- freshness validation using a server-side count over a bounded lookback window
+
+The permit feed currently expects activity within 7 days and the CO feed within 30 days. Current zoning is schema/query checked but does not fail solely because no zoning case was filed inside its 180-day lookback. The health result is diagnostic only; it does not mutate shared market state or core scoring.
+
 ## Fort Worth adapter behavior
 
 `fetchFortWorthPermits()` uses a server-side `File_Date >= DATE 'YYYY-MM-DD'` filter and ArcGIS pagination. It intentionally uses `File_Date` as the primary freshness gate because municipal `Status_Date` values can occasionally be anomalous. `parseDate()` rejects implausibly future event dates, but the raw source value remains available under `raw`.
