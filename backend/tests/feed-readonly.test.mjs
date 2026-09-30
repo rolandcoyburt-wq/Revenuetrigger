@@ -334,6 +334,14 @@ test('response exposes enough state for homepage and public Signals without fall
   assert.equal(empty.state,'empty');
 });
 
+test('feed row SELECT has no SQL limit before clustering',async()=>{
+  const h0=workerSource.indexOf('const rowsQuery=',workerSource.indexOf('async function readStoredFeed'));
+  const h1=workerSource.indexOf('const healthQuery=',h0);
+  assert.ok(h0>0&&h1>h0);
+  const rowQuerySource=workerSource.slice(h0,h1);
+  assert.equal(/\bLIMIT\b/i.test(rowQuerySource),false);
+});
+
 let passed=0;
 for(const [name,fn] of tests){
   try{
