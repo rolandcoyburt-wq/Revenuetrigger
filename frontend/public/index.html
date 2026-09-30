@@ -1358,10 +1358,10 @@ html[data-theme="light"] .gridhead,html[data-theme="light"] .kpi small,html[data
         <p id="changedMessage">Sign in to see the activity that deserves your attention today.</p>
         <div id="changedMoves"></div>
       </div>
-      <div class="changed-stat"><small>New opportunities</small><strong id="chgOpp">—</strong></div>
-      <div class="changed-stat"><small>Hot</small><strong class="accent" id="chgHot">—</strong></div>
-      <div class="changed-stat"><small>Major projects</small><strong id="chgMajor">—</strong></div>
-      <div class="changed-stat"><small>Competitor moves</small><strong id="chgComp">—</strong></div>
+      <div class="changed-stat" hidden><small>New opportunities</small><strong id="chgOpp">—</strong></div>
+      <div class="changed-stat" hidden><small>HOT</small><strong class="accent" id="chgHot">—</strong></div>
+      <div class="changed-stat" hidden><small>Major projects</small><strong id="chgMajor">—</strong></div>
+      <div class="changed-stat" hidden><small>Competitor moves</small><strong id="chgComp">—</strong></div>
     </div>
   </div>
 </section>
@@ -1806,7 +1806,8 @@ async function loadCompetitors(){
 async function loadChanges(){
   const msg=$('#changedMessage');if(!msg)return;
   if(!user){
-    $('#chgOpp').textContent='—';$('#chgHot').textContent='—';$('#chgMajor').textContent='—';$('#chgComp').textContent='—';
+    ['chgOpp','chgHot','chgMajor','chgComp'].forEach(id=>{const tile=document.getElementById(id)?.closest('.changed-stat');if(tile)tile.hidden=true;});
+    document.querySelector('.changed-shell')?.setAttribute('data-visible-stats','0');
     msg.textContent='Sign in to see the activity that deserves your attention today.';
     $('#changedMoves').innerHTML='';
     return;
@@ -1816,16 +1817,21 @@ async function loadChanges(){
     const d=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(d.error||'Could not load changes');
     const s=d.summary||{};
-    $('#chgOpp').textContent=s.opportunities??0;
-    $('#chgHot').textContent=s.hot??0;
-    $('#chgMajor').textContent=s.majorProjects??0;
-    $('#chgComp').textContent=d.competitorMovesAvailable?(s.competitorMoves??0):'—';
+    const visibleStats=[
+      setChangedStat('chgOpp',s.opportunities),
+      setChangedStat('chgHot',s.hot),
+      setChangedStat('chgMajor',s.majorProjects),
+      setChangedStat('chgComp',s.competitorMoves,{available:Boolean(d.competitorMovesAvailable)})
+    ].filter(Boolean).length;
+    document.querySelector('.changed-shell')?.setAttribute('data-visible-stats',String(visibleStats));
     const filterText=d.filters?.markets?.length?` in ${d.filters.markets.join(', ')}`:'';
     msg.textContent=s.opportunities
-      ? `${s.opportunities} matched opportunities since yesterday${filterText}.`
+      ? `${s.opportunities} matched opportunities since yesterday${filterText}. HOT uses the same 80+ threshold as the opportunity table.`
       : `No opportunities matched your current market, industry and score filters since yesterday.`;
     $('#changedMoves').innerHTML=(d.competitorMoves||[]).slice(0,2).map(x=>`<div class="watch-move">• ${esc(x.title)}</div>`).join('');
   }catch(e){
+    ['chgOpp','chgHot','chgMajor','chgComp'].forEach(id=>{const tile=document.getElementById(id)?.closest('.changed-stat');if(tile)tile.hidden=true;});
+    document.querySelector('.changed-shell')?.setAttribute('data-visible-stats','0');
     msg.textContent='Could not load today’s change summary.';
   }
 }
