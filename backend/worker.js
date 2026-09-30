@@ -696,14 +696,49 @@ async function fetchTucsonPermit(permit){
   if(!r.ok)throw new Error(`Tucson PRO ${r.status}`);
   return parseTucsonCommercialPermit(html,permit);
 }
+
+// Tucson's permit-detail page publishes an Applicant field that is not present on
+// the activity-search row. Only promote that field to Company on permit when the
+// source itself clearly identifies an organization. Person names remain Not listed.
+function tucsonBusinessApplicantName(v=''){
+  const name=String(v||'').replace(/\s+/g,' ').trim();
+  if(!isMeaningfulCompanyName(name)||/^(n\/a|not available|not provided)$/i.test(name))return null;
+  const businessSignal=/\b(?:LLC|PLLC|LLP|LP|LTD|INC|INCORPORATED|CORP|CORPORATION|COMPANY|CO|CONSTRUCTION|CONTRACTING|CONTRACTORS?|BUILDERS?|ELECTRIC|ELECTRICAL|PLUMBING|MECHANICAL|ROOFING|SOLAR|ENGINEERING|ARCHITECTS?|ARCHITECTURE|DESIGN|FIRE|SECURITY|SERVICES?|SYSTEMS?|SOLUTIONS?|ENTERPRISES?|INDUSTRIES|DEVELOPMENT|PROPERTIES|HOLDINGS|GROUP|PARTNERS|ASSOCIATES|ENVIRONMENTAL|HEATING|COOLING|HVAC|PAINTING|CONCRETE|MASONRY|LANDSCAP(?:E|ING)|GLASS|DOORS?|WINDOWS?|SIGNS?|COMMUNICATIONS|TECHNOLOG(?:Y|IES)|RESTAURANT|RETAIL)\b/i;
+  return businessSignal.test(name)?name:null;
+}
+function parseTucsonPermitDetail(html,permit){
+  const text=stripTucsonHtml(html);
+  if(!text||/No Records Found/i.test(text))return null;
+  const applicantMatch=text.match(/\bApplicant:\s*(.*?)\s*(?=\bDescription:|\bPermit Reviews|$)/i);
+  const addressMatch=text.match(/\bAddress:\s*(.*?)\s*(?=\bAddress NEW:|\bApply Date:|$)/i);
+  const statusMatch=text.match(/\bStatus:\s*(.*?)\s*(?=\bType:|$)/i);
+  const descriptionMatch=text.match(/\bDescription:\s*(.*?)\s*(?=\bPermit Reviews|$)/i);
+  const applicant=String(applicantMatch?.[1]||'').trim()||null;
+  return {
+    permit,
+    applicant,
+    businessApplicant:tucsonBusinessApplicantName(applicant),
+    address:String(addressMatch?.[1]||'').trim()||null,
+    status:String(statusMatch?.[1]||'').trim()||null,
+    description:String(descriptionMatch?.[1]||'').trim()||null
+  };
+}
+async function fetchTucsonPermitDetail(permit){
+  const url=`${TUCSON_PRO_BASE}/permitdetails/${encodeURIComponent(permit)}/`;
+  const r=await fetch(url,{redirect:'follow',headers:{'user-agent':'RevenueTrigger/6.0 Tucson attribution'}});
+  const html=await r.text();
+  if(!r.ok)throw new Error(`Tucson permit detail ${r.status}`);
+  return parseTucsonPermitDetail(html,permit);
+}
 function normalizeTucsonPro(row){
+  const company=tucsonBusinessApplicantName(row.businessApplicant||row.applicant)||'Not listed';
   return leadFrom({
     market:'Tucson',
     id:row.permit,
     name:row.description ? `Commercial Building — ${row.description.slice(0,90)}` : 'Tucson commercial permit',
     address:row.address||'Tucson, AZ',
     date:tucsonDateMs(row.applyDate),
-    company:'Not listed',
+    company,
     scope:[row.type,row.description].filter(Boolean).join(' — '),
     permit:row.permit,
     permitStatus:row.status||'—',
@@ -748,8 +783,9 @@ async function fetchTempe(days=7,limit=500){
 async function fetchTucson(days=7,limit=500,env=null){
   const {prefix,lastSeq}=await getTucsonCursor(env);
   const maxProbe=Math.min(80,Math.max(20,Number(limit)||60));
-  const hits=[],errors=[];
+  const hitRows=[],errors=[],detailErrors=[];
   let highestFound=lastSeq;
+  const cutoff=Date.now()-days*86400000;
 
   for(let offset=1;offset<=maxProbe;offset+=5){
     const nums=[];
@@ -762,17 +798,41 @@ async function fetchTucson(days=7,limit=500,env=null){
       if(x.error){errors.push({sequence:x.n,error:x.error});continue;}
       if(!x.row)continue;
       highestFound=Math.max(highestFound,x.n);
-      const lead=normalizeTucsonPro(x.row);
-      if(new Date(lead.date).getTime()>=Date.now()-days*86400000)hits.push(lead);
+      if(tucsonDateMs(x.row.applyDate)>=cutoff)hitRows.push(x.row);
     }
     if(offset+5<=maxProbe)await sleep(200);
   }
 
   if(highestFound>lastSeq)await setTucsonCursor(env,prefix,highestFound);
-  hits.sort((a,b)=>new Date(b.date)-new Date(a.date));
+
+  const enriched=[];
+  for(let i=0;i<hitRows.length;i+=5){
+    const batch=await Promise.all(hitRows.slice(i,i+5).map(async row=>{
+      try{
+        const detail=await fetchTucsonPermitDetail(row.permit);
+        return {...row,applicant:detail?.applicant||null,businessApplicant:detail?.businessApplicant||null};
+      }catch(e){
+        detailErrors.push({permit:row.permit,error:String(e?.message||e)});
+        return row;
+      }
+    }));
+    enriched.push(...batch);
+    if(i+5<hitRows.length)await sleep(150);
+  }
+
+  const hits=enriched.map(normalizeTucsonPro).sort((a,b)=>new Date(b.date)-new Date(a.date));
 
   // Attach non-enumerable diagnostics for refresh() without changing lead JSON shape.
-  Object.defineProperty(hits,'_meta',{value:{prefix,start:lastSeq+1,scannedTo:lastSeq+maxProbe,highestFound,errors:errors.slice(0,5)},enumerable:false});
+  Object.defineProperty(hits,'_meta',{value:{
+    prefix,start:lastSeq+1,scannedTo:lastSeq+maxProbe,highestFound,
+    errors:errors.slice(0,5),
+    attribution:{
+      detailPagesChecked:hitRows.length,
+      businessApplicants:hits.filter(x=>isMeaningfulCompanyName(x.company)).length,
+      notListed:hits.filter(x=>!isMeaningfulCompanyName(x.company)).length,
+      detailErrors:detailErrors.slice(0,5)
+    }
+  },enumerable:false});
   return hits.slice(0,limit);
 }
 
@@ -3434,6 +3494,70 @@ export default {
         const limit=clamp(Number(url.searchParams.get('limit')||300),25,500);
         const audit=await scoringAudit(env,{days,limit});
         return json({ok:true,...audit},200,env);
+      }
+      if(path==='/attribution-health'&&request.method==='GET'){
+        const market=(url.searchParams.get('market')||'').trim();
+        const days=clamp(Number(url.searchParams.get('days')||7),1,30);
+        if(!['Tempe','Tucson'].includes(market))return json({error:'attribution health market not supported',supported:['Tempe','Tucson']},400,env);
+
+        if(market==='Tempe'){
+          try{
+            const rows=await fetchTempe(days,700);
+            const listed=rows.filter(x=>isMeaningfulCompanyName(x.company));
+            return json({
+              ok:true,
+              market:'Tempe',
+              days,
+              source:'City of Tempe Building Safety — building permits / Accela open-data extract',
+              records:rows.length,
+              listed:listed.length,
+              notListed:Math.max(0,rows.length-listed.length),
+              listedShare:rows.length?Number((listed.length/rows.length).toFixed(3)):0,
+              attributionField:'ContractorCompanyName',
+              policy:'RevenueTrigger only marks a Tempe permit Listed when the city-published ContractorCompanyName field contains a meaningful company identity. ProjectName is kept as the project title and is not promoted to contractor/company attribution.',
+              generatedAt:nowIso()
+            },200,env);
+          }catch(e){
+            return json({ok:false,market:'Tempe',error:String(e?.message||e),generatedAt:nowIso()},200,env);
+          }
+        }
+
+        const r=env.DB?await env.DB.prepare(`
+          SELECT permit,name,address,event_date,company
+          FROM leads
+          WHERE market='Tucson' AND datetime(event_date)>=datetime('now',?)
+          ORDER BY datetime(event_date) DESC
+          LIMIT 30
+        `).bind(`-${days} days`).all():{results:[]};
+        const storedRows=r.results||[];
+        const permits=[...new Set(storedRows.map(x=>String(x.permit||'').trim()).filter(Boolean))].slice(0,20);
+        const detailRows=[];
+        const detailErrors=[];
+        for(let i=0;i<permits.length;i+=5){
+          const batch=await Promise.all(permits.slice(i,i+5).map(async permit=>{
+            try{return await fetchTucsonPermitDetail(permit)}
+            catch(e){detailErrors.push({permit,error:String(e?.message||e)});return null}
+          }));
+          detailRows.push(...batch.filter(Boolean));
+          if(i+5<permits.length)await sleep(150);
+        }
+        const businessApplicants=detailRows.filter(x=>x.businessApplicant).map(x=>({permit:x.permit,company:x.businessApplicant}));
+        const personOrUnclassified=detailRows.filter(x=>x.applicant&&!x.businessApplicant).length;
+        return json({
+          ok:true,
+          market:'Tucson',
+          days,
+          source:'City of Tucson Property Research Online (PRO) permit details',
+          storedRecords:storedRows.length,
+          permitDetailsChecked:detailRows.length,
+          businessApplicants,
+          businessApplicantCount:businessApplicants.length,
+          personOrUnclassifiedApplicantCount:personOrUnclassified,
+          missingApplicantCount:detailRows.filter(x=>!x.applicant).length,
+          detailErrors:detailErrors.slice(0,5),
+          policy:'RevenueTrigger promotes the source-published Applicant to Company on permit only when the Applicant text itself clearly identifies an organization. Individual applicant names are deliberately not converted into companies.',
+          generatedAt:nowIso()
+        },200,env);
       }
       if(path==='/source-health'&&request.method==='GET'){
         const market=(url.searchParams.get('market')||'').trim();
