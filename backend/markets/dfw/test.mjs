@@ -5,8 +5,17 @@ import {
   normalizeDallasHistoricalPermit,
   normalizeDallasRightOfWayPermit,
 } from './dallas.js';
+import {
+  fetchDallasZoningAtPoint,
+  normalizeDallasBaseZoning,
+  normalizeDallasSup,
+} from './dallas-zoning.js';
 import { canonicalLifecycle, parseDate, parseMoney, toLeadInput } from './normalize.js';
-import { checkArcGISSourceHealth, summarizeSourceHealth } from './health.js';
+import {
+  checkArcGISSourceHealth,
+  DALLAS_ZONING_HEALTH_SPECS,
+  summarizeSourceHealth,
+} from './health.js';
 
 const now = Date.parse('2026-09-29T12:00:00Z');
 assert.equal(parseMoney('$2,200,000'), 2200000);
@@ -90,6 +99,72 @@ assert.equal(readiness.normalizerReady, true);
 assert.equal(readiness.supplementalCurrentReady, true);
 assert.equal(readiness.supplementalSources[0].key, 'dallas_right_of_way_permits');
 
+const zoningCoordinates = { latitude: 32.7767, longitude: -96.7970 };
+const legacyZoning = normalizeDallasBaseZoning({
+  OBJECTID:6878198,
+  ZONE_DIST:'CA-1(A)',
+  CASE_NUMBER:'DCA 112-002',
+  COUNCIL_DATE:Date.parse('1985-05-15T00:00:00Z'),
+  LONG_ZONE_DIST:'CA-1(A)',
+  ORD_NUM:'29128',
+  RES_NUM:'131602',
+  EFFECTIVEDATE:Date.parse('2021-01-27T00:00:00Z'),
+}, zoningCoordinates, { now });
+assert.equal(legacyZoning.zoningDistrict, 'CA-1(A)');
+assert.equal(legacyZoning.councilDate, '1985-05-15T00:00:00.000Z');
+assert.equal(legacyZoning.sourceKey, 'dallas_base_zoning');
+
+const sup = normalizeDallasSup({
+  OBJECTID:12,
+  SUP_NUM:'2451',
+  STATUS:'Active',
+  SPECIFICUSE:'Restaurant',
+  CASE_NUMBER:'Z245-100',
+  EFFECTIVEDATE:Date.parse('2026-08-01T00:00:00Z'),
+}, zoningCoordinates, { now });
+assert.equal(sup.supNumber, '2451');
+assert.equal(sup.specificUse, 'Restaurant');
+assert.equal(sup.status, 'Active');
+
+const zoningUrls = [];
+const zoningFetch = async (url) => {
+  zoningUrls.push(String(url));
+  let features = [];
+  if (String(url).includes('/Zoning/MapServer/15/query?')) {
+    features = [{ attributes: {
+      OBJECTID:1, ZONE_DIST:'CA-1(A)', CASE_NUMBER:'DCA 112-002', LONG_ZONE_DIST:'CA-1(A)',
+    } }];
+  } else if (String(url).includes('/PD_SUP_Search/MapServer/0/query?')) {
+    features = [{ attributes: {
+      OBJECTID:2, SUP_NUM:'2451', STATUS:'Active', SPECIFICUSE:'Restaurant',
+    } }];
+  }
+  return {
+    ok: true,
+    status: 200,
+    async json() { return { features }; },
+  };
+};
+const zoning = await fetchDallasZoningAtPoint({
+  ...zoningCoordinates,
+  fetchFn: zoningFetch,
+  now,
+});
+assert.equal(zoning.baseZoning.length, 1);
+assert.equal(zoning.specialUsePermits.length, 1);
+assert.equal(zoning.plannedDevelopments.length, 0);
+assert.equal(zoning.plannedDevelopmentSubdistricts.length, 0);
+assert.equal(zoning.baseZoning[0].zoningDistrict, 'CA-1(A)');
+assert.equal(zoning.specialUsePermits[0].supNumber, '2451');
+assert.equal(zoningUrls.length, 4);
+assert.ok(zoningUrls.every((url) => decodeURIComponent(url).includes('geometry=-96.797,32.7767')));
+assert.ok(zoningUrls.every((url) => url.includes('inSR=4326')));
+await assert.rejects(
+  () => fetchDallasZoningAtPoint({ latitude: 200, longitude: -96.797, fetchFn: zoningFetch, now }),
+  /latitude must be a finite number/
+);
+assert.equal(DALLAS_ZONING_HEALTH_SPECS.length, 4);
+
 const healthSource = {
   key: 'mock_arcgis',
   market: 'Fort Worth',
@@ -165,4 +240,4 @@ assert.equal(summary.healthySources, 1);
 assert.equal(summary.sourceCount, 2);
 assert.equal(summary.degradedSources.length, 1);
 
-console.log('DFW normalization and source-health tests passed');
+console.log('DFW normalization, zoning, and source-health tests passed');
