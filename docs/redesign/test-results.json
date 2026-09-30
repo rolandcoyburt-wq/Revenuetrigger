@@ -158,11 +158,11 @@
       "status": "PASS"
     },
     {
-      "name": "Competitor search, history, market, profile, relationships and watchlist gate",
+      "name": "Mobile account, Saved card, modal, navigation and source diagram",
       "status": "PASS"
     },
     {
-      "name": "Mobile account, Saved card, modal, navigation and source diagram",
+      "name": "Competitor search, history, market, profile, relationships and watchlist gate",
       "status": "PASS"
     }
   ]
