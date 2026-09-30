@@ -30,7 +30,7 @@ FRONTEND_URL = "https://redesign-signal-command-v7-signalhound-phoenix.rolandcoy
 DEV_AUTH_BYPASS = "false"
 
 # Empty sender disables email delivery in the preview.
-EMAIL_FROM = ""
+EMAIL_FROM = "RevenueTrigger Preview <onboarding@resend.dev>"
 
 # The existing checkout guard rejects REPLACE_ values before calling Stripe.
 STRIPE_PRICE_SCOUT = "REPLACE_PREVIEW_SCOUT"
