@@ -12,7 +12,7 @@ async function mock(page,options={}){
   const path=url.pathname.replace('/api','');let body={ok:true};let status=200;
   if(options.fail?.includes(path)){status=503;body={error:'Synthetic unavailable response'};}
   else if(path==='/me'){body={user};if(options.expired){status=401;body={error:'Expired test session'}}}
-  else if(path==='/leads'||path==='/dashboard')body={leads:leads.filter(x=>!url.searchParams.get('markets')||url.searchParams.get('markets')===x.market)};
+  else if(path==='/feed'||path==='/dashboard')body={...(path==='/feed'?{ok:true,readOnly:true,source:'stored_d1',state:'fresh',opportunityState:'available'}:{}),leads:leads.filter(x=>!url.searchParams.get('markets')||url.searchParams.get('markets')===x.market)};
   else if(path==='/pipeline')body={pipeline:leads.slice(0,2).map(x=>({...x,market:'Chandler',stage:'PRE-TECH'})),sourceStatus:options.degraded?'degraded':'live'};
   else if(path==='/source-health')body={status:options.degraded?'degraded':'live'};
   else if(path==='/sources')body={sources:markets.map(m=>({market:m,status:'live'}))};

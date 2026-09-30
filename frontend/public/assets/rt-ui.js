@@ -20,7 +20,16 @@ window.RTUI=(()=>{
  function decision(x){
   const ai=x.actionIntelligence||{};
   const metrics=[['First-Mover',ai.firstMover],['Opportunity window',ai.opportunityWindow?.label],['Buying window',ai.buyingWindow?.label],['Momentum',ai.momentum?.label],['Data confidence',x.dataConfidence?.score!=null?x.dataConfidence.score+'%':null]].filter(([,v])=>v!=null&&v!=='');
+  if(!metrics.length&&!ai.whyNow&&!ai.nextBestAction?.action)return '';
   return `<div class="rt-decision-metrics">${metrics.map(([k,v])=>`<div><small>${esc(k)}</small><strong>${esc(v)}</strong></div>`).join('')}</div>${ai.whyNow?`<div class="rt-reason"><small>Why now</small><p>${esc(ai.whyNow)}</p></div>`:''}${ai.nextBestAction?.action?`<div class="rt-reason"><small>Next best action</small><p>${esc(ai.nextBestAction.action)}</p>${ai.nextBestAction.reason?`<p class="rt-muted">${esc(ai.nextBestAction.reason)}</p>`:''}</div>`:''}`;
  }
- return {esc,badge,opportunityCard,triggerTimeline,decision,money};
+ function feedState(data){
+  const valid=['fresh','stale','partial','empty','unavailable'];
+  const state=data?.ok===false||(['fresh','stale','partial'].includes(data?.state)&&!Array.isArray(data?.leads))?'unavailable':valid.includes(data?.state)?data.state:'unavailable';
+  const rows=['fresh','stale','partial'].includes(state)&&data?.opportunityState!=='empty'&&Array.isArray(data?.leads)?data.leads:[];
+  const label={fresh:'Stored opportunities',stale:'Stored snapshot · stale',partial:'Partial market coverage',empty:'No current opportunities',unavailable:'Feed unavailable'}[state];
+  const notice={fresh:'',stale:'Stored opportunities are shown. Updates are delayed; verify timing before acting.',partial:'Available stored opportunities are shown. Some selected markets have stale or missing data.',empty:'No stored opportunities are available for the selected markets and time window.',unavailable:'Current opportunities are temporarily unavailable. Please try again shortly.'}[state];
+  return {state,rows,label,notice:!rows.length&&['partial','stale'].includes(state)?'Some selected markets have stale or missing data. No stored opportunities are available in this window.':notice};
+ }
+ return {esc,badge,opportunityCard,triggerTimeline,decision,money,feedState};
 })();

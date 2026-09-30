@@ -22,11 +22,16 @@ document.getElementById('marketList').innerHTML=RTConfig.markets.map(m=>`<span>$
 async function loadMarketingSignals(){
  const {esc,badge,opportunityCard,triggerTimeline,decision,money}=RTUI;
  try{
-  const d=await RTAuth.request('/leads?days=7&limit=3');
-  const rows=(d.leads||[]).slice(0,3);
+  const d=await RTAuth.request('/feed?days=7&limit=3');
+  const feed=RTUI.feedState(d);
+  const note=document.getElementById('homeFeedNotice');
+  note.hidden=!feed.notice;note.textContent=feed.notice;note.dataset.state=feed.state;
+  document.getElementById('heroState').textContent=feed.label;
+  if(feed.state==='unavailable')throw new Error('Feed unavailable');
+  const rows=feed.rows.slice(0,3);
   if(!rows.length){document.getElementById('heroState').textContent='No current records';throw new Error('No current opportunities were returned. Open the feed to explore markets and filters.')}
   const x=rows[0];
-  document.getElementById('heroState').textContent='Current public record';
+  document.getElementById('heroState').textContent=feed.label;
   document.getElementById('heroSignal').innerHTML=`<span class="rt-kicker">${esc(x.market)} / ${esc(x.permit||'Public record')}</span><h2>${esc(RTFormat.displayEventTitle(x))}</h2><p class="rt-muted">${esc(x.address||x.market)}</p>${triggerTimeline(x)}<div class="rt-command-value"><div><small>Estimated service opportunity</small><strong class="rt-money">${money(x)}</strong></div><div><small>Opportunity score</small><strong>${esc(x.score??'—')} <span style="font-size:12px;font-weight:500">/100</span></strong>${badge(x)}</div></div>${x.officialPermitValue?`<p class="rt-muted">Official permit valuation: ${esc(new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(x.officialPermitValue))}</p>`:''}${x.actionIntelligence?.whyNow?`<div class="rt-reason"><small>Why now</small><p>${esc(x.actionIntelligence.whyNow)}</p></div>`:''}<a class="rt-text-link" href="/signals">Explore the opportunity feed <span aria-hidden="true">↗</span></a>`;
   document.getElementById('signalPreviews').innerHTML=rows.map(x=>opportunityCard(x,{preview:true})).join('');
   document.getElementById('marketTicker').innerHTML=rows.map(x=>`<span class="rt-ticker-item"><strong>${esc(x.market)}</strong> · ${esc(RTFormat.displayEventTitle(x))}${Number(x.value)>0?' · '+money(x):''}</span>`).join('');
@@ -34,7 +39,7 @@ async function loadMarketingSignals(){
   document.getElementById('decisionDemo').innerHTML=`<span class="rt-kicker">${esc(rich.market)} / ${esc(rich.permit||'Public record')}</span><h3>${esc(RTFormat.displayEventTitle(rich))}</h3>${decision(rich)||'<p class="rt-unavailable">Additional intelligence is not published for this record.</p>'}${triggerTimeline(rich)}`;
  }catch(e){
   const text=e.message.startsWith('No current')?e.message:'Current opportunities are temporarily unavailable. Please try the opportunity feed again shortly.';
-  if(!e.message.startsWith('No current'))document.getElementById('heroState').textContent='Feed unavailable';
+  if(!e.message.startsWith('No current')){document.getElementById('heroState').textContent='Feed unavailable';const note=document.getElementById('homeFeedNotice');note.hidden=false;note.textContent=RTUI.feedState(null).notice;note.dataset.state='unavailable';}
   document.getElementById('heroSignal').innerHTML=`<p class="rt-unavailable">${esc(text)}</p><a class="rt-text-link" href="/signals">Open the opportunity feed →</a>`;
   document.getElementById('signalPreviews').innerHTML=`<p class="rt-preview-empty">${esc(text)}</p>`;
   document.getElementById('marketTicker').textContent='No current activity available to display.';

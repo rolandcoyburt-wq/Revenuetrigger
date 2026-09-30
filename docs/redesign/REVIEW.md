@@ -10,6 +10,46 @@
 - Backend changes: **none**
 - D1, adapters, scoring, temperature, auth contracts, billing contracts, cron, DFW, and Cloudflare configuration: **unchanged**
 
+## Current review: read-only `/feed` consumer integration
+
+**Review only. Not approved for deployment.** This section supersedes earlier pending `/feed` architecture notes. Parent Work commit: `4d2884a1d828c357f03eae2c1b7517ec4797161f`. Core contract inspected through authenticated GitHub source access at branch `core/read-only-feed`, commit `e1ce8d50544944caef5453ba46812b441fa37d57`. Core’s backend branch was not merged into Work and the local backend remains untouched.
+
+### Consumer changes and state handling
+
+- Marketing requests `/api/feed?days=7&limit=3`; hero, ticker, opportunity previews and Decision Intelligence use those returned records.
+- Signed-out Signals requests `/api/feed?days=7&limit=120`, or `limit=200&markets=<selected market>`. Public requests carry no bearer token. No fallback to `/leads` exists.
+- Signed-in Signals retains the unchanged `/dashboard?limit=200` request and authorization behavior. Its `loadDashboard` function is byte-for-byte unchanged from the parent commit.
+- Public Chandler feed state is no longer overwritten by a separate upstream source-health probe. Signed-in source-health behavior and Early Pipeline loading remain as before. This does not make the entire Signals page a zero-polling page: Early Pipeline still has its separate integration path.
+- `fresh`: normal stored-opportunity presentation, no warning. `stale`: retained records with a delayed-update notice. `partial`: retained records with a coverage notice. `empty`: explicit no-stored-opportunities state. `unavailable`: service/data unavailable, no cards, and unknown KPI values shown as dashes rather than measured zeros.
+- HTTP failures, malformed JSON and missing/invalid feed state fail honestly. Empty or unavailable responses do not generate sample records. Partial coverage with no opportunities retains both the coverage warning and the no-record state.
+- A request sequence guard prevents a slow previous market response from replacing the most recent selection. Filtering retains the reported freshness notice.
+
+Core source inspection confirmed the response envelope includes `state`, `opportunityState`, `leads`, `requested`, counts and per-market `freshness`; the frontend uses Core’s returned state rather than recomputing freshness. Core reported 21/21 backend safety checks; those backend tests were not rerun in Work. No genuine production records or API responses were obtained.
+
+### Visual refinement
+
+The approved v7 direction is retained. Mobile opportunity titles wrap instead of truncating, long company/intelligence text can wrap, narrow-screen Trigger Timelines read vertically, preview actions align at the bottom of cards, and mobile row actions have 44px targets. State notices use subdued amber/neutral treatment; settled status indicators no longer animate. Public calls to action say “See opportunities” rather than promising live data. Missing Decision Intelligence returns no empty metrics panel. Official permit valuation remains separate from amber estimated service opportunity.
+
+### Verification and artifacts
+
+- **41/41 synthetic/local regression checks passed** after the consumer switch and visual CSS refinement, including desktop/mobile layouts, six-market filtering, search/sort, details, Saved, simulated auth/billing callbacks, Competitors and Sources.
+- **27/27 synthetic/local `/feed` integration checks passed**, covering five states on both pages at 390px/1366px, HTTP 503, malformed JSON, missing state, partial-with-empty results, signed-in dashboard contract, market-response ordering, long text and sparse intelligence. The layout subset was rerun after the final copy/state polish.
+- All browser tests intercepted external requests. Mock account, authentication, preference and Stripe requests remained local simulations; no real email, transaction, account change or production API request occurred.
+- `tests/feed-integration.cjs` and `docs/redesign/feed-test-results.json` provide the new reproducible test and results. Existing regression results remain in `docs/redesign/test-results.json`.
+- Updated homepage/Signals captures: `screenshots/after-home-1366.png`, `after-home-390.png`, `after-signals-1366.png`, `after-signals-390.png`. Sixteen state examples are in `screenshots/feed-states/` (home/Signals × stale/partial/empty/unavailable × desktop/mobile). All are synthetic/local examples, not sanitized production-shape or live validation.
+
+### Remaining gates
+
+1. Genuine Arizona production-shape validation for all six markets, pending authorized SELECT-only D1 extraction. No genuine fixtures have been supplied.
+2. Coordinated Core `/feed` and Work frontend integration in an authorized preview: Core’s implementation exists on its review branch but is not deployed or merged. Confirm the actual contract, states and data parity there before release. The frontend intentionally degrades if `/feed` is unavailable; it does not fall back to `/leads`.
+3. Authorized end-to-end Resend/magic-link validation.
+4. Stripe test-mode Checkout → callback → webhook/entitlement → Portal validation.
+5. Actual Cloudflare preview validation of `/signals`, `/competitors` and `/sources` clean routes.
+6. Chandler Early Pipeline genuine-data integration validation, separate from D1 fixtures because Pipeline records are not stored there.
+7. Repository publication of exact Work history remains unresolved; the Work branch remains local. Visual changes and state examples remain subject to user review.
+
+Backend, `/leads`, scoring/temperature thresholds, Arizona adapters, DFW, D1 and Cloudflare configuration are unchanged. No production request, merge or deployment was performed. No broad backend refactoring was started.
+
 ## Phase 1 closure update — account preference correction
 
 **Current status: PASS for isolated review-branch continuation; NOT approved for production deployment.** This section supersedes earlier handoff plans where they conflict, including the earlier request for a SELECT-only Chandler Early Pipeline fixture.

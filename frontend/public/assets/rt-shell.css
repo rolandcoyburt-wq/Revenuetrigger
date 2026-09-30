@@ -21,3 +21,30 @@ html body .source-flow-console,html body .source-flow-console:before{background:
 body .modal{grid-template-columns:minmax(0,1fr);place-items:center;align-content:center;overflow:hidden}body .modal-card{min-width:0;max-height:calc(100dvh - 40px)!important;overflow:auto}
 html:has(.modal.open,.modal.show){overflow:hidden;scroll-behavior:auto}body .modal-card{scroll-behavior:auto}
 body .modal-card .close{background:transparent!important}
+/* Stored-feed state and v7 readability polish. */
+body .rt-feed-notice{margin:0 0 22px;padding:14px 18px;border:1px solid #d9ceb7;border-left:3px solid var(--amber);background:#f7f1e5;color:#675232;font-size:13px;line-height:1.6}
+body .rt-feed-notice[hidden]{display:none}
+body .dashboard>.rt-feed-notice{margin:0;border-width:0 0 1px 3px}
+body .rt-feed-notice[data-state="empty"],body .rt-feed-notice[data-state="unavailable"]{background:#f1f0eb;border-color:var(--rt-line);color:var(--rt-muted)}
+body .status[data-feed-state] .spinner{animation:none!important}
+body .status[data-feed-state="stale"] .spinner,body .status[data-feed-state="partial"] .spinner{background:var(--amber)!important}
+body .status[data-feed-state="empty"] .spinner,body .status[data-feed-state="unavailable"] .spinner{background:#858b84!important}
+body .lead-main,body .rt-card-top .rt-kicker,body .rt-decision-metrics>div{min-width:0}
+body .leadname{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.4}
+body .permit-company,body .rt-card-company strong,body .rt-command h2,body .rt-preview-card h3,body .rt-trigger-timeline span,body .rt-decision-metrics strong{overflow-wrap:anywhere}
+body .rt-card-top{align-items:flex-start;gap:12px}
+body .rt-card-top .rt-temperature{flex-shrink:0}
+body .rt-preview-card{display:flex;flex-direction:column}
+body .rt-preview-card>.rt-text-link{margin-top:auto}
+body .rt-trigger-timeline li{min-width:0}
+@media(max-width:700px){
+ body .leadname{font-size:16px;line-height:1.35}
+ body .lead .view,body .lead .save{min-height:44px;min-width:44px}
+ body .rt-trigger-timeline{grid-template-columns:1fr!important;gap:0;margin-block:24px}
+ body .rt-trigger-timeline li{border-top:0;border-left:2px solid #8ec49a;padding:0 0 22px 20px;margin-left:4px}
+ body .rt-trigger-timeline li:last-child{padding-bottom:0;border-left-color:transparent}
+ body .rt-trigger-timeline li:before{left:-6px;top:1px}
+ body .rt-trigger-timeline small{margin-bottom:4px}
+ body .rt-command-head{align-items:flex-start;gap:14px}
+ body #heroState{text-align:right;max-width:52%;line-height:1.5}
+}

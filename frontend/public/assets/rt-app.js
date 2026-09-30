@@ -2,6 +2,7 @@ const CONFIG=RTConfig;
 const INDUSTRIES=['Commercial services','HVAC','Electrical','Plumbing','Roofing','Landscaping','Security','Signage'];
 const LIVE_MARKETS=RTConfig.markets;
 let leads=[],user=null,currentLead=null,savedOnly=false;
+let publicFeed=null,publicFeedRequest=0;
 let permitCompanyFilter='listed',pipelineCompanyFilter='listed';
 
 const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
@@ -67,6 +68,7 @@ function openSignin(){openModal('signinModal');setTimeout(()=>$('#signinEmail').
 async function openAccount(){renderAccount();await syncBilling();openModal('accountModal')}
 function planActive(){return user&&['active','trialing'].includes(user.subscriptionStatus)?user.plan:'Beta'}
 function render(){
+  if(user)$('#publicFeedNotice').hidden=true;
   const market=$('#market').value,industry=$('#industry').value,min=+$(`#minScore`).value,q=$('#search').value.toLowerCase(),saved=$('#savedFilter').value==='saved',sort=$('#sortFeed')?.value||'score';
   const hasListedCompany=x=>{const c=String(x.company||'').trim();return Boolean(c)&&!/^(not listed|unknown|n\/a|none|null|-+)$/i.test(c);};
   const baseFiltered=leads.filter(x=>(market==='all'||(x.market||'Phoenix')===market)&&(industry==='all'||x.categories?.includes(industry))&&x.score>=min&&(!saved||x.saved)&&(`${x.name} ${x.address} ${x.company} ${x.scope}`.toLowerCase().includes(q)));
@@ -84,7 +86,7 @@ function render(){
   });
   $('#leadList').innerHTML=filtered.length?filtered.map(x=>RTUI.opportunityCard(x,{signedIn:Boolean(user)})).join(''):`<div class="empty">${permitCompanyFilter==='listed'&&baseFiltered.length&&listedCount===0
     ?`None of the current ${baseFiltered.length} opportunities include a published company name. Switch to Not Listed to view them.`
-    :'No signals match these filters.'}</div>`;
+    :!user&&publicFeed&&!leads.length?(publicFeed.state==='unavailable'?publicFeed.notice:'No stored opportunities are available for the selected markets and time window.'):'No signals match these filters.'}</div>`;
   const hotCount=filtered.filter(x=>x.temperature==='HOT').length;
   const totalValue=filtered.reduce((s,x)=>s+Number(x.value||0),0);
   const avgScore=filtered.length?Math.round(filtered.reduce((s,x)=>s+Number(x.score||0),0)/filtered.length):0;
@@ -92,6 +94,7 @@ function render(){
   setKpiValue('kHot',hotCount,String(hotCount));
   setKpiValue('kValue',totalValue,approxMoney(totalValue));
   setKpiValue('kAvg',avgScore,String(avgScore));
+  if(!user&&publicFeed?.state==='unavailable')for(const id of ['kSignals','kHot','kValue','kAvg'])$('#'+id).textContent='—';
   $('#feedKpis')?.classList.toggle('all-zero',filtered.length===0);
 
 }
@@ -243,6 +246,7 @@ async function loadChanges(){
   }
 }
 async function updateSelectedMarketSourceStatus(){
+  if(!user)return; // Public feed freshness is owned by /feed, not upstream source health.
   const selected=$('#market')?.value||'all';
   $('#feedStatus').closest('.status')?.classList.remove('source-degraded');
   if(selected!=='Chandler')return;
@@ -259,7 +263,25 @@ async function updateSelectedMarketSourceStatus(){
     }
   }catch{}
 }
-async function loadPublic(){try{const selected=$('#market')?.value||'all';const marketParam=selected!=='all'?`&markets=${encodeURIComponent(selected)}`:'';const limit=selected!=='all'?200:120;const r=await fetch(`${CONFIG.apiBase}/leads?days=7&limit=${limit}${marketParam}`);if(!r.ok)throw new Error();const d=await r.json();leads=d.leads||[];$('#feedStatus').textContent=`Live • ${leads.length} ${selected==='all'?'Arizona':selected} permit signals`;}catch{leads=[];$('#feedStatus').textContent='Feed temporarily unavailable · Please try again';}render();await updateSelectedMarketSourceStatus()}
+async function loadPublic(){
+ const requestId=++publicFeedRequest;
+ const selected=$('#market')?.value||'all';
+ const marketParam=selected!=='all'?`&markets=${encodeURIComponent(selected)}`:'';
+ const limit=selected!=='all'?200:120;
+ let feed;
+ try{
+  const r=await fetch(`${CONFIG.apiBase}/feed?days=7&limit=${limit}${marketParam}`);
+  if(!r.ok)throw new Error('Feed unavailable');
+  feed=RTUI.feedState(await r.json());
+ }catch{feed=RTUI.feedState(null)}
+ if(requestId!==publicFeedRequest)return;
+ publicFeed=feed;leads=feed.rows;
+ $('#feedStatus').textContent=feed.state==='unavailable'?'Feed unavailable · Please try again':`${feed.label} • ${leads.length} ${selected==='all'?'Arizona':selected} permit signals`;
+ const status=$('#feedStatus').closest('.status');
+ status?.classList.remove('source-degraded');status?.setAttribute('data-feed-state',feed.state);
+ const note=$('#publicFeedNotice');note.hidden=!feed.notice;note.textContent=feed.notice;note.dataset.state=feed.state;
+ render();
+}
 async function loadDashboard(){if(!user)return loadPublic();try{const r=await fetch(`${CONFIG.apiBase}/dashboard?limit=200`,{headers:authHeaders()});if(r.status===401){localStorage.removeItem('revenuetrigger_session');localStorage.removeItem('signalhound_session');user=null;updateUserUI();return loadPublic()}if(!r.ok)throw new Error();const d=await r.json();leads=d.leads||[];$('#feedStatus').textContent=`Personalized • ${leads.length} matched signals`;$('#feedExplainer').textContent=`Your ${planActive()} feed is filtered to your saved industry preferences and plan history.`;render();await updateSelectedMarketSourceStatus();}catch(e){toast('Could not load personalized feed.');loadPublic()}}
 async function loadMe(){if(!token()){user=null;updateUserUI();return false}try{const r=await fetch(`${CONFIG.apiBase}/me`,{headers:authHeaders()});if(!r.ok)throw new Error();user=(await r.json()).user;updateUserUI();return true}catch{localStorage.removeItem('revenuetrigger_session');localStorage.removeItem('signalhound_session');user=null;updateUserUI();return false}}
 function updateUserUI(){if(user){$('#accountBtn').textContent=user.email.split('@')[0];$('#accountBtn').classList.add('live');$('#savedFilter').style.display='inline-block';if($('#exportTop'))$('#exportTop').style.display=user.entitlements?.export&&planActive()!=='Beta'?'inline-flex':'none'}else{$('#accountBtn').textContent='Sign in';$('#accountBtn').classList.remove('live');$('#savedFilter').style.display='none';$('#savedFilter').value='all';if($('#exportTop'))$('#exportTop').style.display='none'}}
