@@ -13,11 +13,12 @@ This directory is intentionally additive. It does not edit the shared scoring, e
 | Dallas | Commercial Permit Activity Dashboard | Current commercial-permit cross-check | Provisional | Official current Tableau dashboard. Direct CSV/render probes have not produced a stable ingestion contract. |
 | Dallas | ROWMS Permit Detail + Permit Location | Supplemental construction / early-pipeline signal | Supplemental-ready | Public ArcGIS tables. Permit detail is joined to location by `EXTERNALFILENUM`; includes status, dates, work description, applicant company and contractors. This is not a replacement for DallasNow building permits. |
 | Dallas | Building Permits (`e7gq-4sah`) | Historical backfill only | Backfill-ready | Official Socrata dataset explicitly says it is historical and no longer updated after migration to DallasNow. |
-| Dallas | Zoning / PD-SUP ArcGIS services | Zoning enrichment | Enrichment-ready | Authoritative base zoning plus SUP/PD/PDS lookups. Do not confuse these with the stale zoning-case layer in the 2026 Zoning Map Hub. |
+| Dallas | Base Zoning | Zoning enrichment | Enrichment-ready | Official polygon layer. Queried point-in-polygon by lead coordinates rather than bulk-ingested. |
+| Dallas | SUP / Planned Developments / PDS | Overlay enrichment | Enrichment-ready | Official City GIS layers for Special Use Permits, Planned Developments and Planned Development Subdistricts. |
 
 ## Canonical DFW record
 
-Every source is normalized before it is mapped into the existing `leadFrom()` contract. The DFW layer preserves:
+Every permit source is normalized before it is mapped into the existing `leadFrom()` contract. The DFW layer preserves:
 
 - source/jurisdiction lineage and schema version
 - source record ID and permit/case number
@@ -31,16 +32,18 @@ Every source is normalized before it is mapped into the existing `leadFrom()` co
 - a conservative `companyCandidate` only when a participant looks organizational
 - raw source record for debugging/schema-drift investigation
 
-`toLeadInput()` maps a normalized record to the current Revenue Trigger `leadFrom()` input shape without changing scoring or shared platform behavior.
+`toLeadInput()` maps a normalized permit record to the current Revenue Trigger `leadFrom()` input shape without changing scoring or shared platform behavior.
+
+Dallas zoning stays separate from that opportunity contract. It enriches an existing lead by coordinates and does not create a standalone opportunity.
 
 ## Source health and schema drift
 
-`health.js` defines explicit field contracts for the Fort Worth production/enrichment sources and the Dallas ROW supplemental source pair. It performs:
+`health.js` defines explicit field contracts for the Fort Worth production/enrichment sources, Dallas ROW supplemental source pair, and Dallas zoning layers. It performs:
 
 - metadata/schema validation (required fields, Query capability, and pagination where required)
-- freshness validation using server-side counts over bounded lookback windows
+- freshness validation using server-side counts over bounded lookback windows for feeds where recency is meaningful
 
-Freshness windows are bounded on both ends so implausible future municipal dates cannot make a stale source appear healthy. This specifically protects against anomalous future values observed in the Fort Worth CO feed. Current zoning is schema/query checked but does not fail solely because no zoning case was filed inside its lookback. Health results are diagnostic only; they do not mutate shared market state or core scoring.
+Freshness windows are bounded on both ends so implausible future municipal dates cannot make a stale source appear healthy. This specifically protects against anomalous future values observed in the Fort Worth CO feed. Static zoning polygon layers are schema/query checked rather than judged by filing recency. Health results are diagnostic only; they do not mutate shared market state or core scoring.
 
 ## Live smoke check
 
@@ -50,7 +53,7 @@ Run:
 node backend/markets/dfw/live-smoke.mjs
 ```
 
-The smoke runner checks Fort Worth source health, Dallas supplemental source health, fetches small live samples from each enabled DFW adapter, maps those normalized records through `toLeadInput()`, and exits non-zero if a required health contract fails. It is intentionally read-only and does not write to D1, modify scoring, or change the production market registry.
+The smoke runner checks Fort Worth source health, Dallas supplemental source health, Dallas zoning schema health, fetches small live samples from each enabled opportunity adapter, performs a Dallas zoning point-in-polygon probe, maps normalized permit records through `toLeadInput()`, and exits non-zero if a required health contract fails. It is intentionally read-only and does not write to D1, modify scoring, or change the production market registry.
 
 ## Fort Worth adapter behavior
 
@@ -70,8 +73,18 @@ The smoke runner checks Fort Worth source health, Dallas supplemental source hea
 - batch-joins the separate permit-location table by `EXTERNALFILENUM`
 - normalizes permit type/status, work/reason, applicant company, contractors and address into the same DFW record contract
 
+`fetchDallasZoningAtPoint()` enriches a geocoded Dallas lead with:
+
+- base zoning district
+- Special Use Permits
+- Planned Developments
+- Planned Development Subdistricts
+- ordinance, resolution, case, council-date and effective-date context where available
+
+The query uses WGS84 lead coordinates and ArcGIS `esriSpatialRelIntersects`. Historical zoning dates are allowed back to 1900 because older Dallas ordinances can still govern a current property; implausible future dates are still rejected.
+
 `fetchDallasHistoricalPermits()` is safe for historical model/backfill work only. It must never be used as the current Dallas building-permit feed.
 
 ## Integration rule
 
-Do not add Dallas or Fort Worth to the production `MARKETS` / `LIVE_MARKETS` constants until the DFW branch is rebased against the latest core-platform work and the minimal wiring change is reviewed. Fort Worth is ready for that integration review; Dallas has a current supplemental ROW source but its primary DallasNow building-permit transport remains provisional. This directory can be rebased or cherry-picked independently.
+Do not add Dallas or Fort Worth to the production `MARKETS` / `LIVE_MARKETS` constants until the DFW branch is rebased against the latest core-platform work and the minimal wiring change is reviewed. Fort Worth is ready for that integration review; Dallas now has a current supplemental ROW source plus production-usable zoning enrichment, but its primary DallasNow building-permit transport remains provisional. This directory can be rebased or cherry-picked independently.
