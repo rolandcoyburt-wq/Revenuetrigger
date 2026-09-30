@@ -191,10 +191,20 @@ await check('14 temperature/lifecycle/action intelligence are authoritative hydr
   }
 });
 await check('15 missing and long fields survive hydration without fake replacements',async()=>{
-  const {body}=await call('/feed?markets=Phoenix&limit=10');
-  const lead=body.leads.find(x=>x.address==='100 Main St Phoenix AZ');
+  const rows=[row({
+    id:'long-edge',
+    market:'Phoenix',
+    address:'999 Edge Case Ave Phoenix AZ',
+    permit:'PHX-LONG',
+    company:'Not listed',
+    scope:'A deliberately long municipal permit description '.repeat(12),
+    official_value:null
+  })];
+  const {body}=await call('/feed?markets=Phoenix&limit=10',{rows});
+  const lead=body.leads[0];
   assert.ok(lead);
-  assert.ok(String(lead.company).length>20||lead.relatedPermits.some(Boolean));
+  assert.equal(lead.company,'Not listed');
+  assert.equal(lead.officialPermitValue,null);
   assert.ok(String(lead.scope).length>100);
 });
 
