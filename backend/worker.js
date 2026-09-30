@@ -587,7 +587,8 @@ function normalizePhoenix(f){
 function normalizeTempe(f){
   const a=f.attributes||{};
   const address=[a.OriginalAddress1,a.OriginalAddress2,a.OriginalCity||'Tempe',a.OriginalState||'AZ',a.OriginalZip].filter(Boolean).join(' ');
-  return leadFrom({market:'Tempe',id:a.OBJECTID||a.PermitNum,name:a.ProjectName||a.Description||a.PermitTypeDesc||a.PermitType,address,date:a.IssuedDateDtm||a.AppliedDateDtm||a.StatusDateDtm,company:a.ContractorCompanyName,scope:[a.Description,a.PermitClass,a.PermitTypeDesc,a.Type].filter(Boolean).join(' — '),permit:a.PermitNum,permitStatus:a.StatusCurrent,source:'City of Tempe Building Safety — building permits'});
+  const officialValue=Number(a.EstProjectCost);
+  return leadFrom({market:'Tempe',id:a.OBJECTID||a.PermitNum,name:a.ProjectName||a.Description||a.PermitTypeDesc||a.PermitType,address,date:a.IssuedDateDtm||a.AppliedDateDtm||a.StatusDateDtm,company:a.ContractorCompanyName,scope:[a.Description,a.PermitClass,a.PermitTypeDesc,a.Type].filter(Boolean).join(' — '),permit:a.PermitNum,permitStatus:a.StatusCurrent,source:'City of Tempe Building Safety — building permits',officialValue:Number.isFinite(officialValue)&&officialValue>0?officialValue:null});
 }
 function decodeTucsonHtml(s=''){
   return String(s||'')
