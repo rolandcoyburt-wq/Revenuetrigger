@@ -2399,6 +2399,174 @@ async function buildRelationshipIntelligence(env,rawCompany,{days=365,rowLimit=5
 }
 
 
+async function historicalCoverageReadiness(env,{days=730,rowLimit=12000}={}){
+  days=Math.max(90,Math.min(730,Number(days)||730));
+  rowLimit=Math.max(1000,Math.min(12000,Number(rowLimit)||12000));
+
+  const rows=(await env.DB.prepare(`
+    SELECT id,name,address,event_date,market,permit,scope,company
+    FROM leads
+    WHERE datetime(event_date)>=datetime('now',?)
+    ORDER BY datetime(event_date) DESC
+    LIMIT ?
+  `).bind(`-${days} days`,rowLimit).all()).results||[];
+
+  const prepared=rows.map(x=>{
+    const canonical=canonicalCompanyName(x.company||'');
+    const addr=usableClusterAddress({address:x.address,market:x.market});
+    return {
+      ...x,
+      _canonical:canonical,
+      _listed:isListedCompanyName(canonical),
+      _projectKey:addr?`${x.market||''}|${addr}`:'',
+      _ms:safeEventMs(x.event_date)
+    };
+  }).filter(x=>x._ms);
+
+  const DAY=86400000;
+  const now=Date.now();
+
+  function analyze(records,label){
+    const dated=records.filter(x=>x._ms);
+    const msValues=dated.map(x=>Number(x._ms||0)).filter(Boolean);
+    const earliestMs=msValues.length?Math.min(...msValues):0;
+    const latestMs=msValues.length?Math.max(...msValues):0;
+    const projectKeys=new Set(dated.map(x=>x._projectKey).filter(Boolean));
+    const listed=dated.filter(x=>x._listed);
+    const companies=new Map();
+
+    for(const x of listed){
+      if(!companies.has(x._canonical))companies.set(x._canonical,[]);
+      companies.get(x._canonical).push(x);
+    }
+
+    let companiesSpan30=0,companiesSpan60=0,companiesSpan90=0;
+    let momentumComparableCompanies=0,expansionBaselineCompanies=0;
+    for(const recs of companies.values()){
+      const times=recs.map(x=>Number(x._ms||0)).filter(Boolean);
+      if(!times.length)continue;
+      const span=(Math.max(...times)-Math.min(...times))/DAY;
+      if(span>=30)companiesSpan30++;
+      if(span>=60)companiesSpan60++;
+      if(span>=90)companiesSpan90++;
+
+      const current30=recs.some(x=>now-x._ms<=30*DAY);
+      const previous30=recs.some(x=>now-x._ms>30*DAY&&now-x._ms<=60*DAY);
+      if(current30&&previous30)momentumComparableCompanies++;
+
+      const recent90=recs.some(x=>now-x._ms<=90*DAY);
+      const prior90=recs.some(x=>now-x._ms>90*DAY);
+      if(recent90&&prior90)expansionBaselineCompanies++;
+    }
+
+    const projectCompanies=new Map();
+    const companyProjects=new Map();
+    for(const x of listed){
+      if(!x._projectKey)continue;
+      if(!projectCompanies.has(x._projectKey))projectCompanies.set(x._projectKey,new Set());
+      projectCompanies.get(x._projectKey).add(x._canonical);
+      if(!companyProjects.has(x._canonical))companyProjects.set(x._canonical,new Map());
+      const pm=companyProjects.get(x._canonical);
+      const prior=pm.get(x._projectKey);
+      if(!prior||Number(x._ms||0)>Number(prior._ms||0))pm.set(x._projectKey,x);
+    }
+
+    const pairProjects=new Map();
+    for(const [projectKey,set] of projectCompanies){
+      const arr=[...set].sort();
+      for(let i=0;i<arr.length;i++)for(let j=i+1;j<arr.length;j++){
+        const key=`${arr[i]}|||${arr[j]}`;
+        if(!pairProjects.has(key))pairProjects.set(key,new Set());
+        pairProjects.get(key).add(projectKey);
+      }
+    }
+
+    const repeatedPairs=[...pairProjects.entries()].filter(([,set])=>set.size>=2);
+    let gapCandidateCount=0;
+    const gapCompanies=new Set();
+    for(const [pairKey,sharedKeys] of repeatedPairs){
+      const [a,b]=pairKey.split('|||');
+      for(const company of [a,b]){
+        const projects=companyProjects.get(company);
+        if(!projects?.size)continue;
+        let latestSharedMs=0;
+        for(const key of sharedKeys){
+          const p=projects.get(key);
+          if(p&&Number(p._ms||0)>latestSharedMs)latestSharedMs=Number(p._ms||0);
+        }
+        if(!latestSharedMs)continue;
+        const hasNewer=[...projects.entries()].some(([key,p])=>!sharedKeys.has(key)&&Number(p._ms||0)>latestSharedMs);
+        if(hasNewer){gapCandidateCount++;gapCompanies.add(company)}
+      }
+    }
+
+    const storedSpanDays=earliestMs&&latestMs?Math.round((latestMs-earliestMs)/DAY):0;
+    const momentumStatus=momentumComparableCompanies>0?'ready':'limited';
+    const expansionStatus=expansionBaselineCompanies>0?'ready':'limited';
+    const gapStatus=gapCandidateCount>0?'ready':repeatedPairs.length>0?'building_history':'insufficient_history';
+
+    return {
+      market:label,
+      recordCount:dated.length,
+      listedRecordCount:listed.length,
+      earliestStoredActivity:earliestMs?new Date(earliestMs).toISOString():null,
+      latestStoredActivity:latestMs?new Date(latestMs).toISOString():null,
+      storedSpanDays,
+      distinctProjects:projectKeys.size,
+      distinctCompanies:companies.size,
+      companyHistoryDepth:{
+        span30Days:companiesSpan30,
+        span60Days:companiesSpan60,
+        span90Days:companiesSpan90,
+        comparable30DayMomentum:momentumComparableCompanies,
+        expansionBaseline90Days:expansionBaselineCompanies
+      },
+      relationshipHistory:{
+        repeatedCompanyPairs:repeatedPairs.length,
+        positiveGapPatterns:gapCandidateCount,
+        companiesWithPositiveGapPattern:gapCompanies.size
+      },
+      readiness:{
+        companyMomentum:momentumStatus,
+        territoryAndVerticalExpansion:expansionStatus,
+        relationshipGaps:gapStatus
+      }
+    };
+  }
+
+  const markets=[...new Set(prepared.map(x=>x.market).filter(Boolean))].sort();
+  const byMarket=markets.map(m=>analyze(prepared.filter(x=>x.market===m),m));
+  const overall=analyze(prepared,'All markets');
+
+  const backfillPriority=byMarket
+    .map(x=>{
+      let score=0;
+      if(x.readiness.companyMomentum!=='ready')score+=1;
+      if(x.readiness.territoryAndVerticalExpansion!=='ready')score+=2;
+      if(x.readiness.relationshipGaps!=='ready')score+=2;
+      if(x.storedSpanDays<90)score+=2;
+      return {market:x.market,priorityScore:score,storedSpanDays:x.storedSpanDays,readiness:x.readiness};
+    })
+    .sort((a,b)=>b.priorityScore-a.priorityScore||a.market.localeCompare(b.market));
+
+  return {
+    ok:true,
+    requestedWindowDays:days,
+    rowsExamined:prepared.length,
+    overall,
+    markets:byMarket,
+    backfillPriority,
+    interpretation:{
+      companyMomentum:'Ready means at least one company has activity in both the current 30-day and previous 30-day windows.',
+      territoryAndVerticalExpansion:'Ready means at least one company has activity in the last 90 days plus earlier activity in the selected history window.',
+      relationshipGaps:'Ready means the stored records already contain at least one supported historical-pattern gap. Building history means repeated company pairs exist but no later gap sequence is yet established.',
+      caution:'These readiness labels measure historical-data depth for RevenueTrigger analytics. They are not commercial rankings or predictions.'
+    },
+    generatedAt:new Date().toISOString()
+  };
+}
+
+
 async function discoverRelationshipGapCandidates(env,{days=365,rowLimit=7500,limit=12}={}){
   days=Math.max(90,Math.min(730,Number(days)||365));
   rowLimit=Math.max(1000,Math.min(12000,Number(rowLimit)||7500));
@@ -2673,6 +2841,11 @@ export default {
         return json({ok:true,count:data.results.length,meta:data.meta,results:data.results},200,env);
       }
 
+      if(path==='/historical-coverage'&&request.method==='GET'){
+        const days=Math.max(90,Math.min(730,Number(url.searchParams.get('days')||730)));
+        const data=await historicalCoverageReadiness(env,{days,rowLimit:12000});
+        return json(data,200,env);
+      }
       if(path==='/relationship-gap-candidates'&&request.method==='GET'){
         const days=Math.max(90,Math.min(730,Number(url.searchParams.get('days')||365)));
         const limit=Math.max(1,Math.min(25,Number(url.searchParams.get('limit')||12)));
