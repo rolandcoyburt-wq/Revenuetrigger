@@ -1136,6 +1136,9 @@ html[data-theme="light"] .gridhead,html[data-theme="light"] .kpi small,html[data
   line-height:1.6;
 }
 .company-toggle-btn{font-variant-numeric:tabular-nums}
+
+.status.source-degraded{color:#d6b37f}
+.status.source-degraded .spinner{background:var(--warm-tier,#f2a14b);box-shadow:0 0 14px rgba(242,161,75,.45)}
 </style>
 
 <style>
@@ -1853,8 +1856,24 @@ async function loadChanges(){
     msg.textContent='Could not load today’s change summary.';
   }
 }
-async function loadPublic(){try{const selected=$('#market')?.value||'all';const marketParam=selected!=='all'?`&markets=${encodeURIComponent(selected)}`:'';const limit=selected!=='all'?200:120;const r=await fetch(`${CONFIG.apiBase}/leads?days=7&limit=${limit}${marketParam}`);if(!r.ok)throw new Error();const d=await r.json();leads=d.leads||[];if(!leads.length&&selected==='all')throw new Error();$('#feedStatus').textContent=`Live • ${leads.length} ${selected==='all'?'Arizona':selected} permit signals`;}catch{leads=SAMPLE;$('#feedStatus').textContent='Demo mode • API unavailable';}render()}
-async function loadDashboard(){if(!user)return loadPublic();try{const r=await fetch(`${CONFIG.apiBase}/dashboard?limit=200`,{headers:authHeaders()});if(r.status===401){localStorage.removeItem('revenuetrigger_session');localStorage.removeItem('signalhound_session');user=null;updateUserUI();return loadPublic()}if(!r.ok)throw new Error();const d=await r.json();leads=d.leads||[];$('#feedStatus').textContent=`Personalized • ${leads.length} matched signals`;$('#feedExplainer').textContent=`Your ${planActive()} feed is filtered to your saved industry preferences and plan history.`;render();}catch(e){toast('Could not load personalized feed.');loadPublic()}}
+async function updateSelectedMarketSourceStatus(){
+  const selected=$('#market')?.value||'all';
+  if(selected!=='Chandler')return;
+  try{
+    const r=await fetch(`${CONFIG.apiBase}/source-health?market=Chandler&days=7`);
+    const d=await r.json().catch(()=>({}));
+    if(d.status==='degraded'||d.ok===false){
+      const last=d.storedFallback?.lastRefresh;
+      const suffix=last?` • last stored refresh ${new Date(last.replace(' ','T')+'Z').toLocaleString()}`:'';
+      $('#feedStatus').textContent=`Stored snapshot • Chandler city source temporarily unavailable${suffix}`;
+      $('#feedStatus').closest('.status')?.classList.add('source-degraded');
+    }else{
+      $('#feedStatus').closest('.status')?.classList.remove('source-degraded');
+    }
+  }catch{}
+}
+async function loadPublic(){try{const selected=$('#market')?.value||'all';const marketParam=selected!=='all'?`&markets=${encodeURIComponent(selected)}`:'';const limit=selected!=='all'?200:120;const r=await fetch(`${CONFIG.apiBase}/leads?days=7&limit=${limit}${marketParam}`);if(!r.ok)throw new Error();const d=await r.json();leads=d.leads||[];if(!leads.length&&selected==='all')throw new Error();$('#feedStatus').textContent=`Live • ${leads.length} ${selected==='all'?'Arizona':selected} permit signals`;}catch{leads=SAMPLE;$('#feedStatus').textContent='Demo mode • API unavailable';}render();await updateSelectedMarketSourceStatus()}
+async function loadDashboard(){if(!user)return loadPublic();try{const r=await fetch(`${CONFIG.apiBase}/dashboard?limit=200`,{headers:authHeaders()});if(r.status===401){localStorage.removeItem('revenuetrigger_session');localStorage.removeItem('signalhound_session');user=null;updateUserUI();return loadPublic()}if(!r.ok)throw new Error();const d=await r.json();leads=d.leads||[];$('#feedStatus').textContent=`Personalized • ${leads.length} matched signals`;$('#feedExplainer').textContent=`Your ${planActive()} feed is filtered to your saved industry preferences and plan history.`;render();await updateSelectedMarketSourceStatus();}catch(e){toast('Could not load personalized feed.');loadPublic()}}
 async function loadMe(){if(!token()){user=null;updateUserUI();return false}try{const r=await fetch(`${CONFIG.apiBase}/me`,{headers:authHeaders()});if(!r.ok)throw new Error();user=(await r.json()).user;updateUserUI();return true}catch{localStorage.removeItem('revenuetrigger_session');localStorage.removeItem('signalhound_session');user=null;updateUserUI();return false}}
 function updateUserUI(){if(user){$('#accountBtn').textContent=user.email.split('@')[0];$('#accountBtn').classList.add('live');$('#savedFilter').style.display='inline-block';if($('#exportTop'))$('#exportTop').style.display=user.entitlements?.export&&planActive()!=='Beta'?'inline-flex':'none'}else{$('#accountBtn').textContent='Sign in';$('#accountBtn').classList.remove('live');$('#savedFilter').style.display='none';$('#savedFilter').value='all';if($('#exportTop'))$('#exportTop').style.display='none'}}
 function renderAccount(){if(!user){$('#accountLoggedOut').style.display='block';$('#accountLoggedIn').style.display='none';return}$('#accountLoggedOut').style.display='none';$('#accountLoggedIn').style.display='block';$('#aEmail').textContent=user.email;$('#aPlan').textContent=planActive();$('#aStatus').textContent=user.subscriptionStatus||'inactive';$('#aSaved').textContent=user.savedCount||0;$('#prefScore').value=String(user.preferences?.minScore||70);$('#prefAlert').value=user.entitlements?.alert||'none';const limit=user.entitlements?.industryLimit||1;$('#industryLimitText').textContent=`Your ${planActive()} plan allows ${limit} industr${limit===1?'y':'ies'}.`;$('#industryChecks').innerHTML=INDUSTRIES.map(i=>`<label class="check"><input type="checkbox" value="${esc(i)}" ${(user.preferences?.industries||[]).includes(i)?'checked':''}>${esc(i)}</label>`).join('');const marketLimit=user.entitlements?.marketLimit||1;$('#marketLimitText').textContent=`Your ${planActive()} plan allows ${marketLimit} market${marketLimit===1?'':'s'}.`;$('#marketChecks').innerHTML=LIVE_MARKETS.map(m=>`<label class="check"><input type="checkbox" value="${esc(m)}" ${(user.preferences?.markets||['Phoenix']).includes(m)?'checked':''}>${esc(m)}</label>`).join('');$('#exportBtn').disabled=!(user.entitlements?.export&&planActive()!=='Beta');$('#billingBtn').textContent=user.subscriptionStatus==='active'||user.subscriptionStatus==='trialing'?'Manage billing':'Upgrade plan'}
@@ -2153,7 +2172,7 @@ function bindCompanyToggle(rootId,onChange){
 bindCompanyToggle('permitCompanyToggle',value=>{permitCompanyFilter=value;render()});
 bindCompanyToggle('pipelineCompanyToggle',value=>{pipelineCompanyFilter=value;renderPipeline()});
 
-$('#competitorRun')?.addEventListener('click',loadCompetitors);$('#competitorSearch')?.addEventListener('keydown',e=>{if(e.key==='Enter')loadCompetitors()});$('#market').addEventListener('change',()=>{if(user)render();else loadPublic()});['industry','minScore','sortFeed','savedFilter'].forEach(id=>$('#'+id).addEventListener('change',render));$('#pipelineStage')?.addEventListener('change',renderPipeline);$('#pipelineMinScore')?.addEventListener('change',renderPipeline);$('#pipelineRefresh')?.addEventListener('click',loadPipeline);$('#search').addEventListener('input',render);$$('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id)}));
+$('#competitorRun')?.addEventListener('click',loadCompetitors);$('#competitorSearch')?.addEventListener('keydown',e=>{if(e.key==='Enter')loadCompetitors()});$('#market').addEventListener('change',async()=>{if(user){render();await updateSelectedMarketSourceStatus()}else{await loadPublic();await updateSelectedMarketSourceStatus()}});['industry','minScore','sortFeed','savedFilter'].forEach(id=>$('#'+id).addEventListener('change',render));$('#pipelineStage')?.addEventListener('change',renderPipeline);$('#pipelineMinScore')?.addEventListener('change',renderPipeline);$('#pipelineRefresh')?.addEventListener('click',loadPipeline);$('#search').addEventListener('input',render);$$('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id)}));
 (async()=>{const qp=new URLSearchParams(location.search);if(qp.get('billing')==='success')toast('Subscription checkout completed. Updating your account…');if(qp.get('billing')==='cancel')toast('Checkout canceled.');const hashParams=new URLSearchParams(location.hash.replace(/^#/,''));const magic=hashParams.get('magic');if(magic){try{await verifyMagic(magic);history.replaceState({},'',location.pathname+location.search)}catch(e){history.replaceState({},'',location.pathname+location.search);toast(e.message)}}else{const signed=await loadMe();if(signed){await loadDashboard();maybeOpenOnboarding();loadCompetitors();loadChanges()}else{await loadPublic();renderCompetitors();loadChanges()}loadPipeline()}if(qp.get('billing')==='success'){setTimeout(async()=>{await loadMe();await loadDashboard()},1800);history.replaceState({},'',location.pathname)}})();
 </script>
 
