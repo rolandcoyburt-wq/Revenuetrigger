@@ -42,6 +42,16 @@ Every source is normalized before it is mapped into the existing `leadFrom()` co
 
 Freshness windows are bounded on both ends so implausible future municipal dates cannot make a stale source appear healthy. This specifically protects against anomalous future values observed in the Fort Worth CO feed. Current zoning is schema/query checked but does not fail solely because no zoning case was filed inside its lookback. Health results are diagnostic only; they do not mutate shared market state or core scoring.
 
+## Live smoke check
+
+Run:
+
+```bash
+node backend/markets/dfw/live-smoke.mjs
+```
+
+The smoke runner checks Fort Worth source health, Dallas supplemental source health, fetches small live samples from each enabled DFW adapter, maps those normalized records through `toLeadInput()`, and exits non-zero if a required health contract fails. It is intentionally read-only and does not write to D1, modify scoring, or change the production market registry.
+
 ## Fort Worth adapter behavior
 
 `fetchFortWorthPermits()` uses a server-side `File_Date >= DATE 'YYYY-MM-DD'` filter and ArcGIS pagination. It intentionally uses `File_Date` as the primary freshness gate because municipal `Status_Date` values can occasionally be anomalous. `parseDate()` rejects implausibly future event dates, but the raw source value remains available under `raw`.
