@@ -808,7 +808,7 @@ function tempeCookieHeader(response){
 }
 function tempeCapDetailUrl(html,baseUrl=TEMPE_CITIZEN_SEARCH){
   const raw=String(html||'');
-  const matches=[...raw.matchAll(/href=["']([^"']*Cap\/CapDetail\.aspx\?[^"']+)["']/gi)];
+  const matches=[...raw.matchAll(/href=["']([^"']*\/Cap\/CapDetail\.aspx\?[^"']+)["']/gi)];
   const href=matches.map(m=>decodeTempeHtml(m[1])).find(Boolean);
   if(!href)return null;
   try{return new URL(href,baseUrl).toString()}catch{return null}
@@ -851,10 +851,11 @@ async function fetchTempeCitizenDetailByPermit(permit){
   const cookie=tempeCookieHeader(start);
 
   const body=new URLSearchParams();
-  for(const field of ['__VIEWSTATE','__VIEWSTATEGENERATOR','__EVENTTARGET','__EVENTARGUMENT','__LASTFOCUS','__VIEWSTATEENCRYPTED','ACA_CS_FIELD']){
+  for(const field of ['__VIEWSTATE','__VIEWSTATEGENERATOR','__EVENTVALIDATION','__EVENTTARGET','__EVENTARGUMENT','__LASTFOCUS','__VIEWSTATEENCRYPTED','ACA_CS_FIELD']){
     const value=tempeHiddenInput(startHtml,field);
     if(value||['__EVENTTARGET','__EVENTARGUMENT','__LASTFOCUS','__VIEWSTATEENCRYPTED'].includes(field))body.set(field,value||'');
   }
+  body.set('ctl00$ScriptManager1','');
   body.set('ctl00$PlaceHolderMain$generalSearchForm$txtGSPermitNumber',record);
   body.set('ctl00$PlaceHolderMain$btnNewSearch','Search');
 
@@ -875,7 +876,10 @@ async function fetchTempeCitizenDetailByPermit(permit){
   let detailUrl=/\/Cap\/CapDetail\.aspx/i.test(search.url||'')?search.url:tempeCapDetailUrl(searchHtml,TEMPE_CITIZEN_SEARCH);
   if(!detailUrl){
     const text=stripTucsonHtml(searchHtml);
-    if(!text.toUpperCase().includes(record))throw new Error('Tempe permit not found in Citizen Access');
+    if(!text.toUpperCase().includes(record)){
+      const hasValidation=/event validation|invalid postback|viewstate/i.test(text);
+      throw new Error(hasValidation?'Tempe Citizen Access rejected the search postback':'Tempe permit not found in Citizen Access search response');
+    }
     throw new Error('Tempe record found but detail URL could not be resolved');
   }
 
