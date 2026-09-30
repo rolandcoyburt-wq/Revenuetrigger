@@ -3998,6 +3998,78 @@ export default {
           generatedAt:nowIso()
         },200,env);
       }
+      if(path==='/tucson-recheck-preview'&&request.method==='GET'){
+        const days=clamp(Number(url.searchParams.get('days')||30),7,90);
+        const limit=clamp(Number(url.searchParams.get('limit')||20),1,40);
+        const result=env.DB?await env.DB.prepare(`
+          SELECT permit,name,address,event_date,company,permit_status,score,updated_at
+          FROM leads
+          WHERE market='Tucson'
+            AND datetime(event_date)>=datetime('now',?)
+          ORDER BY datetime(event_date) DESC
+          LIMIT ?
+        `).bind(`-${days} days`,limit).all():{results:[]};
+
+        const storedRows=(result.results||[]).filter(row=>!isMeaningfulCompanyName(row.company));
+        const checked=[];
+        const errors=[];
+
+        for(let i=0;i<storedRows.length;i+=5){
+          const batch=await Promise.all(storedRows.slice(i,i+5).map(async row=>{
+            const permit=String(row.permit||'').trim();
+            try{
+              const [activity,detail]=await Promise.all([
+                fetchTucsonPermit(permit),
+                fetchTucsonPermitDetail(permit)
+              ]);
+              const currentStatus=String(activity?.status||detail?.status||'').trim()||null;
+              const storedStatus=String(row.permit_status||'').trim()||null;
+              const businessApplicant=detail?.businessApplicant||null;
+              const statusChanged=Boolean(currentStatus&&storedStatus&&currentStatus.toLowerCase()!==storedStatus.toLowerCase());
+              const laterStage=Boolean(currentStatus&&!/submitted|application received/i.test(currentStatus));
+              return {
+                permit,
+                storedStatus,
+                currentStatus,
+                statusChanged,
+                laterStage,
+                applicant:detail?.applicant||null,
+                businessApplicant,
+                canPromoteCompany:Boolean(businessApplicant),
+                storedScore:Number(row.score||0),
+                eventDate:row.event_date,
+                lastStoredRefresh:row.updated_at
+              };
+            }catch(e){
+              errors.push({permit,error:String(e?.message||e)});
+              return null;
+            }
+          }));
+          checked.push(...batch.filter(Boolean));
+          if(i+5<storedRows.length)await sleep(150);
+        }
+
+        const promotable=checked.filter(x=>x.canPromoteCompany);
+        const advanced=checked.filter(x=>x.statusChanged||x.laterStage);
+        return json({
+          ok:true,
+          mode:'preview_only',
+          market:'Tucson',
+          days,
+          storedNotListedExamined:storedRows.length,
+          permitDetailsChecked:checked.length,
+          statusChangedCount:checked.filter(x=>x.statusChanged).length,
+          laterStageCount:checked.filter(x=>x.laterStage).length,
+          businessApplicantCount:promotable.length,
+          promotableCompanies:promotable.map(x=>({permit:x.permit,company:x.businessApplicant,currentStatus:x.currentStatus})),
+          advancedCandidates:advanced.slice(0,20),
+          checked,
+          errors:errors.slice(0,10),
+          policy:'A Tucson record becomes Listed only when the City of Tucson public permit detail explicitly publishes an organization in the Applicant field. Individual names remain Not Listed. This endpoint does not write to D1.',
+          generatedAt:nowIso()
+        },200,env);
+      }
+
       if(path==='/source-health'&&request.method==='GET'){
         const market=(url.searchParams.get('market')||'').trim();
         const days=clamp(Number(url.searchParams.get('days')||7),1,90);
