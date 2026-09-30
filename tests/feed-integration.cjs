@@ -6,10 +6,10 @@ const {mock,leads}=require('./fixtures.cjs');
  const results=[];fs.mkdirSync('docs/redesign/screenshots/feed-states',{recursive:true});
  async function check(name,fn){try{await fn();results.push({name,status:'PASS'});console.log('PASS '+name)}catch(e){results.push({name,status:'FAIL',error:e.message});console.log('FAIL '+name+' '+e.message)}}
  async function page(width=1366){const p=await browser.newPage({viewport:{width,height:900},reducedMotion:'reduce',serviceWorkers:'block'});p.calls=await mock(p);p.errors=[];p.on('pageerror',e=>p.errors.push(e.message));return p}
- const messages={fresh:'',stale:'Updates are delayed',partial:'stale or missing data',empty:'No stored opportunities',unavailable:'temporarily unavailable'};
+ const messages={fresh:'',stale:'stored market data may be delayed',partial:'stored market data may be delayed or missing',empty:'No stored opportunities',unavailable:'temporarily unavailable'};
  for(const width of [390,1366])for(const route of ['/','/signals'])for(const state of Object.keys(messages))await check(`${route} ${state} ${width}px`,async()=>{
   const p=await page(width);let request;
-  await p.route('**/api/feed?**',r=>{request=r.request();return r.fulfill({json:{ok:state!=='unavailable',readOnly:true,source:'stored_d1',state,opportunityState:state==='empty'?'empty':state==='unavailable'?'unavailable':'available',leads:['empty','unavailable'].includes(state)?[]:leads}})});
+  await p.route('**/api/feed?**',r=>{request=r.request();return r.fulfill({json:{ok:state!=='unavailable',state,freshness:{thresholdMinutes:180,markets:[{market:'Phoenix',state:state==='partial'?'stale':state,storedCount:3,lastStoredAt:'2026-09-30T00:00:00Z',latestEventAt:'2026-09-29T23:00:00Z',ageMinutes:200}]},leads:['empty','unavailable'].includes(state)?[]:leads}})});
   await p.goto('http://127.0.0.1:8765'+route);await p.waitForLoadState('networkidle');
   assert(request);assert.equal(request.method(),'GET');assert.equal(request.headers().authorization,undefined);
   assert.equal(new URL(request.url()).searchParams.get('limit'),route==='/'?'3':'120');
@@ -34,10 +34,10 @@ const {mock,leads}=require('./fixtures.cjs');
  });
  for(const scenario of ['http503','malformed','missing-state','partial-empty'])await check(`Honest ${scenario} response`,async()=>{
   for(const route of ['/','/signals']){
-   const p=await page();await p.route('**/api/feed?**',r=>scenario==='malformed'?r.fulfill({body:'invalid JSON'}):r.fulfill({status:scenario==='http503'?503:200,json:scenario==='partial-empty'?{ok:true,state:'partial',opportunityState:'empty',leads:[]}:{leads}}));
+   const p=await page();await p.route('**/api/feed?**',r=>scenario==='malformed'?r.fulfill({body:'invalid JSON'}):r.fulfill({status:scenario==='http503'?503:200,json:scenario==='partial-empty'?{ok:true,state:'partial',leads:[]}:scenario==='http503'?{ok:false,state:'unavailable',leads:[],error:'stored_feed_unavailable'}:{leads}}));
    await p.goto('http://127.0.0.1:8765'+route);await p.waitForLoadState('networkidle');
    assert.equal(await p.locator(route==='/'?'.rt-preview-card':'.lead').count(),0);
-   assert((await p.locator(route==='/'?'#homeFeedNotice':'#publicFeedNotice').innerText()).includes(scenario==='partial-empty'?'stale or missing data':'unavailable'));
+   assert((await p.locator(route==='/'?'#homeFeedNotice':'#publicFeedNotice').innerText()).includes(scenario==='partial-empty'?'stored market data may be delayed or missing':'unavailable'));
    await p.close();
   }
  });
@@ -70,6 +70,24 @@ const {mock,leads}=require('./fixtures.cjs');
    return {decision:RTUI.decision({}),timeline:RTUI.triggerTimeline({}),overflow:document.documentElement.scrollWidth>innerWidth};
   });assert.equal(result.decision,'');assert.equal(result.timeline,'');assert.equal(result.overflow,false);await p.close();
  });
- await browser.close();fs.writeFileSync('docs/redesign/feed-test-results.json',JSON.stringify({validation:'synthetic/local; no production requests',coreContract:'e1ce8d50544944caef5453ba46812b441fa37d57',results},null,2));
+ for(const route of ['/','/signals'])await check(`HTTP 400 invalid_market is a request error: ${route}`,async()=>{
+  const p=await page();await p.route('**/api/feed?**',r=>r.fulfill({status:400,json:{ok:false,error:'invalid_market'}}));
+  await p.goto('http://127.0.0.1:8765'+route);await p.waitForLoadState('networkidle');
+  assert.match(await p.locator(route==='/'?'#heroState':'#feedStatus').innerText(),/request error/i);
+  assert.match(await p.locator(route==='/'?'#homeFeedNotice':'#publicFeedNotice').innerText(),/unsupported market/);
+  assert.equal(await p.locator(route==='/'?'.rt-preview-card':'.lead').count(),0);
+  await p.screenshot({path:`docs/redesign/screenshots/feed-states/${route==='/'?'home':'signals'}-invalid-market-1366.png`});await p.close();
+ });
+ await check('Freshness array parses nulls and retains authoritative top-level state',async()=>{
+  const p=await page();await p.goto('http://127.0.0.1:8765/');await p.waitForLoadState('networkidle');
+  const result=await p.evaluate(()=>{
+   const metadata={market:'Phoenix',state:'stale',storedCount:2,lastStoredAt:null,latestEventAt:null,ageMinutes:null};
+   return {array:RTUI.feedState({ok:true,state:'partial',leads:[{id:'fixture'}],freshness:{thresholdMinutes:180,markets:[metadata]}}),legacy:RTUI.feedState({ok:true,state:'fresh',leads:[],freshness:{markets:{Phoenix:metadata}}})};
+  });assert.equal(result.array.freshness.thresholdMinutes,180);assert.equal(result.array.freshness.markets.length,1);assert.equal(result.array.freshness.markets[0].lastStoredAt,null);assert.equal(result.array.freshness.markets[0].ageMinutes,null);assert.equal(result.array.state,'partial');assert.match(result.array.notice,/Phoenix \(stale\)/);assert(!/municipal|source.*down/i.test(result.array.notice));assert.deepEqual(result.legacy.freshness.markets,[]);assert.equal(result.legacy.state,'fresh');await p.close();
+ });
+ await check('Failed network never inserts sample records',async()=>{
+  for(const route of ['/','/signals']){const p=await page();await p.route('**/api/feed?**',r=>r.abort());await p.goto('http://127.0.0.1:8765'+route);await p.waitForLoadState('networkidle');assert.equal(await p.locator(route==='/'?'.rt-preview-card':'.lead').count(),0);assert.match(await p.locator(route==='/'?'#heroState':'#feedStatus').innerText(),/unavailable/i);await p.close()}
+ });
+ await browser.close();fs.writeFileSync('docs/redesign/feed-test-results.json',JSON.stringify({validation:'synthetic/local; no production requests',coreContract:'50dfbd8d53f69e7fadf07ef2fd8192f9b9ad6ac5',results},null,2));
  if(results.some(x=>x.status==='FAIL'))process.exitCode=1;
 })();

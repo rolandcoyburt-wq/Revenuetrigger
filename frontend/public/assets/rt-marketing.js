@@ -21,9 +21,9 @@ document.getElementById('signinModal').addEventListener('click',e=>{if(e.target.
 document.getElementById('marketList').innerHTML=RTConfig.markets.map(m=>`<span>${RTUI.esc(m)}</span>`).join('');
 async function loadMarketingSignals(){
  const {esc,badge,opportunityCard,triggerTimeline,decision,money}=RTUI;
+ let feed;
  try{
-  const d=await RTAuth.request('/feed?days=7&limit=3');
-  const feed=RTUI.feedState(d);
+  feed=await RTUI.readFeed('days=7&limit=3');
   const note=document.getElementById('homeFeedNotice');
   note.hidden=!feed.notice;note.textContent=feed.notice;note.dataset.state=feed.state;
   document.getElementById('heroState').textContent=feed.label;
@@ -38,8 +38,8 @@ async function loadMarketingSignals(){
   const rich=rows.find(x=>x.actionIntelligence&&Object.keys(x.actionIntelligence).length)||x;
   document.getElementById('decisionDemo').innerHTML=`<span class="rt-kicker">${esc(rich.market)} / ${esc(rich.permit||'Public record')}</span><h3>${esc(RTFormat.displayEventTitle(rich))}</h3>${decision(rich)||'<p class="rt-unavailable">Additional intelligence is not published for this record.</p>'}${triggerTimeline(rich)}`;
  }catch(e){
-  const text=e.message.startsWith('No current')?e.message:'Current opportunities are temporarily unavailable. Please try the opportunity feed again shortly.';
-  if(!e.message.startsWith('No current')){document.getElementById('heroState').textContent='Feed unavailable';const note=document.getElementById('homeFeedNotice');note.hidden=false;note.textContent=RTUI.feedState(null).notice;note.dataset.state='unavailable';}
+  const text=feed?.requestError?feed.notice:e.message.startsWith('No current')?e.message:'Current opportunities are temporarily unavailable. Please try the opportunity feed again shortly.';
+  if(!e.message.startsWith('No current')){document.getElementById('heroState').textContent=feed?.label||'Feed unavailable';const note=document.getElementById('homeFeedNotice');note.hidden=false;note.textContent=feed?.notice||RTUI.feedState(null).notice;note.dataset.state='unavailable';}
   document.getElementById('heroSignal').innerHTML=`<p class="rt-unavailable">${esc(text)}</p><a class="rt-text-link" href="/signals">Open the opportunity feed →</a>`;
   document.getElementById('signalPreviews').innerHTML=`<p class="rt-preview-empty">${esc(text)}</p>`;
   document.getElementById('marketTicker').textContent='No current activity available to display.';

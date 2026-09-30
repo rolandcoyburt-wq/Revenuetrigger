@@ -10,6 +10,42 @@
 - Backend changes: **none**
 - D1, adapters, scoring, temperature, auth contracts, billing contracts, cron, DFW, and Cloudflare configuration: **unchanged**
 
+## Finalized Core v1 feed contract — current integration review
+
+**Not deployed or merged.** This entry supersedes earlier `/feed` contract assumptions. Core reference: branch `core/read-only-feed-v1`, commit `50dfbd8d53f69e7fadf07ef2fd8192f9b9ad6ac5`, based on `db5260fe16e0b9f81b36df71a50797a8b69cc7f3`. Work inspected that exact Worker source through GitHub without copying or modifying backend files. Core reports 20/20 backend checks; Work did not independently rerun those backend checks. The subsequently attached `feed-contract (1).md` is byte-identical to the contract inside `RevenueTrigger-Core-Feed-Handoff-50dfbd8 (1).zip`; its backend patch and 20/20 test report were inspected without applying the patch. These attachments contain no genuine Arizona record fixtures.
+
+Work continued from `6575b48`, preserving the approved visual commits after `cf08fa5`: section rearrangement, deep-green Decision Intelligence, standalone Early Pipeline/Competitor Intelligence, highlighted Hunter pricing, cement Early Pipeline, white Competitor Intelligence/Markets/Market Brief, and black Built for Your Trade. Homepage HTML and theme CSS were unchanged in this contract alignment.
+
+### Contract alignment
+
+- Homepage: `GET /api/feed?days=7&limit=3`. Signed-out Signals: `/api/feed?days=7&limit=120` or a selected Arizona market with limit 200. These public fetches carry no bearer token.
+- A shared frontend feed reader retains HTTP status when interpreting the response. HTTP 400 `invalid_market` produces **Feed request error** with unsupported-market/configuration guidance. It is never represented as an empty market. HTTP 503 `stored_feed_unavailable`, malformed responses and failed network requests produce an unavailable state.
+- Top-level `state` is authoritative. `fresh` renders normally; `stale` and `partial` retain returned opportunities with restrained stored-data notices; `empty` and `unavailable` never insert sample records. The old optional `opportunityState` field is no longer consulted.
+- `freshness.markets` is parsed as an array containing `market`, `state`, `storedCount`, `lastStoredAt`, `latestEventAt` and `ageMinutes`; nullable values are preserved. `freshness.thresholdMinutes` is read from the envelope (Core v1 uses 180). Object-keyed legacy metadata is ignored safely. Metadata never overrides the top-level state.
+- Freshness notices say “Some stored market data may be delayed,” with the available per-market stored state. They do not claim a municipality is down or infer upstream source health.
+- Signed-in `loadDashboard()` is byte-for-byte unchanged from the preceding Work commit. Existing auth/billing callbacks, Saved, Pipeline, filters/sorting, preferences, 75+/80+ options, CSV export and competitor flows remain intact.
+
+### Validation and artifacts
+
+All runs used synthetic/local interception; no production API request, real email, account mutation or Stripe transaction was performed.
+
+- **41/41 existing regression checks passed**, including responsive layouts at 390, 430, 768, 1366 and 1920px across homepage, Signals, Competitors and Sources.
+- **31/31 feed checks passed**: five data states on desktop/mobile for both consumers, exact HTTP 503 payload, invalid-market HTTP 400 on both pages, array/null parsing, safe handling of object-shaped legacy metadata, network failure without fallback, partial empty data, dashboard continuity, market request ordering and long/sparse records.
+- **8/8 account preference cases passed**: 40/60/75/80 load, save and reload at desktop/mobile widths. The previously temporary check is now reproducible as `tests/preferences.cjs`.
+- `docs/redesign/test-results.json` and `feed-test-results.json` hold the refreshed regression/feed results. Homepage and Signals full-page screenshots are refreshed; `screenshots/feed-states/` contains stale/partial/empty/unavailable examples and two explicit invalid-market examples. Screenshots contain synthetic QA records only.
+
+### Remaining blockers
+
+1. Genuine Arizona production-shape validation, pending authorized SELECT-only D1 access and sanitized records.
+2. Coordinated Core v1/frontend integration validation in an authorized preview. Core v1 is a separate review branch and has not been merged into Work; no deployed `/feed` availability is claimed.
+3. Authorized real Resend/magic-link end-to-end validation.
+4. Stripe test-mode Checkout → callback → webhook/entitlement → Portal validation.
+5. Actual Cloudflare preview clean-route validation for Signals, Competitors and Sources.
+6. Chandler Early Pipeline genuine-data integration validation, separate from D1 fixtures.
+7. Exact Work branch publication and final visual/release review.
+
+Backend, `/leads`, scoring, Arizona adapters, DFW, D1/schema and Cloudflare security are untouched. Nothing deployed or merged; branch remains local.
+
 ## Market Brief palette update
 
 Changed only the Market Brief (`#opportunities`) section background to white. Card styling, layout, content and data behavior remain unchanged. Desktop/mobile previews refreshed using intercepted synthetic/local data. No production requests, merge or deployment.

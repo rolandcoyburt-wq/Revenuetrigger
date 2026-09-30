@@ -2,6 +2,86 @@
   "data": "Synthetic QA fixtures; all external network requests intercepted. No production/API/Stripe end-to-end verification.",
   "results": [
     {
+      "name": "Layout / at 390px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout /signals at 390px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout /competitors at 390px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout /sources at 390px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout / at 430px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout /signals at 430px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout /competitors at 430px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout /sources at 430px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout / at 768px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout /signals at 768px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout /competitors at 768px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout /sources at 768px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout / at 1366px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout /signals at 1366px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout /competitors at 1366px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout /sources at 1366px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout / at 1920px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout /signals at 1920px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout /competitors at 1920px",
+      "status": "PASS"
+    },
+    {
+      "name": "Layout /sources at 1920px",
+      "status": "PASS"
+    },
+    {
       "name": "Feed filters, search, sorting, detail and authoritative temperature",
       "status": "PASS"
     },
@@ -83,86 +163,6 @@
     },
     {
       "name": "Final Sources contrast and mobile KPI layout",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout /signals at 390px",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout /competitors at 390px",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout /sources at 390px",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout /signals at 430px",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout /competitors at 430px",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout /sources at 430px",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout /signals at 768px",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout /competitors at 768px",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout /sources at 768px",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout /signals at 1366px",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout /competitors at 1366px",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout /sources at 1366px",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout /signals at 1920px",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout /competitors at 1920px",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout /sources at 1920px",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout / at 390px",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout / at 430px",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout / at 768px",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout / at 1366px",
-      "status": "PASS"
-    },
-    {
-      "name": "Layout / at 1920px",
       "status": "PASS"
     }
   ]

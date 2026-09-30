@@ -268,15 +268,10 @@ async function loadPublic(){
  const selected=$('#market')?.value||'all';
  const marketParam=selected!=='all'?`&markets=${encodeURIComponent(selected)}`:'';
  const limit=selected!=='all'?200:120;
- let feed;
- try{
-  const r=await fetch(`${CONFIG.apiBase}/feed?days=7&limit=${limit}${marketParam}`);
-  if(!r.ok)throw new Error('Feed unavailable');
-  feed=RTUI.feedState(await r.json());
- }catch{feed=RTUI.feedState(null)}
+ const feed=await RTUI.readFeed(`days=7&limit=${limit}${marketParam}`);
  if(requestId!==publicFeedRequest)return;
  publicFeed=feed;leads=feed.rows;
- $('#feedStatus').textContent=feed.state==='unavailable'?'Feed unavailable · Please try again':`${feed.label} • ${leads.length} ${selected==='all'?'Arizona':selected} permit signals`;
+ $('#feedStatus').textContent=feed.state==='unavailable'?feed.label:`${feed.label} • ${leads.length} ${selected==='all'?'Arizona':selected} permit signals`;
  const status=$('#feedStatus').closest('.status');
  status?.classList.remove('source-degraded');status?.setAttribute('data-feed-state',feed.state);
  const note=$('#publicFeedNotice');note.hidden=!feed.notice;note.textContent=feed.notice;note.dataset.state=feed.state;

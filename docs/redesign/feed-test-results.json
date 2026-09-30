@@ -1,6 +1,6 @@
 {
   "validation": "synthetic/local; no production requests",
-  "coreContract": "e1ce8d50544944caef5453ba46812b441fa37d57",
+  "coreContract": "50dfbd8d53f69e7fadf07ef2fd8192f9b9ad6ac5",
   "results": [
     {
       "name": "/ fresh 390px",
@@ -108,6 +108,22 @@
     },
     {
       "name": "Long text and sparse intelligence remain readable on mobile",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP 400 invalid_market is a request error: /",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP 400 invalid_market is a request error: /signals",
+      "status": "PASS"
+    },
+    {
+      "name": "Freshness array parses nulls and retains authoritative top-level state",
+      "status": "PASS"
+    },
+    {
+      "name": "Failed network never inserts sample records",
       "status": "PASS"
     }
   ]

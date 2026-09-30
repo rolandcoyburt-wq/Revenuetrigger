@@ -23,13 +23,22 @@ window.RTUI=(()=>{
   if(!metrics.length&&!ai.whyNow&&!ai.nextBestAction?.action)return '';
   return `<div class="rt-decision-metrics">${metrics.map(([k,v])=>`<div><small>${esc(k)}</small><strong>${esc(v)}</strong></div>`).join('')}</div>${ai.whyNow?`<div class="rt-reason"><small>Why now</small><p>${esc(ai.whyNow)}</p></div>`:''}${ai.nextBestAction?.action?`<div class="rt-reason"><small>Next best action</small><p>${esc(ai.nextBestAction.action)}</p>${ai.nextBestAction.reason?`<p class="rt-muted">${esc(ai.nextBestAction.reason)}</p>`:''}</div>`:''}`;
  }
- function feedState(data){
+ function feedState(data,status=200){
   const valid=['fresh','stale','partial','empty','unavailable'];
-  const state=data?.ok===false||(['fresh','stale','partial'].includes(data?.state)&&!Array.isArray(data?.leads))?'unavailable':valid.includes(data?.state)?data.state:'unavailable';
-  const rows=['fresh','stale','partial'].includes(state)&&data?.opportunityState!=='empty'&&Array.isArray(data?.leads)?data.leads:[];
-  const label={fresh:'Stored opportunities',stale:'Stored snapshot · stale',partial:'Partial market coverage',empty:'No current opportunities',unavailable:'Feed unavailable'}[state];
-  const notice={fresh:'',stale:'Stored opportunities are shown. Updates are delayed; verify timing before acting.',partial:'Available stored opportunities are shown. Some selected markets have stale or missing data.',empty:'No stored opportunities are available for the selected markets and time window.',unavailable:'Current opportunities are temporarily unavailable. Please try again shortly.'}[state];
-  return {state,rows,label,notice:!rows.length&&['partial','stale'].includes(state)?'Some selected markets have stale or missing data. No stored opportunities are available in this window.':notice};
+  const requestError=status===400&&data?.error==='invalid_market';
+  const state=status>=400||data?.ok===false||(['fresh','stale','partial'].includes(data?.state)&&!Array.isArray(data?.leads))?'unavailable':valid.includes(data?.state)?data.state:'unavailable';
+  const rows=['fresh','stale','partial'].includes(state)&&Array.isArray(data?.leads)?data.leads:[];
+  // This array describes stored D1 freshness, never municipal source health.
+  const markets=Array.isArray(data?.freshness?.markets)?data.freshness.markets.filter(x=>x&&RTConfig.markets.includes(x.market)&&valid.includes(x.state)).map(x=>({market:x.market,state:x.state,storedCount:x.storedCount,lastStoredAt:x.lastStoredAt,latestEventAt:x.latestEventAt,ageMinutes:x.ageMinutes})):[];
+  const label=requestError?'Feed request error':{fresh:'Stored opportunities',stale:'Stored snapshot · stale',partial:'Partial market coverage',empty:'No current opportunities',unavailable:'Feed unavailable'}[state];
+  let notice=requestError?'The feed request contains an unsupported market. Check the market selection or configuration.':{fresh:'',stale:'Stored opportunities are shown. Some stored market data may be delayed; verify timing before acting.',partial:'Available stored opportunities are shown. Some stored market data may be delayed or missing.',empty:'No stored opportunities are available for the selected markets and time window.',unavailable:'Current opportunities are temporarily unavailable. Please try again shortly.'}[state];
+  if(!rows.length&&['partial','stale'].includes(state))notice='Some stored market data may be delayed or missing. No stored opportunities are available in this window.';
+  if(['partial','stale'].includes(state)&&markets.length)notice+=' Stored data: '+markets.map(x=>`${x.market} (${x.state})`).join(', ')+'.';
+  return {state,rows,label,notice,requestError,freshness:{thresholdMinutes:data?.freshness?.thresholdMinutes,markets}};
  }
- return {esc,badge,opportunityCard,triggerTimeline,decision,money,feedState};
+ async function readFeed(query){
+  try{const response=await fetch(RTConfig.apiBase+'/feed?'+query);return feedState(await response.json(),response.status)}catch{return feedState(null)}
+ }
+
+ return {esc,badge,opportunityCard,triggerTimeline,decision,money,feedState,readFeed};
 })();
