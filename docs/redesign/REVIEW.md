@@ -10,6 +10,10 @@
 - Backend changes: **none**
 - D1, adapters, scoring, temperature, auth contracts, billing contracts, cron, DFW, and Cloudflare configuration: **unchanged**
 
+## Market Brief palette update
+
+Changed only the Market Brief (`#opportunities`) section background to white. Card styling, layout, content and data behavior remain unchanged. Desktop/mobile previews refreshed using intercepted synthetic/local data. No production requests, merge or deployment.
+
 ## Homepage palette revision — September 30, 2026
 
 Parent: `9b8837c1c848246c94f18c0aea59343d93e38532`. Updated only homepage theme CSS: Early Pipeline uses cement, Competitor Intelligence uses white, Built for Your Trade uses black/graphite, and Markets uses white. Text, borders and stage indicators were adjusted for contrast. Content, section order, layouts and all application behavior remain unchanged. These colors supersede the corresponding themes in the visual-pass entry below.

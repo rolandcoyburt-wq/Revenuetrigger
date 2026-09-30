@@ -91,3 +91,6 @@ body.rt-marketing #markets .rt-market-panel{background:var(--paper);border-color
 body.rt-marketing #markets .rt-market-planned{background:#fff}
 body.rt-marketing #markets .rt-market-list span{border-color:var(--rt-line);color:var(--graphite)}
 body.rt-marketing #markets .rt-planned-label{border-color:var(--rt-line);color:var(--rt-muted)}
+
+/* Market Brief: white section, existing opportunity cards preserved. */
+body.rt-marketing #opportunities{background:#fff}
