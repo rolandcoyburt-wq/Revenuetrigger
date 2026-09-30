@@ -836,6 +836,83 @@ function parseTempeCitizenDetail(html,permit){
   };
 }
 
+
+function tempeProfessionalCompany(p={}){
+  const candidates=[
+    p.businessName,p.businessName2,p.contractorBusinessName,p.organizationName,
+    p.tradeName,p.companyName,p.name,p.fullName
+  ].map(x=>String(x||'').trim()).filter(Boolean);
+  return candidates.find(isMeaningfulCompanyName)||null;
+}
+function tempeProfessionalLicense(p={}){
+  return String(p.licenseNumber||p.contractorLicenseNumber||p.businessLicense||p.referenceLicenseId||'').trim()||null;
+}
+async function fetchTempeAccelaApiRecord(permit){
+  const record=String(permit||'').trim().toUpperCase();
+  const endpoint='https://apis.accela.com/v4/search/records?limit=10&expand=professionals,contacts,addresses';
+  const bodies=[
+    {customId:record,serviceProviderCode:'TEMPE',module:'Building'},
+    {customId:record,module:'Building'},
+    {customId:record,serviceProviderCode:'TEMPE'}
+  ];
+  const headerVariants=[
+    {},
+    {'x-accela-agency':'TEMPE'},
+    {'x-accela-agency':'TEMPE','x-accela-environment':'PROD'}
+  ];
+  const attempts=[];
+
+  for(let i=0;i<bodies.length;i++){
+    for(let j=0;j<headerVariants.length;j++){
+      try{
+        const r=await fetch(endpoint,{
+          method:'POST',
+          headers:{
+            'content-type':'application/json',
+            'accept':'application/json',
+            'user-agent':'RevenueTrigger/6.3 Tempe Accela API enrichment',
+            ...headerVariants[j]
+          },
+          body:JSON.stringify(bodies[i])
+        });
+        const text=await r.text();
+        let data=null;
+        try{data=JSON.parse(text)}catch{}
+        const results=Array.isArray(data?.result)?data.result:[];
+        const exact=results.find(x=>String(x?.customId||'').trim().toUpperCase()===record)||results[0]||null;
+        attempts.push({
+          bodyVariant:i+1,
+          headerVariant:j+1,
+          status:r.status,
+          resultCount:results.length,
+          message:data?.message||data?.code||null
+        });
+        if(r.ok&&exact){
+          const professionals=Array.isArray(exact.professionals)?exact.professionals:[];
+          const companyCandidates=professionals.map(tempeProfessionalCompany).filter(Boolean);
+          const company=companyCandidates[0]||null;
+          const professional=professionals.find(p=>tempeProfessionalCompany(p)===company)||professionals[0]||null;
+          const valuation=Number(exact.estimatedTotalJobCost||exact.estimatedJobCost||exact.jobValue||exact.valuation||0)||null;
+          return {
+            ok:true,
+            record:exact,
+            contractor:company,
+            contractorLicense:professional?tempeProfessionalLicense(professional):null,
+            officialValuation:valuation,
+            status:exact.status?.text||exact.status?.value||exact.status||null,
+            description:exact.description||exact.name||null,
+            source:'Accela V4 Search Records API — Tempe',
+            attempts
+          };
+        }
+      }catch(e){
+        attempts.push({bodyVariant:i+1,headerVariant:j+1,status:null,error:String(e?.message||e)});
+      }
+    }
+  }
+  return {ok:false,attempts};
+}
+
 async function fetchTempeCitizenDetailByPermit(permit){
   const record=String(permit||'').trim().toUpperCase();
   if(!/^BP\d{6}$/i.test(record))throw new Error('Tempe permit must look like BP261214');
@@ -3777,14 +3854,55 @@ export default {
         const permit=(url.searchParams.get('permit')||'').trim().toUpperCase();
         if(!permit)return json({error:'permit is required',example:'BP261214'},400,env);
         try{
-          const detail=await fetchTempeCitizenDetailByPermit(permit);
           const rows=await fetchTempe(30,700);
           const sourceRow=rows.find(x=>String(x.permit||'').trim().toUpperCase()===permit)||null;
+
+          const api=await fetchTempeAccelaApiRecord(permit);
+          let detail=null;
+          let sourcePath='accela_v4_api';
+
+          if(api.ok){
+            detail={
+              contractor:api.contractor,
+              contractorLicense:api.contractorLicense,
+              officialValuation:api.officialValuation,
+              status:api.status,
+              projectDescription:api.description,
+              detailUrl:null
+            };
+          }else{
+            sourcePath='citizen_access_fallback';
+            try{
+              detail=await fetchTempeCitizenDetailByPermit(permit);
+            }catch(citizenError){
+              return json({
+                ok:false,
+                mode:'preview_only',
+                market:'Tempe',
+                permit,
+                sourcePath:'no_server_side_path_yet',
+                accelaApiAttempts:api.attempts,
+                citizenAccessError:String(citizenError?.message||citizenError),
+                openData:{
+                  found:Boolean(sourceRow),
+                  company:sourceRow?.company||'Not listed',
+                  estimatedOpportunity:sourceRow?.value||null,
+                  status:sourceRow?.permitStatus||null,
+                  name:sourceRow?.name||null
+                },
+                finding:'The City permit is visible in the public browser UI, but neither the official Accela API attempt nor the server-side Citizen Access postback returned the record from the Worker.',
+                caution:'Preview only. No D1 rows, scores, temperatures, or opportunity values were changed.',
+                generatedAt:nowIso()
+              },200,env);
+            }
+          }
+
           return json({
             ok:true,
             mode:'preview_only',
             market:'Tempe',
             permit,
+            sourcePath,
             openData:{
               found:Boolean(sourceRow),
               company:sourceRow?.company||'Not listed',
@@ -3792,29 +3910,29 @@ export default {
               status:sourceRow?.permitStatus||null,
               name:sourceRow?.name||null
             },
-            citizenAccess:{
-              contractor:detail.contractor,
-              contractorLicense:detail.contractorLicense,
-              officialValuation:detail.officialValuation,
-              status:detail.status,
-              appliedDate:detail.appliedDate,
-              issuedDate:detail.issuedDate,
-              projectDescription:detail.projectDescription,
-              detailUrl:detail.detailUrl
+            enrichedSource:{
+              contractor:detail?.contractor||null,
+              contractorLicense:detail?.contractorLicense||null,
+              officialValuation:detail?.officialValuation||null,
+              status:detail?.status||null,
+              projectDescription:detail?.projectDescription||null,
+              detailUrl:detail?.detailUrl||null
             },
             enrichmentDecision:{
-              canPromoteCompany:Boolean(detail.contractor&&isMeaningfulCompanyName(detail.contractor)),
-              canUseOfficialValuation:Number.isFinite(Number(detail.officialValuation))&&Number(detail.officialValuation)>0,
-              proposedCompany:detail.contractor&&isMeaningfulCompanyName(detail.contractor)?detail.contractor:null,
-              proposedOfficialValuation:Number.isFinite(Number(detail.officialValuation))&&Number(detail.officialValuation)>0?Number(detail.officialValuation):null
+              canPromoteCompany:Boolean(detail?.contractor&&isMeaningfulCompanyName(detail.contractor)),
+              canUseOfficialValuation:Number.isFinite(Number(detail?.officialValuation))&&Number(detail?.officialValuation)>0,
+              proposedCompany:detail?.contractor&&isMeaningfulCompanyName(detail.contractor)?detail.contractor:null,
+              proposedOfficialValuation:Number.isFinite(Number(detail?.officialValuation))&&Number(detail?.officialValuation)>0?Number(detail.officialValuation):null
             },
-            caution:'Preview only. No D1 rows, scores, temperatures, or opportunity values are changed by this endpoint. Contractor and valuation are taken from the City of Tempe public Citizen Access record.',
+            accelaApiAttempts:api.attempts,
+            caution:'Preview only. No D1 rows, scores, temperatures, or opportunity values are changed by this endpoint.',
             generatedAt:nowIso()
           },200,env);
         }catch(e){
           return json({ok:false,mode:'preview_only',market:'Tempe',permit,error:String(e?.message||e),generatedAt:nowIso()},200,env);
         }
       }
+
       if(path==='/attribution-health'&&request.method==='GET'){
         const market=(url.searchParams.get('market')||'').trim();
         const days=clamp(Number(url.searchParams.get('days')||7),1,30);
