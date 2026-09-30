@@ -23,3 +23,21 @@ STRIPE_PRICE_TERRITORY = "price_1UIfKRQtkZRdtmROuFOtSulQ"
 
 [triggers]
 crons = ["17 * * * *"]
+
+[previews.vars]
+ALLOWED_ORIGIN = "https://redesign-signal-command-v7-signalhound-phoenix.rolandcoyburt.workers.dev"
+FRONTEND_URL = "https://redesign-signal-command-v7-signalhound-phoenix.rolandcoyburt.workers.dev"
+DEV_AUTH_BYPASS = "false"
+
+# Empty sender disables email delivery in the preview.
+EMAIL_FROM = ""
+
+# The existing checkout guard rejects REPLACE_ values before calling Stripe.
+STRIPE_PRICE_SCOUT = "REPLACE_PREVIEW_SCOUT"
+STRIPE_PRICE_HUNTER = "REPLACE_PREVIEW_HUNTER"
+STRIPE_PRICE_TERRITORY = "REPLACE_PREVIEW_TERRITORY"
+
+[[previews.d1_databases]]
+binding = "DB"
+database_name = "revenuetrigger-preview"
+database_id = "3e002252-2664-496f-a77f-a3a9880274d8"
