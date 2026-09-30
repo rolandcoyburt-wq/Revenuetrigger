@@ -10,6 +10,12 @@
 - Backend changes: **none**
 - D1, adapters, scoring, temperature, auth contracts, billing contracts, cron, DFW, and Cloudflare configuration: **unchanged**
 
+## Homepage palette revision — September 30, 2026
+
+Parent: `9b8837c1c848246c94f18c0aea59343d93e38532`. Updated only homepage theme CSS: Early Pipeline uses cement, Competitor Intelligence uses white, Built for Your Trade uses black/graphite, and Markets uses white. Text, borders and stage indicators were adjusted for contrast. Content, section order, layouts and all application behavior remain unchanged. These colors supersede the corresponding themes in the visual-pass entry below.
+
+Five existing responsive homepage checks rerun at 390/430/768/1366/1920px with synthetic/local interception. Updated full-page and section screenshots accompany this change. No production requests, backend edits, merge or deployment. Remaining validation gates are unchanged.
+
 ## Homepage visual pass — September 30, 2026
 
 Parent: `cf08fa51619eb813559d6424598c9e599a684d81`. Presentation-only homepage update; all existing deployment blockers below remain open.

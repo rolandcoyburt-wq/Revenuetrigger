@@ -63,3 +63,31 @@ body.rt-marketing #pricing .price.featured small,body.rt-marketing #pricing .pri
 body.rt-marketing #pricing .price.featured .badge{background:#79efa6!important;color:#143b2a!important}
 @media(max-width:900px){.rt-marketing .rt-product-grid{gap:30px}.rt-marketing .rt-decision-principles{grid-template-columns:1fr;gap:15px}.rt-marketing .rt-decision-principles strong{font-size:20px}.rt-marketing .rt-movement-grid article{padding:22px}.rt-marketing .rt-movement-grid h3{font-size:23px}}
 @media(max-width:700px){.rt-marketing #intelligence .rt-decision-grid,.rt-marketing .rt-product-grid,.rt-marketing #markets .rt-market-grid,.rt-marketing .rt-momentum-strip{grid-template-columns:1fr}.rt-marketing .rt-decision-intro,.rt-marketing #intelligence .rt-decision-panel{padding:24px}.rt-marketing .rt-decision-principles{grid-template-columns:repeat(3,1fr);gap:8px}.rt-marketing .rt-decision-principles strong{font-size:17px}.rt-marketing .rt-decision-principles span{font-size:9px}.rt-marketing .rt-decision-intro h3{font-size:29px}.rt-marketing .rt-preview-heading{align-items:start;padding:18px;gap:16px}.rt-marketing .rt-project-stages{padding:26px 20px}.rt-marketing .rt-movement-grid{grid-template-columns:1fr}.rt-marketing .rt-movement-grid article{border-right:0;border-bottom:1px solid #41604d;padding:25px}.rt-marketing .rt-movement-symbol{margin-bottom:22px;font-size:36px}.rt-marketing .rt-momentum-strip{padding:25px}.rt-marketing #markets .rt-market-panel{padding:26px}}
+/* Requested section palette: cement / white / black / white. */
+body.rt-marketing #early-pipeline{background:var(--stone);color:var(--graphite)}
+body.rt-marketing #early-pipeline h2,body.rt-marketing #early-pipeline h3{color:var(--graphite)!important}
+body.rt-marketing #early-pipeline p{color:var(--rt-muted)}
+body.rt-marketing #early-pipeline .rt-product-lead{color:var(--graphite)}
+body.rt-marketing #early-pipeline .rt-kicker,body.rt-marketing #early-pipeline .rt-project-stages small{color:var(--green-dark)}
+body.rt-marketing #early-pipeline .rt-stage-preview{background:#deddd6;border-color:var(--rt-line)}
+body.rt-marketing #early-pipeline .rt-preview-heading{border-color:#bfc3bd}
+body.rt-marketing #early-pipeline .rt-preview-heading>span:last-child{color:var(--rt-muted)}
+body.rt-marketing #early-pipeline .rt-stage-index{border-color:var(--green-dark);color:var(--green-dark)}
+body.rt-marketing #early-pipeline .rt-stage-later .rt-stage-index{border-color:#879389;color:var(--rt-muted)}
+body.rt-marketing #early-pipeline .rt-stage-later small{color:var(--rt-muted)}
+body.rt-marketing #competitor-intelligence,body.rt-marketing #markets{background:#fff;color:var(--graphite);border-color:var(--rt-line)}
+body.rt-marketing #competitor-intelligence h2,body.rt-marketing #competitor-intelligence h3,body.rt-marketing #markets h2,body.rt-marketing #markets h3{color:var(--graphite)!important}
+body.rt-marketing #competitor-intelligence p,body.rt-marketing #markets p{color:var(--rt-muted)}
+body.rt-marketing #competitor-intelligence .rt-kicker,body.rt-marketing #competitor-intelligence .rt-movement-symbol,body.rt-marketing #markets .rt-kicker,body.rt-marketing #markets .rt-text-link{color:var(--green-dark)}
+body.rt-marketing #competitor-intelligence .rt-competitor-preview{background:var(--paper);border-color:var(--rt-line)}
+body.rt-marketing #competitor-intelligence .rt-preview-heading,body.rt-marketing #competitor-intelligence .rt-movement-grid article,body.rt-marketing #competitor-intelligence .rt-momentum-strip{border-color:var(--rt-line)}
+body.rt-marketing #competitor-intelligence .rt-preview-heading>span:last-child{color:var(--rt-muted)}
+body.rt-marketing #solutions{background:#202521!important;color:#fff}
+body.rt-marketing #solutions h2,body.rt-marketing #solutions h3{color:#fff!important}
+body.rt-marketing #solutions p{color:#bfd1c6}
+body.rt-marketing #solutions .rt-kicker{color:#79efa6}
+body.rt-marketing #solutions .rt-trades,body.rt-marketing #solutions .rt-trades article{border-color:#4b5b4f}
+body.rt-marketing #markets .rt-market-panel{background:var(--paper);border-color:var(--rt-line)}
+body.rt-marketing #markets .rt-market-planned{background:#fff}
+body.rt-marketing #markets .rt-market-list span{border-color:var(--rt-line);color:var(--graphite)}
+body.rt-marketing #markets .rt-planned-label{border-color:var(--rt-line);color:var(--rt-muted)}
