@@ -70,21 +70,24 @@ class SelectOnlyDB{
             db.operations.push({type:'all',sql,args});
             if(db.fail)throw new Error('simulated D1 failure');
             const days=parseWindowArg(args[0]);
-            const markets=args.slice(1);
+            const healthQuery=/COUNT\(\*\) AS stored_count/i.test(sql);
+            const markets=healthQuery?args.slice(2):args.slice(1);
             const cutoff=Date.now()-days*DAY;
-            if(/COUNT\(\*\) AS stored_count/i.test(sql)){
+            if(healthQuery){
               const grouped=[];
               for(const market of markets){
                 const all=db.rows.filter(x=>x.market===market);
                 if(!all.length)continue;
                 const inWindow=all.filter(x=>new Date(x.event_date).getTime()>=cutoff);
-                const latestStored=all.map(x=>x.updated_at).filter(Boolean).sort().at(-1)||null;
+                const latestWindowStored=inWindow.map(x=>x.updated_at).filter(Boolean).sort().at(-1)||null;
+                const latestAnyStored=all.map(x=>x.updated_at).filter(Boolean).sort().at(-1)||null;
                 const latestEvent=all.map(x=>x.event_date).filter(Boolean).sort().at(-1)||null;
                 grouped.push({
                   market,
                   stored_count:all.length,
                   window_count:inWindow.length,
-                  latest_stored_at:latestStored,
+                  latest_window_stored_at:latestWindowStored,
+                  latest_any_stored_at:latestAnyStored,
                   latest_event_at:latestEvent
                 });
               }
@@ -332,6 +335,16 @@ test('response exposes enough state for homepage and public Signals without fall
   assert.equal(empty.opportunityState,'empty');
   assert.ok(['fresh','stale','empty','partial'].includes(fresh.state));
   assert.equal(empty.state,'empty');
+});
+
+test('historical-only records do not make an empty window look fresh',async()=>{
+  const old=rawLead({eventMs:Date.now()-45*DAY,updatedMs:Date.now()-5*60000});
+  const j=await body(await callFeed(new SelectOnlyDB([old]),'?markets=Phoenix&days=7'));
+  assert.equal(j.state,'empty');
+  assert.equal(j.opportunityState,'empty');
+  assert.equal(j.freshness.markets.Phoenix.windowRecordCount,0);
+  assert.equal(j.freshness.markets.Phoenix.latestStoredAt,null);
+  assert.ok(j.freshness.markets.Phoenix.latestAnyStoredAt);
 });
 
 test('feed row SELECT has no SQL limit before clustering',async()=>{
