@@ -1564,6 +1564,155 @@ html[data-theme="light"] #pipeline .pipeline-stage{color:#4c6758}
   }
 }
 </style>
+
+<style>
+/* V133 — mobile Early Pipeline parity with Opportunity Feed */
+@media(max-width:620px){
+  #pipelineList .pipeline-lead{
+    display:grid !important;
+    grid-template-columns:52px minmax(0,1fr) !important;
+    grid-auto-rows:auto !important;
+    column-gap:12px !important;
+    row-gap:10px !important;
+    padding:18px 15px !important;
+    align-items:start !important;
+  }
+
+  #pipelineList .pipeline-lead .score{
+    grid-column:1 !important;
+    grid-row:1 !important;
+    width:48px !important;
+    height:48px !important;
+    justify-self:center !important;
+  }
+
+  #pipelineList .pipeline-main{
+    grid-column:2 !important;
+    grid-row:1 !important;
+    min-width:0 !important;
+  }
+
+  #pipelineList .pipeline-main .leadname{
+    display:-webkit-box !important;
+    -webkit-box-orient:vertical !important;
+    -webkit-line-clamp:2 !important;
+    white-space:normal !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+    font-size:17px !important;
+    line-height:1.18 !important;
+    font-weight:800 !important;
+  }
+
+  #pipelineList .pipeline-permit{
+    margin-top:6px !important;
+    font-size:11px !important;
+    line-height:1.25 !important;
+  }
+
+  #pipelineList .pipeline-stage{display:none !important}
+  #pipelineList .pipeline-copy{display:none !important}
+
+  #pipelineList .pipeline-company-cell{
+    grid-column:1 / -1 !important;
+    grid-row:2 !important;
+    display:block !important;
+    width:100% !important;
+    padding:10px 11px !important;
+    border:1px solid #193a28 !important;
+    border-radius:9px !important;
+    background:rgba(8,27,17,.5) !important;
+  }
+  #pipelineList .pipeline-company-cell:before{
+    content:"COMPANY / PARTICIPANT" !important;
+    display:block !important;
+    margin:0 0 5px !important;
+    color:#71877b !important;
+    font-size:8px !important;
+    line-height:1 !important;
+    letter-spacing:.12em !important;
+    font-weight:600 !important;
+  }
+  #pipelineList .pipeline-company-cell strong{
+    display:block !important;
+    font-size:13px !important;
+    line-height:1.25 !important;
+    font-weight:500 !important;
+  }
+  #pipelineList .pipeline-company-cell small{
+    display:block !important;
+    margin-top:4px !important;
+    font-size:8px !important;
+    line-height:1.2 !important;
+    letter-spacing:.07em !important;
+    font-weight:600 !important;
+  }
+
+  #pipelineList .pipeline-seller{
+    grid-column:1 / -1 !important;
+    grid-row:3 !important;
+    display:flex !important;
+    flex-wrap:wrap !important;
+    gap:6px !important;
+    width:100% !important;
+    padding:10px 11px !important;
+    border:1px solid #193a28 !important;
+    border-radius:9px !important;
+    background:rgba(8,27,17,.46) !important;
+    align-items:flex-start !important;
+  }
+  #pipelineList .pipeline-seller:before{
+    content:"WHO SHOULD SELL" !important;
+    flex:0 0 100% !important;
+    margin:0 0 2px !important;
+    padding:0 !important;
+    color:#71877b !important;
+    font-size:8px !important;
+    line-height:1 !important;
+    letter-spacing:.12em !important;
+    font-weight:600 !important;
+  }
+  #pipelineList .pipeline-seller .chip{
+    padding:4px 7px !important;
+    font-size:9px !important;
+    line-height:1.1 !important;
+    font-weight:500 !important;
+  }
+
+  #pipelineList .pipeline-temperature{
+    grid-column:1 !important;
+    grid-row:4 !important;
+    justify-self:center !important;
+    align-self:center !important;
+    width:48px !important;
+    text-align:center !important;
+    font-size:15px !important;
+    line-height:1.1 !important;
+    margin:0 !important;
+  }
+
+  #pipelineList .pipeline-actions{
+    grid-column:2 !important;
+    grid-row:4 !important;
+    justify-self:end !important;
+    align-self:center !important;
+    margin:0 !important;
+  }
+  #pipelineList .pipeline-actions .view{
+    min-width:72px !important;
+    min-height:42px !important;
+    padding:9px 14px !important;
+    font-size:12px !important;
+    border-radius:9px !important;
+  }
+
+  html[data-theme="light"] #pipelineList .pipeline-company-cell,
+  html[data-theme="light"] #pipelineList .pipeline-seller{
+    background:#f7faf8 !important;
+    border-color:#d7e3db !important;
+  }
+}
+</style>
 </head>
 <body>
 <header class="topbar"><div class="wrap"><nav><a class="brand" href="#" aria-label="RevenueTrigger home">
