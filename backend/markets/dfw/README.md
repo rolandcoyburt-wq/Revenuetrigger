@@ -9,8 +9,9 @@ This directory is intentionally additive. It does not edit the shared scoring, e
 | Fort Worth | CFW Open Data Development Permits View | Primary permit ingestion | Production-ready | Public ArcGIS table; updated hourly during business hours; includes permit type/subtype, project/work text, owner, dates/status, valuation, use, units and square feet. |
 | Fort Worth | CFW Certificates of Occupancy Table | Occupancy / opening signal | Production-ready | Public ArcGIS table; City states weekday 7am refresh. Strong occupant/project/address fields. |
 | Fort Worth | Zoning Cases Current | Early-pipeline enrichment | Enrichment-ready | Public ArcGIS layer with case number, dates, applicant, address, action and from/to zoning. |
-| Dallas | DallasNow / Accela public Building module | Current permit source | Provisional | Current official land-management system. Public reports include Building Active, Building Issued and Building Submitted, but a stable machine-readable report export still needs validation before production enablement. |
-| Dallas | Commercial Permit Activity Dashboard | Current commercial permit cross-check | Provisional | Official current Tableau dashboard. Treat as validation/fallback until a stable export contract is verified. |
+| Dallas | DallasNow / Accela public Building module | Primary current building-permit source | Provisional | Current official land-management system. Public reports include Building Active, Building Issued and Building Submitted, but a stable machine-readable report export still needs validation before production enablement. |
+| Dallas | Commercial Permit Activity Dashboard | Current commercial-permit cross-check | Provisional | Official current Tableau dashboard. Direct CSV/render probes have not produced a stable ingestion contract. |
+| Dallas | ROWMS Permit Detail + Permit Location | Supplemental construction / early-pipeline signal | Supplemental-ready | Public ArcGIS tables. Permit detail is joined to location by `EXTERNALFILENUM`; includes status, dates, work description, applicant company and contractors. This is not a replacement for DallasNow building permits. |
 | Dallas | Building Permits (`e7gq-4sah`) | Historical backfill only | Backfill-ready | Official Socrata dataset explicitly says it is historical and no longer updated after migration to DallasNow. |
 | Dallas | Zoning / PD-SUP ArcGIS services | Zoning enrichment | Enrichment-ready | Authoritative base zoning plus SUP/PD/PDS lookups. Do not confuse these with the stale zoning-case layer in the 2026 Zoning Map Hub. |
 
@@ -34,12 +35,12 @@ Every source is normalized before it is mapped into the existing `leadFrom()` co
 
 ## Source health and schema drift
 
-`health.js` defines explicit field contracts for the three Fort Worth sources and performs two independent checks before production wiring:
+`health.js` defines explicit field contracts for the Fort Worth production/enrichment sources and the Dallas ROW supplemental source pair. It performs:
 
 - metadata/schema validation (required fields, Query capability, and pagination where required)
-- freshness validation using a server-side count over a bounded lookback window
+- freshness validation using server-side counts over bounded lookback windows
 
-The permit feed currently expects activity within 7 days and the CO feed within 30 days. Freshness windows are bounded on both ends so implausible future municipal dates cannot make a stale source appear healthy. Current zoning is schema/query checked but does not fail solely because no zoning case was filed inside its 180-day lookback. The health result is diagnostic only; it does not mutate shared market state or core scoring.
+Freshness windows are bounded on both ends so implausible future municipal dates cannot make a stale source appear healthy. This specifically protects against anomalous future values observed in the Fort Worth CO feed. Current zoning is schema/query checked but does not fail solely because no zoning case was filed inside its lookback. Health results are diagnostic only; they do not mutate shared market state or core scoring.
 
 ## Fort Worth adapter behavior
 
@@ -49,10 +50,18 @@ The permit feed currently expects activity within 7 days and the CO feed within 
 
 ## Dallas adapter behavior
 
-`normalizeDallasNowRecord()` is ready for current DallasNow records once a stable report/API payload is validated. Current Dallas ingestion is deliberately **disabled** by `dallasLiveSourceReadiness()` rather than shipping a brittle browser scraper.
+`normalizeDallasNowRecord()` is ready for current DallasNow building records once a stable report/API payload is validated. The primary Dallas building-permit ingestion remains deliberately **disabled** by `dallasLiveSourceReadiness()` rather than shipping a brittle browser scraper.
 
-`fetchDallasHistoricalPermits()` is safe for historical model/backfill work only. It must never be used as the current Dallas feed.
+`fetchDallasRightOfWayPermits()` is a current supplemental feed. It:
+
+- filters by recent `CREATEDDATE` and defaults to commercial ROW permits
+- rejects implausibly future source dates
+- paginates the ROW permit-detail table
+- batch-joins the separate permit-location table by `EXTERNALFILENUM`
+- normalizes permit type/status, work/reason, applicant company, contractors and address into the same DFW record contract
+
+`fetchDallasHistoricalPermits()` is safe for historical model/backfill work only. It must never be used as the current Dallas building-permit feed.
 
 ## Integration rule
 
-Do not add Dallas or Fort Worth to the production `MARKETS` / `LIVE_MARKETS` constants until source health tests pass and the minimal wiring change is reviewed against the latest core-platform branch. This directory can be rebased or cherry-picked independently.
+Do not add Dallas or Fort Worth to the production `MARKETS` / `LIVE_MARKETS` constants until the DFW branch is rebased against the latest core-platform work and the minimal wiring change is reviewed. Fort Worth is ready for that integration review; Dallas has a current supplemental ROW source but its primary DallasNow building-permit transport remains provisional. This directory can be rebased or cherry-picked independently.
