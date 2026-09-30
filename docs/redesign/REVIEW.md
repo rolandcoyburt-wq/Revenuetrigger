@@ -1,10 +1,13 @@
-# Revenue Trigger — Signal Command v7 review build
+# Revenue Trigger — Signal Command v7 final reviewed frontend · 47227a5
 
 **NOT DEPLOYED TO PRODUCTION.** This is an isolated frontend review branch. Nothing has been merged to `main`. Live-data and real email/Stripe verification remain outstanding, so this is not a production-release sign-off.
 
 - Local branch: `redesign/signal-command-v7`
-- Approved commit: `2b0c4bbbd6168a8d893fda3fc77647eaaad99a8c`
-- GitHub publication: **not pushed**. Authorized push failed because command-line Git has no GitHub credentials. The connected GitHub API confirmed that this exact commit is not present remotely. No replacement commit or alternate branch was published.
+- Final reviewed frontend build: `47227a548c7b45bb21fd4129d01d18dc73d6d857`
+- Core review status: **PASS for combined preview/integration validation**; Core reports no blocking frontend `/feed` integration defects. This is not production-deployment approval.
+- Approved backend for combined preview: `core/read-only-feed-v1` at `50dfbd8d53f69e7fadf07ef2fd8192f9b9ad6ac5`.
+- Documentation correction: this release identity supersedes the earlier Phase 1 identity `2b0c4bbbd6168a8d893fda3fc77647eaaad99a8c`. Historical phase references below remain historical. The documentation-only follow-up does not change the reviewed frontend runtime.
+- GitHub publication: **not pushed from Work**. Earlier publication attempts were blocked by unavailable command-line credentials; no replacement commit or alternate branch was published. Core independently reviewed the exact final Work package identified above.
 - Repository: `rolandcoyburt-wq/Revenuetrigger`
 - Baseline: `db5260fe16e0b9f81b36df71a50797a8b69cc7f3` (matches the Core handoff)
 - Backend changes: **none**
