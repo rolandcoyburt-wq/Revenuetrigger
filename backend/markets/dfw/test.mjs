@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { normalizeFortWorthPermit, normalizeFortWorthOccupancy } from './fort-worth.js';
 import { normalizeDallasHistoricalPermit } from './dallas.js';
 import { canonicalLifecycle, parseDate, parseMoney, toLeadInput } from './normalize.js';
+import { checkArcGISSourceHealth, summarizeSourceHealth } from './health.js';
 
 const now = Date.parse('2026-09-29T12:00:00Z');
 assert.equal(parseMoney('$2,200,000'), 2200000);
@@ -35,3 +36,68 @@ assert.equal(d.eventDate, '2019-12-31T00:00:00.000Z');
 assert.equal(d.companyCandidate, 'ACME CONSTRUCTION LLC');
 assert.equal(d.address.display, '100 ELM ST, Dallas TX 75201');
 console.log('DFW normalization tests passed');
+
+
+const healthSource = {
+  key: 'mock_arcgis',
+  market: 'Fort Worth',
+  jurisdiction: 'City of Fort Worth',
+  url: 'https://example.test/FeatureServer/0',
+};
+const healthyFetch = async (url) => ({
+  ok: true,
+  status: 200,
+  async json() {
+    if (String(url).includes('/query?')) return { count: 12 };
+    return {
+      capabilities: 'Query,Extract',
+      objectIdField: 'ObjectId',
+      maxRecordCount: 1000,
+      advancedQueryCapabilities: { supportsPagination: true },
+      fields: [{ name: 'ObjectId' }, { name: 'Permit_No' }, { name: 'File_Date' }],
+    };
+  },
+});
+const health = await checkArcGISSourceHealth({
+  source: healthSource,
+  requiredFields: ['ObjectId','Permit_No','File_Date'],
+  dateField: 'File_Date',
+  lookbackDays: 7,
+  requireRecentRows: true,
+  requirePagination: true,
+  fetchFn: healthyFetch,
+  now,
+});
+assert.equal(health.healthy, true);
+assert.equal(health.recentCount, 12);
+assert.deepEqual(health.missingFields, []);
+
+const driftFetch = async (url) => ({
+  ok: true,
+  status: 200,
+  async json() {
+    if (String(url).includes('/query?')) return { count: 0 };
+    return {
+      capabilities: 'Query',
+      advancedQueryCapabilities: { supportsPagination: false },
+      fields: [{ name: 'ObjectId' }],
+    };
+  },
+});
+const drift = await checkArcGISSourceHealth({
+  source: healthSource,
+  requiredFields: ['ObjectId','Permit_No','File_Date'],
+  dateField: 'File_Date',
+  lookbackDays: 7,
+  requireRecentRows: true,
+  requirePagination: true,
+  fetchFn: driftFetch,
+  now,
+});
+assert.equal(drift.healthy, false);
+assert.equal(drift.status, 'degraded');
+assert.deepEqual(drift.missingFields, ['Permit_No','File_Date']);
+const summary = summarizeSourceHealth({ market:'Fort Worth', healthy:false, checkedAt:new Date(now).toISOString(), sources:[health, drift] });
+assert.equal(summary.healthySources, 1);
+assert.equal(summary.sourceCount, 2);
+assert.equal(summary.degradedSources.length, 1);
