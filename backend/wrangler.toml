@@ -32,10 +32,10 @@ DEV_AUTH_BYPASS = "false"
 # Empty sender disables email delivery in the preview.
 EMAIL_FROM = "RevenueTrigger Preview <onboarding@resend.dev>"
 
-# The existing checkout guard rejects REPLACE_ values before calling Stripe.
-STRIPE_PRICE_SCOUT = "REPLACE_PREVIEW_SCOUT"
-STRIPE_PRICE_HUNTER = "REPLACE_PREVIEW_HUNTER"
-STRIPE_PRICE_TERRITORY = "REPLACE_PREVIEW_TERRITORY"
+# Sandbox Price IDs confirmed by the owner; use only with matching preview test secrets.
+STRIPE_PRICE_SCOUT = "price_1UIfIzQtkZRdtmROP8dRxslu"
+STRIPE_PRICE_HUNTER = "price_1UIfJiQtkZRdtmROREXUa7Ad"
+STRIPE_PRICE_TERRITORY = "price_1UIfKRQtkZRdtmROuFOtSulQ"
 
 [[previews.d1_databases]]
 binding = "DB"
