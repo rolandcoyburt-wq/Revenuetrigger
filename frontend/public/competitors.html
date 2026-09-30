@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -7,16 +7,7 @@
 <title>Competitor Intelligence | RevenueTrigger</title>
 <meta name="description" content="Search contractor and company activity tied to public permit data across RevenueTrigger markets.">
 <link rel="icon" type="image/png" href="/assets/FAVICON.png">
-<script>
-(function(){
-  try{
-    var saved=localStorage.getItem('revenuetrigger_theme');
-    document.documentElement.setAttribute('data-theme',saved==='light'?'light':'dark');
-  }catch(e){
-    document.documentElement.setAttribute('data-theme','dark');
-  }
-})();
-</script>
+
 <style>
 :root{
   --bg:#020806;--bg2:#04100a;--panel:#07120d;--panel2:#0a1a11;--ink:#f5f8f6;--muted:#899b92;
@@ -510,34 +501,11 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
 }
 </style>
 
-</head>
-<body>
-<header class="topbar">
-  <div class="wrap">
-    <nav>
-      <a class="brand" href="/" aria-label="RevenueTrigger home">
-        <img class="brand-logo brand-logo-dark" src="/assets/revenuetrigger-icon.svg" alt="RevenueTrigger">
-        <img class="brand-logo brand-logo-light" src="/assets/RT-Logo-WHT-BG.svg" alt="RevenueTrigger">
-      </a>
-      <div class="navlinks">
-        <a href="/#signals">Opportunities</a>
-        <a href="/#pipeline">Early Pipeline</a>
-        <a class="active" href="/competitors.html">Competitors</a>
-        <a class="nav-sources" href="/sources.html">Sources</a>
-        <a href="/sources.html#pricing">Pricing</a>
-      </div>
-      <details class="mobile-nav"><summary><span>Navigate</span><span class="mobile-nav-icon" aria-hidden="true">☰</span></summary><div class="mobile-nav-panel"><a href="/#signals">Opportunities</a><a href="/#pipeline">Early Pipeline</a><a href="/competitors.html">Competitors</a><a href="/sources.html">Sources</a><a href="/sources.html#pricing" class="mobile-nav-pricing">Pricing</a></div></details>
-      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light theme" title="Switch to light theme" onclick="toggleTheme()">
-        <span class="theme-toggle-icon" id="themeIcon">☀</span>
-        <span class="theme-label theme-label-full" id="themeLabel">Light mode</span>
-        <span class="theme-label theme-label-short" id="themeLabelShort">Light</span>
-      </button>
-      <button class="account-btn" id="accountBtn" onclick="accountAction()">Sign in</button>
-    </nav>
-  </div>
-</header>
+<link rel="stylesheet" href="/assets/rt-shell.css"><script src="/assets/rt-config.js"></script><script src="/assets/rt-auth.js"></script></head>
+<body class="rt-existing">
+<div id="rt-header" data-shell="app"></div>
 
-<main>
+<script src="/assets/rt-shell.js"></script><main>
 <section class="hero">
   <div class="wrap hero-grid">
     <div class="hero-copy">
@@ -550,7 +518,7 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
       <p>Search contractors and companies tied to public permit activity, compare recent project activity, and see where competitors are showing up across RevenueTrigger markets.</p>
       <div class="hero-actions">
         <a class="btn btn-primary" href="#competitor-tool">Explore competitor activity ↗</a>
-        <a class="btn btn-secondary" href="/">Back to opportunities</a>
+        <a class="btn btn-secondary" href="/signals">Back to opportunities</a>
       </div>
       <div class="hero-proof"><span><b>01</b> Search</span><span><b>02</b> Compare</span><span><b>03</b> Track activity</span></div>
     </div>
@@ -644,7 +612,7 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
 </div>
 
 <script>
-const CONFIG={apiBase:localStorage.getItem('revenuetrigger_api')||localStorage.getItem('signalhound_api')||'https://api.revenuetrigger.ai/api'};
+const CONFIG=RTConfig;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const THEME_KEY='revenuetrigger_theme';
 function currentTheme(){return document.documentElement.getAttribute('data-theme')==='light'?'light':'dark'}
@@ -683,15 +651,15 @@ initLightMouseGlow();
 
 syncThemeUI();
 let user=null, competitorData=[],watchlist=[],competitorTotal=0,competitorLimit=50;
-function token(){return localStorage.getItem('revenuetrigger_session')||localStorage.getItem('signalhound_session')||''}
+function token(){return RTAuth.token()}
 function authHeaders(extra={}){const t=token();return {...extra,...(t?{Authorization:`Bearer ${t}`}:{})}}
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function openModal(id){$('#'+id)?.classList.add('show')} function closeModal(id){$('#'+id)?.classList.remove('show')}
 function openSignin(){openModal('signinModal');setTimeout(()=>$('#signinEmail')?.focus(),50)}
-function accountAction(){if(user){location.href='/';return}openSignin()}
+function accountAction(){if(user){location.href='/signals?account=1';return}openSignin()}
 function updateUserUI(){const b=$('#accountBtn');if(!b)return;if(user){b.textContent=user.email.split('@')[0];b.classList.add('live')}else{b.textContent='Sign in';b.classList.remove('live')}}
 async function loadMe(){if(!token()){user=null;updateUserUI();return false}try{const r=await fetch(`${CONFIG.apiBase}/me`,{headers:authHeaders()});if(!r.ok)throw 0;user=(await r.json()).user;updateUserUI();return true}catch{localStorage.removeItem('revenuetrigger_session');localStorage.removeItem('signalhound_session');user=null;updateUserUI();return false}}
-async function requestSignin(email){const r=await fetch(`${CONFIG.apiBase}/auth/request`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Could not send link');return d}
+async function requestSignin(email){return RTAuth.requestSignin(email)}
 async function verifyMagic(raw){const r=await fetch(`${CONFIG.apiBase}/auth/verify`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token:raw})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Sign-in link failed');localStorage.setItem('revenuetrigger_session',d.session);localStorage.removeItem('signalhound_session');user=d.user;history.replaceState({},'',location.pathname);updateUserUI();await loadWatchlist();await loadCompetitors();const pending=localStorage.getItem('revenuetrigger_pending_plan');if(pending){localStorage.removeItem('revenuetrigger_pending_plan');setTimeout(()=>buyPlan(pending),300)}}
 function moneyCompact(n){n=Number(n||0);if(!n)return '—';if(n>=1e6)return '$'+(n/1e6).toFixed(n>=1e7?0:1)+'M';if(n>=1e3)return '$'+Math.round(n/1e3)+'K';return '$'+Math.round(n).toLocaleString()}
 
@@ -837,7 +805,7 @@ function renderCompetitors(){
   </div>`).join('');
 }
 function selectedMarketCount(){
-  return $('#competitorMarket').value==='all' ? 6 : 1;
+  return $('#competitorMarket').value==='all' ? RTConfig.markets.length : 1;
 }
 function updateHeroMetrics(){
   $('#heroCompanies').textContent=competitorTotal||'0';
