@@ -57,6 +57,45 @@ export const DALLAS_SUPPLEMENTAL_HEALTH_SPECS = Object.freeze([
   }),
 ]);
 
+export const DALLAS_ZONING_HEALTH_SPECS = Object.freeze([
+  Object.freeze({
+    source: DFW_SOURCES.dallasBaseZoning,
+    requiredFields: [
+      'OBJECTID','ZONE_DIST','PD_NUM','CD_NUM','CASE_NUMBER','COUNCIL_DATE','COMMON_NAME',
+      'LONG_ZONE_DIST','ORD_NUM','NOTES','RES_NUM','EFFECTIVEDATE',
+    ],
+    requireRecentRows: false,
+    requirePagination: true,
+  }),
+  Object.freeze({
+    source: DFW_SOURCES.dallasSupSearch,
+    requiredFields: [
+      'OBJECTID','SUP_NUM','BLOCK_LOT','EXPIRES','NOTES','STATUS','POSTED','AUTO_RENEW',
+      'COUNCIL_DATE','CASE_NUMBER','RES_NUM','ORD_NUM','EFFECTIVEDATE','SPECIFICUSE',
+    ],
+    requireRecentRows: false,
+    requirePagination: true,
+  }),
+  Object.freeze({
+    source: DFW_SOURCES.dallasPlannedDevelopments,
+    requiredFields: [
+      'OBJECTID','ZONE_DIST','PD_NUM','CD_NUM','CASE_NUMBER','COUNCIL_DATE','COMMON_NAME',
+      'LONG_ZONE_DIST','ORD_NUM','NOTES','RES_NUM','EFFECTIVEDATE','DISTRICTUSE',
+    ],
+    requireRecentRows: false,
+    requirePagination: true,
+  }),
+  Object.freeze({
+    source: DFW_SOURCES.dallasPds,
+    requiredFields: [
+      'OBJECTID','ZONE_DIST','PDS_NUM','CASE_NUMBER','COUNCIL_DATE','LONG_ZONE_DIST',
+      'RES_NUM','ORD_NUM','NOTES','UNIQUEID','EFFECTIVEDATE','DISTRICTUSE',
+    ],
+    requireRecentRows: false,
+    requirePagination: true,
+  }),
+]);
+
 function isoDay(ms) {
   return new Date(ms).toISOString().slice(0, 10);
 }
@@ -161,6 +200,10 @@ export async function checkFortWorthSourceHealth({ fetchFn = fetch, now = Date.n
 
 export async function checkDallasSupplementalSourceHealth({ fetchFn = fetch, now = Date.now() } = {}) {
   return checkSpecs('Dallas', DALLAS_SUPPLEMENTAL_HEALTH_SPECS, { fetchFn, now });
+}
+
+export async function checkDallasZoningSourceHealth({ fetchFn = fetch, now = Date.now() } = {}) {
+  return checkSpecs('Dallas zoning', DALLAS_ZONING_HEALTH_SPECS, { fetchFn, now });
 }
 
 async function checkSpecs(market, specs, { fetchFn, now }) {
