@@ -2399,6 +2399,137 @@ async function buildRelationshipIntelligence(env,rawCompany,{days=365,rowLimit=5
 }
 
 
+async function discoverRelationshipGapCandidates(env,{days=365,rowLimit=7500,limit=12}={}){
+  days=Math.max(90,Math.min(730,Number(days)||365));
+  rowLimit=Math.max(1000,Math.min(12000,Number(rowLimit)||7500));
+  limit=Math.max(1,Math.min(25,Number(limit)||12));
+
+  const rows=(await env.DB.prepare(`
+    SELECT id,name,address,event_date,market,permit,official_value,score,scope,company
+    FROM leads
+    WHERE company IS NOT NULL
+      AND TRIM(company)<>''
+      AND LOWER(TRIM(company)) NOT IN ('not listed','unknown','n/a','none','null','owner','to be bid','tbd','to be determined','not provided','unassigned')
+      AND datetime(event_date)>=datetime('now',?)
+    ORDER BY datetime(event_date) DESC
+    LIMIT ?
+  `).bind(`-${days} days`,rowLimit).all()).results||[];
+
+  const prepared=rows.map(x=>{
+    const canonical=canonicalCompanyName(x.company||'');
+    const addr=usableClusterAddress({address:x.address,market:x.market});
+    return {...x,_canonical:canonical,_projectKey:addr?`${x.market||''}|${addr}`:'',_type:classifyProjectType(`${x.name||''} ${x.scope||''}`),_ms:safeEventMs(x.event_date)};
+  }).filter(x=>isListedCompanyName(x._canonical)&&x._projectKey&&x._ms);
+
+  const projectCompanies=new Map();
+  const companyProjects=new Map();
+  for(const x of prepared){
+    if(!projectCompanies.has(x._projectKey))projectCompanies.set(x._projectKey,new Set());
+    projectCompanies.get(x._projectKey).add(x._canonical);
+
+    if(!companyProjects.has(x._canonical))companyProjects.set(x._canonical,new Map());
+    const pm=companyProjects.get(x._canonical);
+    const prior=pm.get(x._projectKey);
+    if(!prior || Number(x._ms||0)>Number(prior._ms||0))pm.set(x._projectKey,x);
+  }
+
+  const pairProjects=new Map();
+  for(const [projectKey,companies] of projectCompanies){
+    const arr=[...companies].sort();
+    if(arr.length<2)continue;
+    for(let i=0;i<arr.length;i++)for(let j=i+1;j<arr.length;j++){
+      const key=`${arr[i]}|||${arr[j]}`;
+      if(!pairProjects.has(key))pairProjects.set(key,new Set());
+      pairProjects.get(key).add(projectKey);
+    }
+  }
+
+  const gapRows=[];
+  for(const [pairKey,sharedKeys] of pairProjects){
+    if(sharedKeys.size<2)continue;
+    const [a,b]=pairKey.split('|||');
+    for(const [company,counterparty] of [[a,b],[b,a]]){
+      const projects=companyProjects.get(company);
+      if(!projects?.size)continue;
+
+      let latestSharedMs=0,latestSharedRecord=null;
+      for(const key of sharedKeys){
+        const p=projects.get(key);
+        if(p && Number(p._ms||0)>latestSharedMs){latestSharedMs=Number(p._ms||0);latestSharedRecord=p}
+      }
+      if(!latestSharedMs)continue;
+
+      const newer=[...projects.entries()]
+        .filter(([key,p])=>!sharedKeys.has(key)&&Number(p._ms||0)>latestSharedMs)
+        .map(([,p])=>p)
+        .sort((x,y)=>Number(y._ms||0)-Number(x._ms||0));
+      if(!newer.length)continue;
+
+      const newest=newer[0];
+      gapRows.push({
+        company,
+        counterparty,
+        historicalSharedProjectCount:sharedKeys.size,
+        evidenceStrength:sharedKeys.size>=3?'repeated':'emerging',
+        latestSharedActivity:latestSharedRecord?.event_date||null,
+        newerProject:{
+          market:newest.market||null,
+          address:newest.address||null,
+          project:newest.name||null,
+          permit:newest.permit||null,
+          date:newest.event_date||null,
+          projectType:newest._type||'Other'
+        },
+        newerProjectCount:newer.length,
+        status:'historical_pattern_gap',
+        interpretation:`${counterparty} appears with ${company} on ${sharedKeys.size} prior distinct project addresses, but is not present in stored public permit-linked records for a newer project. This is a historical-pattern gap only; it does not show that work is unawarded, available, or expected to involve that counterparty.`
+      });
+    }
+  }
+
+  const grouped=new Map();
+  for(const gap of gapRows){
+    let g=grouped.get(gap.company);
+    if(!g){
+      const projects=companyProjects.get(gap.company)||new Map();
+      const markets=new Set([...projects.values()].map(x=>x.market).filter(Boolean));
+      const latest=[...projects.values()].sort((a,b)=>Number(b._ms||0)-Number(a._ms||0))[0];
+      g={company:gap.company,projectCount:projects.size,marketCount:markets.size,markets:[...markets],latestActivity:latest?.event_date||null,gaps:[]};
+      grouped.set(gap.company,g);
+    }
+    g.gaps.push(gap);
+  }
+
+  const candidates=[...grouped.values()].map(g=>{
+    g.gaps.sort((a,b)=>Number(b.historicalSharedProjectCount||0)-Number(a.historicalSharedProjectCount||0)||String(b.newerProject?.date||'').localeCompare(String(a.newerProject?.date||'')));
+    return {
+      company:g.company,
+      projectCount:g.projectCount,
+      marketCount:g.marketCount,
+      markets:g.markets,
+      latestActivity:g.latestActivity,
+      relationshipGapCount:g.gaps.length,
+      strongestHistoricalSharedProjectCount:Math.max(...g.gaps.map(x=>Number(x.historicalSharedProjectCount||0))),
+      gaps:g.gaps.slice(0,5)
+    };
+  }).sort((a,b)=>b.relationshipGapCount-a.relationshipGapCount||b.strongestHistoricalSharedProjectCount-a.strongestHistoricalSharedProjectCount||String(b.latestActivity||'').localeCompare(String(a.latestActivity||''))).slice(0,limit);
+
+  return {
+    ok:true,
+    days,
+    rowsExamined:prepared.length,
+    candidateCount:candidates.length,
+    recommended:candidates[0]||null,
+    candidates,
+    methodology:{
+      purpose:'Find positive QA examples for the Relationship Gaps model using stored public permit-linked history.',
+      threshold:'A counterparty must share at least 2 distinct prior normalized project addresses with the company, followed by a newer dated company project where that counterparty is absent from stored public permit-linked records.',
+      caution:'A historical-pattern gap is not evidence that work is unawarded, available, open for bid, or expected to involve the historical counterparty.'
+    }
+  };
+}
+
+
 async function discoverRelationshipCandidates(env,{days=365,rowLimit=7500,limit=12}={}){
   days=Math.max(90,Math.min(730,Number(days)||365));
   rowLimit=Math.max(1000,Math.min(12000,Number(rowLimit)||7500));
@@ -2542,6 +2673,12 @@ export default {
         return json({ok:true,count:data.results.length,meta:data.meta,results:data.results},200,env);
       }
 
+      if(path==='/relationship-gap-candidates'&&request.method==='GET'){
+        const days=Math.max(90,Math.min(730,Number(url.searchParams.get('days')||365)));
+        const limit=Math.max(1,Math.min(25,Number(url.searchParams.get('limit')||12)));
+        const data=await discoverRelationshipGapCandidates(env,{days,rowLimit:7500,limit});
+        return json(data,200,env);
+      }
       if(path==='/relationship-candidates'&&request.method==='GET'){
         const days=Math.max(90,Math.min(730,Number(url.searchParams.get('days')||365)));
         const limit=Math.max(3,Math.min(25,Number(url.searchParams.get('limit')||12)));
@@ -2567,6 +2704,7 @@ export default {
           relationshipSummary:data.relationshipSummary||null,
           historicalAssociations:(data.historicalAssociations||[]).slice(0,10),
           frequentlyAppearsWith:(data.frequentlyAppearsWith||[]).slice(0,10),
+          relationshipGaps:(data.relationshipGaps||[]).slice(0,10),
           methodology:data.methodology||null
         },200,env);
       }
