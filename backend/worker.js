@@ -13,6 +13,9 @@
 //   STRIPE_PRICE_SCOUT, STRIPE_PRICE_HUNTER, STRIPE_PRICE_TERRITORY
 //   DEV_AUTH_BYPASS=false
 
+import { fetchFortWorthPermits } from './markets/dfw/fort-worth.js';
+import { toLeadInput } from './markets/dfw/normalize.js';
+
 const PHX_PERMITS='https://maps.phoenix.gov/pub/rest/services/Public/Planning_Permit/MapServer/1/query';
 const TEMPE_PERMITS='https://services.arcgis.com/lQySeXwbBg53XWDi/ArcGIS/rest/services/building_permits/FeatureServer/0/query';
 const TUCSON_PRO_BASE='https://pro.tucsonaz.gov';
@@ -22,15 +25,16 @@ const MESA_PERMITS='https://data.mesaaz.gov/resource/m2kk-w2hz.json';
 const CHANDLER_ACTIVE='https://gis.chandleraz.gov/appsanonymous/rest/services/DevelopmentServices/DSActiveProjects/MapServer';
 const CHANDLER_CONSTRUCTION='https://gis.chandleraz.gov/portalserver/rest/services/EM/DevelopmentServices/MapServer/56';
 const CHANDLER_ACCELA_PERMITS='https://gis.chandleraz.gov/appsanonymous/rest/services/Tolemi/Building_Blocks/MapServer/0/query';
-const MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler'];
-const LIVE_MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler'];
+const MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler','Fort Worth'];
+const LIVE_MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler','Fort Worth'];
 const SOURCE_STATUS={
   Phoenix:{status:'live',cadence:'City feed',source:'City of Phoenix Planning & Development'},
   Tempe:{status:'live',cadence:'Published weekly',source:'City of Tempe Building Safety'},
   Tucson:{status:'live',cadence:'Hourly RevenueTrigger discovery',source:'City of Tucson Property Research Online (PRO)'},
   Scottsdale:{status:'live',cadence:'Official CSV permit report',source:'City of Scottsdale Building Permit Reports'},
   Mesa:{status:'live',cadence:'City open-data API',source:'City of Mesa Data Hub — Building Permits'},
-  Chandler:{status:'live',cadence:'Official Accela/ArcGIS permit feed + Early Pipeline',source:'City of Chandler Accela permit layer + DSActiveProjects'}
+  Chandler:{status:'live',cadence:'Official Accela/ArcGIS permit feed + Early Pipeline',source:'City of Chandler Accela permit layer + DSActiveProjects'},
+  'Fort Worth':{status:'live',cadence:'Updated hourly during business hours',source:'City of Fort Worth Development Services — Development Permits Open Data'}
 };
 const INDUSTRIES=['Commercial services','HVAC','Electrical','Plumbing','Roofing','Landscaping','Security','Signage'];
 const PLANS={
@@ -1787,6 +1791,27 @@ async function fetchChandler(days=7,limit=500){
   Object.defineProperty(out,'_meta',{value:{stageStats},enumerable:false});
   return out;
 }
+async function fetchFortWorth(days=7,limit=500){
+  const safeLimit=Math.max(1,Number(limit)||500);
+  const pageSize=1000;
+  const maxPages=Math.max(2,Math.min(5,Math.ceil(safeLimit/pageSize)+1));
+  const records=await fetchFortWorthPermits({
+    sinceDays:Math.max(1,Number(days)||7),
+    pageSize,
+    maxPages
+  });
+  return records
+    .map(record=>{
+      const input=toLeadInput(record);
+      return leadFrom({
+        ...input,
+        source:'City of Fort Worth Development Services — Development Permits Open Data'
+      });
+    })
+    .sort((a,b)=>b.score-a.score||new Date(b.date)-new Date(a.date))
+    .slice(0,safeLimit);
+}
+
 async function fetchMarket(market,days=7,limit=500,env=null){
   if(market==='Phoenix')return fetchPhoenix(days,limit);
   if(market==='Tempe')return fetchTempe(days,limit);
@@ -1794,6 +1819,7 @@ async function fetchMarket(market,days=7,limit=500,env=null){
   if(market==='Scottsdale')return fetchScottsdale(days,limit);
   if(market==='Mesa')return fetchMesa(days,limit);
   if(market==='Chandler')return fetchChandlerAccelaPermits(days,limit);
+  if(market==='Fort Worth')return fetchFortWorth(days,limit);
   return [];
 }
 async function persist(env,leads){
@@ -1854,6 +1880,130 @@ async function stored(env,limit=120,days=7){
   if(!env.DB)return null;
   const r=await env.DB.prepare(`SELECT * FROM leads WHERE datetime(event_date) >= datetime('now', ?) ORDER BY score DESC,event_date DESC LIMIT ?`).bind(`-${days} days`,limit).all();
   return clusterLeads((r.results||[]).map(hydrateStoredLead));
+}
+
+
+const FEED_FRESHNESS_MINUTES=180;
+const FEED_CACHE_CONTROL='public, max-age=30, s-maxage=120, stale-while-revalidate=300';
+
+function feedJson(body,status=200,env={}){
+  const response=json(body,status,env);
+  response.headers.set('Cache-Control',status===200?FEED_CACHE_CONTROL:'no-store');
+  response.headers.set('Vary','Origin');
+  response.headers.set('X-RevenueTrigger-Read-Only','true');
+  return response;
+}
+
+function feedInt(value,fallback,min,max){
+  if(value===null||value===undefined||value==='')return fallback;
+  const n=Number(value);
+  return Number.isFinite(n)?clamp(Math.trunc(n),min,max):fallback;
+}
+
+function feedMarkets(raw){
+  if(raw===null)return {ok:true,markets:[...LIVE_MARKETS],invalid:[]};
+  const requested=String(raw).split(',').map(x=>x.trim()).filter(Boolean);
+  if(!requested.length)return {ok:false,markets:[],invalid:['(empty)']};
+  const unique=[...new Set(requested)];
+  const invalid=unique.filter(x=>!LIVE_MARKETS.includes(x));
+  if(invalid.length)return {ok:false,markets:[],invalid};
+  return {ok:true,markets:unique,invalid:[]};
+}
+
+function feedOverallState(marketStates=[]){
+  if(!marketStates.length)return 'empty';
+  const states=marketStates.map(x=>x.state);
+  if(states.every(x=>x==='empty'))return 'empty';
+  if(states.every(x=>x==='fresh'))return 'fresh';
+  if(states.every(x=>x==='stale'))return 'stale';
+  return 'partial';
+}
+
+async function readStoredFeed(env,{days=7,limit=120,markets=LIVE_MARKETS}={}){
+  if(!env.DB)throw new Error('D1 binding unavailable');
+
+  const safeDays=feedInt(days,7,1,30);
+  const safeLimit=feedInt(limit,120,1,200);
+  const safeMarkets=[...new Set((markets||[]).filter(x=>LIVE_MARKETS.includes(x)))];
+  if(!safeMarkets.length)return {
+    ok:true,state:'empty',leads:[],markets:[],
+    query:{days:safeDays,limit:safeLimit,markets:[]},
+    counts:{returned:0,clusteredAvailable:0,rawRowsScanned:0},
+    freshness:{thresholdMinutes:FEED_FRESHNESS_MINUTES,markets:[]},
+    generatedAt:nowIso()
+  };
+
+  // Read more raw rows than the requested opportunity limit so hydration and
+  // clustering happen before the final response limit is applied.
+  const rawScanLimit=clamp(Math.max(500,safeLimit*12),500,5000);
+  const placeholders=safeMarkets.map(()=>'?').join(',');
+  const window=`-${safeDays} days`;
+
+  const rowsSql=`
+    SELECT *
+    FROM leads
+    WHERE datetime(event_date)>=datetime('now',?)
+      AND market IN (${placeholders})
+    ORDER BY score DESC,event_date DESC
+    LIMIT ?
+  `;
+  const statsSql=`
+    SELECT
+      market,
+      COUNT(*) AS stored_count,
+      MAX(updated_at) AS last_stored_at,
+      MAX(event_date) AS latest_event_at,
+      CAST((julianday('now')-julianday(MAX(updated_at)))*1440 AS INTEGER) AS age_minutes
+    FROM leads
+    WHERE datetime(event_date)>=datetime('now',?)
+      AND market IN (${placeholders})
+    GROUP BY market
+  `;
+
+  const rowResult=await env.DB.prepare(rowsSql).bind(window,...safeMarkets,rawScanLimit).all();
+  const statsResult=await env.DB.prepare(statsSql).bind(window,...safeMarkets).all();
+
+  const hydrated=(rowResult.results||[]).map(hydrateStoredLead);
+  const clustered=clusterLeads(hydrated);
+  const leads=clustered.slice(0,safeLimit);
+
+  const statsMap=new Map((statsResult.results||[]).map(row=>[String(row.market||''),row]));
+  const marketStates=safeMarkets.map(market=>{
+    const row=statsMap.get(market);
+    const storedCount=Number(row?.stored_count||0);
+    const ageMinutes=Number.isFinite(Number(row?.age_minutes))?Math.max(0,Number(row.age_minutes)):null;
+    let state='empty';
+    if(storedCount>0)state=ageMinutes!==null&&ageMinutes<=FEED_FRESHNESS_MINUTES?'fresh':'stale';
+    return {
+      market,
+      state,
+      storedCount,
+      lastStoredAt:row?.last_stored_at||null,
+      latestEventAt:row?.latest_event_at||null,
+      ageMinutes
+    };
+  });
+
+  return {
+    ok:true,
+    state:feedOverallState(marketStates),
+    leads,
+    markets:safeMarkets,
+    source:'RevenueTrigger stored D1 opportunity feed',
+    query:{days:safeDays,limit:safeLimit,markets:safeMarkets},
+    counts:{
+      returned:leads.length,
+      clusteredAvailable:clustered.length,
+      rawRowsScanned:hydrated.length,
+      rawScanLimit
+    },
+    freshness:{
+      basis:'stored D1 updated_at only; municipal source health is not polled',
+      thresholdMinutes:FEED_FRESHNESS_MINUTES,
+      markets:marketStates
+    },
+    generatedAt:nowIso()
+  };
 }
 
 
@@ -2079,6 +2229,7 @@ async function stripePost(env,path,params){
   const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data?.error?.message||`Stripe ${r.status}`);return data;
 }
 async function createCheckout(request,env,user){
+  if(env.BILLING_CHECKOUT_DISABLED==='true')return json({error:'checkout_disabled'},403,env);
   const {plan}=await request.json();if(!['Scout','Hunter','Territory'].includes(plan))return json({error:'invalid plan'},400,env);
   const price=stripePrice(env,plan);if(!price||String(price).includes('REPLACE_'))return json({error:`Stripe price for ${plan} is not configured`},503,env);
   const frontend=String(env.FRONTEND_URL||env.ALLOWED_ORIGIN||'').replace(/\/$/,'');
@@ -2120,7 +2271,7 @@ async function handleStripeWebhook(request,env){
   await env.DB.prepare(`INSERT INTO billing_events (event_id,type,processed_at) VALUES (?,?,datetime('now'))`).bind(evt.id,evt.type).run();return new Response('ok');
 }
 
-function marketFromSource(source=''){const s=String(source);if(s.includes('Tempe'))return 'Tempe';if(s.includes('Tucson'))return 'Tucson';if(s.includes('Scottsdale'))return 'Scottsdale';if(s.includes('Mesa'))return 'Mesa';if(s.includes('Chandler'))return 'Chandler';return 'Phoenix';}
+function marketFromSource(source=''){const s=String(source);if(s.includes('Tempe'))return 'Tempe';if(s.includes('Tucson'))return 'Tucson';if(s.includes('Scottsdale'))return 'Scottsdale';if(s.includes('Mesa'))return 'Mesa';if(s.includes('Chandler'))return 'Chandler';if(s.includes('Fort Worth')||s.includes('fort_worth'))return 'Fort Worth';return 'Phoenix';}
 function cleanMarkets(items,limit){const out=[];for(const x of Array.isArray(items)?items:[]){if(MARKETS.includes(x)&&!out.includes(x))out.push(x);if(out.length>=limit)break;}return out.length?out:['Phoenix'];}
 function userPlanActive(user){return ['active','trialing'].includes(user.subscription_status||'')&&PLANS[user.plan] ? user.plan : 'Beta';}
 function cleanIndustries(items,limit){const out=[];for(const x of Array.isArray(items)?items:[]){if(INDUSTRIES.includes(x)&&!out.includes(x))out.push(x);if(out.length>=limit)break;}return out.length?out:['Commercial services'];}
@@ -4528,6 +4679,35 @@ export default {
           pipeline:rows
         },200,env);
       }
+      if(path==='/feed'&&request.method==='GET'){
+        const days=feedInt(url.searchParams.get('days'),7,1,30);
+        const limit=feedInt(url.searchParams.get('limit'),120,1,200);
+        const parsedMarkets=feedMarkets(url.searchParams.has('markets')?url.searchParams.get('markets'):null);
+        if(!parsedMarkets.ok){
+          return feedJson({
+            ok:false,
+            error:'invalid_market',
+            invalidMarkets:parsedMarkets.invalid,
+            allowedMarkets:LIVE_MARKETS,
+            generatedAt:nowIso()
+          },400,env);
+        }
+        try{
+          const data=await readStoredFeed(env,{days,limit,markets:parsedMarkets.markets});
+          return feedJson(data,200,env);
+        }catch(e){
+          return feedJson({
+            ok:false,
+            state:'unavailable',
+            leads:[],
+            markets:parsedMarkets.markets,
+            query:{days,limit,markets:parsedMarkets.markets},
+            error:'stored_feed_unavailable',
+            message:'Stored opportunity data is temporarily unavailable.',
+            generatedAt:nowIso()
+          },503,env);
+        }
+      }
       if(path==='/leads'&&request.method==='GET'){
         const days=clamp(Number(url.searchParams.get('days')||7),1,30);
         const limit=clamp(Number(url.searchParams.get('limit')||120),1,500);
@@ -4562,7 +4742,7 @@ export default {
         if(requested.length===1&&LIVE_MARKETS.includes(requested[0])&&!filtered.length){
           try{filtered=clusterLeads(await fetchMarket(requested[0],days,limit,env));}catch{}
         }
-        return json({leads:filtered.slice(0,limit),markets,source:'Arizona municipal public permit data',generatedAt:nowIso()},200,env);
+        return json({leads:filtered.slice(0,limit),markets,source:'Municipal public permit data',generatedAt:nowIso()},200,env);
       }
       if(path==='/refresh'&&request.method==='POST'){
         const token=(request.headers.get('authorization')||'').replace(/^Bearer\s+/i,'');if(!env.ADMIN_TOKEN||token!==env.ADMIN_TOKEN)return json({error:'unauthorized'},401,env);const result=await refresh(env,7);return json({ok:true,count:result.leads.length,markets:result.markets},200,env);

@@ -9,6 +9,7 @@ database_name = "signalhound"
 database_id = "5b0156dc-1646-4233-abf7-5d65ef30a317"
 
 [vars]
+BILLING_CHECKOUT_DISABLED = "true"
 ALLOWED_ORIGIN = "https://revenuetrigger.ai"
 FRONTEND_URL = "https://revenuetrigger.ai"
 DEV_AUTH_BYPASS = "false"
@@ -23,3 +24,22 @@ STRIPE_PRICE_TERRITORY = "price_1UIfKRQtkZRdtmROuFOtSulQ"
 
 [triggers]
 crons = ["17 * * * *"]
+
+[previews.vars]
+BILLING_CHECKOUT_DISABLED = "false"
+ALLOWED_ORIGIN = "https://integration-frontend-fort-worth-v1-signalhound-phoenix.rolandcoyburt.workers.dev"
+FRONTEND_URL = "https://integration-frontend-fort-worth-v1-signalhound-phoenix.rolandcoyburt.workers.dev"
+DEV_AUTH_BYPASS = "false"
+
+# Empty sender disables email delivery in the preview.
+EMAIL_FROM = "RevenueTrigger Preview <onboarding@resend.dev>"
+
+# Sandbox Price IDs confirmed by the owner; use only with matching preview test secrets.
+STRIPE_PRICE_SCOUT = "price_1UIfIzQtkZRdtmROP8dRxslu"
+STRIPE_PRICE_HUNTER = "price_1UIfJiQtkZRdtmROREXUa7Ad"
+STRIPE_PRICE_TERRITORY = "price_1UIfKRQtkZRdtmROuFOtSulQ"
+
+[[previews.d1_databases]]
+binding = "DB"
+database_name = "revenuetrigger-preview"
+database_id = "3e002252-2664-496f-a77f-a3a9880274d8"
