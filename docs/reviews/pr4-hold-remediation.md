@@ -59,3 +59,34 @@ Backend: https://feature-public-opportunity-funnel-v1-signalhound-api.rolandcoyb
 This branch’s Cloudflare preview aliases and immutable version URLs select the feature backend; version URLs therefore cannot fall back to production. Use the canonical frontend alias above for validation because backend CORS/auth callbacks allow that matching origin. Production remains `https://api.revenuetrigger.ai/api` with checkout enabled. Backend `[previews.vars]` allows that frontend and uses it for auth/Stripe redirects. Existing preview D1 remains `revenuetrigger-preview` (`3e002252-2664-496f-a77f-a3a9880274d8`). Production configuration before `[previews.vars]` is byte-identical to main. No secrets are copied or edited; existing test Price IDs are unchanged.
 
 Read-only deployed-preview checks must verify the pair after GitHub/Cloudflare finishes building. Authenticated and Stripe regressions above are local mocked tests, not claims of live authenticated or Stripe transactions.
+
+## Deployed preview verification
+
+Cloudflare reported successful frontend and backend builds/deployments for runtime head `03ab677a7dd2ce2a89a13ebebd85568623b44d2c`. The canonical frontend was reloaded after this deployment and renders the matching sanitized backend contract. Browser checks confirmed:
+
+- Mixed markets: 8 teasers, accurate stored-snapshot/stale state, aggregate count wording.
+- Fort Worth filter: 8 sanitized teasers; market-window count remains broader than client-side filters.
+- Chandler Early Pipeline: 3 teasers.
+- Reveal: opens the free-account/sign-in dialog, not full detail.
+
+Direct API and JavaScript-asset navigation was blocked by this execution environment (`ERR_BLOCKED_BY_CLIENT`; shell HTTP 403). Therefore negative-route HTTP status and response-key assertions are worker-level mocked tests, not claimed as direct deployed HTTP probes. Authenticated logout/race and Stripe tests likewise use local mocks; no live account or checkout transaction was created.
+
+The preview configuration test verifies the API mapping, matching CORS origin and preview-only D1 binding. No production deployment, production binding/secret change, D1 writes, migration, fixture SQL or refresh was performed by this work. PR #4 is still Draft; remote main remains `c2b5b5d9750cd9b4e108807449f38d6d9b9f66d4`.
+
+## Complete PR changed-file list against merged main
+
+- `backend/worker.js`
+- `backend/wrangler.toml`
+- `backend/tests/checkout-disable.test.mjs`
+- `backend/tests/feed-readonly.test.mjs`
+- `backend/tests/public-funnel.test.mjs`
+- `frontend/public/assets/rt-app.js`
+- `frontend/public/assets/rt-config.js`
+- `frontend/public/assets/rt-shell.css` (original funnel + merge resolution)
+- `frontend/public/assets/rt-ui.js` (original funnel)
+- `frontend/public/signals.html` (original funnel)
+- `tests/checkout-disable.cjs`
+- `tests/funnel-preview-config.cjs`
+- `tests/public-funnel.cjs`
+- `docs/reviews/pr4-hold-remediation.md`
+- `docs/reviews/pr4-hold-test-results.txt`

@@ -90,7 +90,7 @@ PASS anonymous blocked /api/admin/scottsdale-debug
 PASS anonymous blocked /api/admin/chandler-permits-debug
 PASS expired session cannot access diagnostic records
 PASS teaser uses random identity and fixed title, not source fields or polluted categories/stage
-PASS public feed allowlist and max 8 
+PASS public feed allowlist and max 8
 PASS public feed allowlist and max 8 /api
 PASS full diagnostics remain available to valid
 PASS full diagnostics remain available to internal-admin
@@ -167,4 +167,3 @@ Exit: 0
 
 $ git diff --check
 Exit: 0
-
