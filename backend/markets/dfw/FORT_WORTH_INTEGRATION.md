@@ -53,6 +53,18 @@ Before merge or deployment, validate:
 
 The existing Territory entitlement remains `marketLimit: 6` while the live-market registry becomes seven markets. This branch intentionally does not change plan entitlements. If Territory should select every live market simultaneously, update that separately as an explicit product decision.
 
+## Frontend dependency
+
+The current `main` frontend still hard-codes the six Arizona markets. Specifically:
+
+- `frontend/public/index.html` defines `LIVE_MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler']`
+- the Sources page presents `06 live permit markets` and `AZ current coverage`
+- the Competitors page market selector is also hard-coded to the six Arizona markets
+
+This integration branch intentionally does not edit those frontend files because the active frontend/redesign work is being handled separately. Fort Worth is therefore **backend-ready but UI-gated** until the selected frontend branch adds Fort Worth to its market controls and updates Arizona-only copy.
+
+Direct backend preview validation can still use `/leads?markets=Fort%20Worth` and `/sources`.
+
 ## Rollout recommendation
 
 Use a Cloudflare preview or non-production Worker first. Exercise Fort Worth single-market requests and one authenticated dashboard flow, then review D1 rows and source health before any production merge/deploy.
