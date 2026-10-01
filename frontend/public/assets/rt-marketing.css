@@ -128,3 +128,8 @@ html body.rt-marketing #pricing .price.featured .money small{color:#fff!importan
 .rt-command-value .rt-hero-score{font-size:38px;line-height:1.1;font-variant-numeric:tabular-nums}
 .rt-command-value .rt-hero-score span{font-size:16px;font-weight:500;color:var(--rt-muted)}
 @media(max-width:400px){.rt-hero-priority{gap:10px}.rt-command .rt-hero-priority .rt-temperature{font-size:14px;padding:8px 10px}}
+
+/* Equal emphasis for value and priority, with shared label/value rows. */
+.rt-command-value{grid-template-rows:auto auto;row-gap:5px}
+.rt-command-value>div{display:grid;grid-template-rows:subgrid;grid-row:span 2}
+.rt-command-value .rt-money,.rt-command-value .rt-hero-score{font-size:38px;line-height:1.1;margin-top:0;align-self:baseline;font-variant-numeric:tabular-nums}
