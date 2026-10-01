@@ -23,7 +23,8 @@ console.log('PASS exact mappings, UTF-8, redaction, genuine fields and immutable
  for(const width of [390,1366])for(const market of ['Mesa','Scottsdale','Chandler']){
   const row=rows.find(x=>x.market===market),lead={...row,categories:JSON.parse(row.categories),date:row.event_date,permitStatus:row.permit_status,officialPermitValue:row.official_value};
   const page=await browser.newPage({viewport:{width,height:1000},serviceWorkers:'block'});const calls=await mock(page);
-  await page.route('**/api/feed?**',r=>r.fulfill({json:{ok:true,state:'fresh',leads:[lead]}}));
+  await page.addInitScript(()=>localStorage.setItem('revenuetrigger_session','qa-session'));
+  await page.route('**/api/dashboard?**',r=>r.fulfill({json:{leads:[lead]}}));
   await page.goto('http://127.0.0.1:8765/signals');await page.waitForSelector('.lead');
   assert(!(await page.locator('.lead').innerText()).includes('ΓÇ'));
   if(market==='Scottsdale')assert((await page.locator('.lead').innerText()).includes('[PHONE REDACTED]'));

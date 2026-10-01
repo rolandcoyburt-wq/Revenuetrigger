@@ -3,7 +3,7 @@ window.RTConfig=Object.freeze({
  checkoutDisabled:false,
  // This feature build uses its matching backend on preview aliases and version URLs.
  apiBase:typeof location!=='undefined'&&location.hostname.endsWith('-signalhound-phoenix.rolandcoyburt.workers.dev')
-  ?'https://feature-public-opportunity-funnel-v1-signalhound-api.rolandcoyburt.workers.dev/api'
+  ?'https://278f022f-signalhound-api.rolandcoyburt.workers.dev/api'
   :'https://api.revenuetrigger.ai/api',
- markets:Object.freeze(['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler','Fort Worth'])
+ markets:Object.freeze(['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler','Fort Worth','Dallas'])
 });
