@@ -249,10 +249,11 @@ await check('20 response shape is suitable for homepage/public Signals without d
 
 // Fort Worth integration: the existing LIVE_MARKETS-driven contract must extend
 // without fetching adapters, writing D1, or enabling Dallas.
-await check('21 default feed includes Fort Worth with explicit empty state',async()=>{
+await check('21 default feed includes Fort Worth and Dallas with explicit empty states',async()=>{
   const {body,db}=await call('/feed');
-  assert.deepEqual(body.markets,[...markets,'Fort Worth']);
+  assert.deepEqual(body.markets,[...markets,'Fort Worth','Dallas']);
   assert.equal(body.freshness.markets.find(x=>x.market==='Fort Worth').state,'empty');
+  assert.equal(body.freshness.markets.find(x=>x.market==='Dallas').state,'empty');
   assert.equal(body.state,'partial');
   assert.equal(db.statements.length,2);
 });
@@ -284,11 +285,25 @@ await check('23 Fort Worth empty stale unavailable and mixed states remain hones
   const failed=await call(path,{dbOptions:{fail:true}});
   assert.equal(failed.response.status,503);assert.equal(failed.body.state,'unavailable');
 });
-await check('24 Dallas remains rejected and Fort Worth appears in allowlist',async()=>{
-  const {response,body,db}=await call('/feed?markets=Dallas');
-  assert.equal(response.status,400);assert.deepEqual(body.invalidMarkets,['Dallas']);
-  assert.ok(body.allowedMarkets.includes('Fort Worth'));assert.ok(!body.allowedMarkets.includes('Dallas'));
+await check('24 unknown markets remain rejected while Dallas and Fort Worth are allowed',async()=>{
+  const {response,body,db}=await call('/feed?markets=Atlantis');
+  assert.equal(response.status,400);assert.deepEqual(body.invalidMarkets,['Atlantis']);
+  assert.ok(body.allowedMarkets.includes('Fort Worth'));assert.ok(body.allowedMarkets.includes('Dallas'));
   assert.equal(db.statements.length,0);
+});
+await check('25 Dallas filter returns stored Dallas rows without municipal fetches',async()=>{
+  const d=row({id:'dallas-a',market:'Dallas',address:'1445 Ross Ave Dallas TX',source:'City of Dallas DallasNow Building — Issued',permit:'COM-ALT-ADD-26-002263',company:'1445 ROSS AVE LLC',official_value:3200000});
+  const {response,body,db}=await call('/feed?markets=Dallas&days=7&limit=20',{rows:[...sampleRows(),d]});
+  assert.equal(response.status,200);assert.deepEqual(body.markets,['Dallas']);assert.equal(body.leads.length,1);
+  assert.equal(body.leads[0].market,'Dallas');assert.equal('permit' in body.leads[0],false);assert.match(body.leads[0].id,/^teaser_/);for(const secret of ['COM-ALT-ADD-26-002263','1445 ROSS AVE LLC','1445 Ross Ave','dallas-a'])assert(!JSON.stringify(body).includes(secret));assert.equal(body.state,'fresh');
+  assert.equal(db.statements.length,2);
+});
+await check('26 Dallas plus Fort Worth mixed stored-feed query remains additive',async()=>{
+  const fw=row({id:'fw-mixed',market:'Fort Worth',address:'100 Main St Fort Worth TX',source:'City of Fort Worth Development Services',permit:'FW-MIX'});
+  const d=row({id:'dallas-mixed',market:'Dallas',address:'1445 Ross Ave Dallas TX',source:'City of Dallas DallasNow Building — Submitted + Issued',permit:'COM-ALT-ADD-26-002263'});
+  const {response,body,db}=await call('/feed?markets=Dallas,Fort%20Worth&days=7&limit=20',{rows:[...sampleRows(),fw,d]});
+  assert.equal(response.status,200);assert.deepEqual(body.markets,['Dallas','Fort Worth']);assert.equal(body.leads.length,2);
+  assert.deepEqual(new Set(body.leads.map(x=>x.market)),new Set(['Dallas','Fort Worth']));assert.equal(db.statements.length,2);
 });
 
 const failed=results.filter(x=>!x.ok);

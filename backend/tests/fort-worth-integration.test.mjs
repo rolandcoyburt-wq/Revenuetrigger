@@ -45,13 +45,13 @@ await check('fetchMarket uses Fort Worth adapter and unchanged core leadFrom con
     assert.equal(rows[0].officialPermitValue,2200000);
     const expected=core.leadFrom({...toLeadInput(normalizeFortWorthPermit(raw)),source:rows[0].source});
     assert.equal(rows[0].score,expected.score);assert.deepEqual(rows[0].categories,expected.categories);
-    assert.deepEqual(await core.fetchMarket('Dallas',7,1),[]);assert.equal(requests,1);
+    assert.deepEqual(await core.fetchMarket('Unknown',7,1),[]);assert.equal(requests,1);
   }finally{globalThis.fetch=original;}
 });
-await check('source recognition registration and public metadata include only Fort Worth addition',async()=>{
+await check('Fort Worth recognition remains unchanged after additive Dallas registration',async()=>{
   assert.equal(core.marketFromSource('City of Fort Worth Development Services'),'Fort Worth');
   assert.equal(core.marketFromSource('fort_worth_development_permits'),'Fort Worth');
-  const expected=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler','Fort Worth'];
+  const expected=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler','Fort Worth','Dallas'];
   assert.deepEqual(core.MARKETS,expected);assert.deepEqual(core.LIVE_MARKETS,expected);
   assert.equal(core.PLANS.Territory.marketLimit,6);
   const original=globalThis.fetch;let attempts=0;
@@ -59,7 +59,7 @@ await check('source recognition registration and public metadata include only Fo
   try{
     const res=await core.default.fetch(new Request('https://preview.invalid/api/sources'),{});
     const data=await res.json();assert.equal(res.status,200);assert.deepEqual(data.liveMarkets,expected);
-    assert.equal(data.markets['Fort Worth'].status,'live');assert.equal(data.markets.Dallas,undefined);
+    assert.equal(data.markets['Fort Worth'].status,'live');assert.equal(data.markets.Dallas.status,'live');
     assert.equal(attempts,0);
   }finally{globalThis.fetch=original;}
 });

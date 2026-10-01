@@ -14,6 +14,7 @@
 //   DEV_AUTH_BYPASS=false
 
 import { fetchFortWorthPermits } from './markets/dfw/fort-worth.js';
+import { fetchDallasNowBuildingRecords } from './markets/dfw/dallas-now.js';
 import { toLeadInput } from './markets/dfw/normalize.js';
 
 const PHX_PERMITS='https://maps.phoenix.gov/pub/rest/services/Public/Planning_Permit/MapServer/1/query';
@@ -25,8 +26,8 @@ const MESA_PERMITS='https://data.mesaaz.gov/resource/m2kk-w2hz.json';
 const CHANDLER_ACTIVE='https://gis.chandleraz.gov/appsanonymous/rest/services/DevelopmentServices/DSActiveProjects/MapServer';
 const CHANDLER_CONSTRUCTION='https://gis.chandleraz.gov/portalserver/rest/services/EM/DevelopmentServices/MapServer/56';
 const CHANDLER_ACCELA_PERMITS='https://gis.chandleraz.gov/appsanonymous/rest/services/Tolemi/Building_Blocks/MapServer/0/query';
-const MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler','Fort Worth'];
-const LIVE_MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler','Fort Worth'];
+const MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler','Fort Worth','Dallas'];
+const LIVE_MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler','Fort Worth','Dallas'];
 const SOURCE_STATUS={
   Phoenix:{status:'live',cadence:'City feed',source:'City of Phoenix Planning & Development'},
   Tempe:{status:'live',cadence:'Published weekly',source:'City of Tempe Building Safety'},
@@ -34,7 +35,8 @@ const SOURCE_STATUS={
   Scottsdale:{status:'live',cadence:'Official CSV permit report',source:'City of Scottsdale Building Permit Reports'},
   Mesa:{status:'live',cadence:'City open-data API',source:'City of Mesa Data Hub — Building Permits'},
   Chandler:{status:'live',cadence:'Official Accela/ArcGIS permit feed + Early Pipeline',source:'City of Chandler Accela permit layer + DSActiveProjects'},
-  'Fort Worth':{status:'live',cadence:'Updated hourly during business hours',source:'City of Fort Worth Development Services — Development Permits Open Data'}
+  'Fort Worth':{status:'live',cadence:'Updated hourly during business hours',source:'City of Fort Worth Development Services — Development Permits Open Data'},
+  Dallas:{status:'live',cadence:'Rolling 7-day DallasNow Building Submitted + Issued reports',source:'City of Dallas DallasNow Building'}
 };
 const INDUSTRIES=['Commercial services','HVAC','Electrical','Plumbing','Roofing','Landscaping','Security','Signage'];
 const PLANS={
@@ -529,6 +531,7 @@ function usableClusterAddress(lead={}){
     market?`${market} ARIZONA`:'',
     'ARIZONA','AZ'
   ].filter(Boolean));
+  if (market==='DALLAS' && /^(?:DALLAS\s*)?(?:TX|TEXAS)?(?:\s+\d{5}(?:-\d{4})?)?$/.test(addr)) return '';
   return generic.has(addr)?'':addr;
 }
 function clusterLeads(leads=[]){
@@ -1812,6 +1815,38 @@ async function fetchFortWorth(days=7,limit=500){
     .slice(0,safeLimit);
 }
 
+function dallasSourceLabel(record){
+  const observed=[...new Set((record.sourceObservations||[]).map(x=>x.report==='issued'?'Issued':'Submitted'))];
+  const lifecycle=observed.length?observed.join(' + '):'Building';
+  const url=record.sourceUrl||'';
+  return `City of Dallas DallasNow Building — ${lifecycle}${url?` — ${url}`:''}`;
+}
+async function fetchDallas(days=7,limit=500){
+  const safeLimit=Math.max(1,Number(limit)||500);
+  const records=await fetchDallasNowBuildingRecords({days:Math.max(1,Number(days)||7)});
+  const leads=records.map(record=>{
+    const input=toLeadInput(record);
+    const lead=leadFrom({...input,source:dallasSourceLabel(record)});
+    return {
+      ...lead,
+      sourceRecordId:record.sourceRecordId,
+      sourceUrl:record.sourceUrl||null,
+      dallasNowLink:record.dallasNowLink||null,
+      temporaryId:Boolean(record.temporaryId),
+      secondaryFingerprint:record.secondaryFingerprint||null,
+      sourceObservations:record.sourceObservations||[],
+      participantRole:record.companyCandidate?'applicant':null,
+      participants:record.participants||[],
+      lineage:record.lineage||{},
+      identityHints:record.identityHints||{},
+      parcelNumber:record.parcelNumber||null,
+      councilDistrict:record.councilDistrict||null
+    };
+  }).sort((a,b)=>b.score-a.score||new Date(b.date)-new Date(a.date)).slice(0,safeLimit);
+  Object.defineProperty(leads,'_meta',{value:records._meta||null,enumerable:false});
+  return leads;
+}
+
 async function fetchMarket(market,days=7,limit=500,env=null){
   if(market==='Phoenix')return fetchPhoenix(days,limit);
   if(market==='Tempe')return fetchTempe(days,limit);
@@ -1820,14 +1855,28 @@ async function fetchMarket(market,days=7,limit=500,env=null){
   if(market==='Mesa')return fetchMesa(days,limit);
   if(market==='Chandler')return fetchChandlerAccelaPermits(days,limit);
   if(market==='Fort Worth')return fetchFortWorth(days,limit);
+  if(market==='Dallas')return fetchDallas(days,limit);
   return [];
+}
+const DALLAS_PROVENANCE_FIELDS=['sourceRecordId','sourceUrl','dallasNowLink','temporaryId','secondaryFingerprint','sourceObservations','participantRole','participants','lineage','identityHints','parcelNumber','councilDistrict'];
+function dallasProvenance(lead){
+  return Object.fromEntries(DALLAS_PROVENANCE_FIELDS.filter(key=>Object.hasOwn(lead,key)).map(key=>[key,lead[key]]));
 }
 async function persist(env,leads){
   if(!env.DB)return;
   const sql=`INSERT INTO leads (id,name,address,event_date,company,scope,score,categories,value,temperature,permit,permit_status,official_value,source,market,updated_at)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'))
     ON CONFLICT(id) DO UPDATE SET name=excluded.name,address=excluded.address,event_date=excluded.event_date,company=excluded.company,scope=excluded.scope,score=excluded.score,categories=excluded.categories,value=excluded.value,temperature=excluded.temperature,permit=excluded.permit,permit_status=excluded.permit_status,official_value=excluded.official_value,source=excluded.source,market=excluded.market,updated_at=datetime('now')`;
-  const stmts=leads.map(x=>env.DB.prepare(sql).bind(x.id,x.name,x.address,new Date(x.date).toISOString(),x.company,x.scope,x.score,JSON.stringify(x.categories),x.value,x.temperature,x.permit,x.permitStatus||'—',x.officialPermitValue||null,x.source,x.market||'Phoenix'));
+  // Other markets retain their existing storage path. Dallas needs structured
+  // provenance in addition to its human-readable source attribution.
+  const dallasSql=sql.replace('source,market,updated_at','source,market,source_provenance,updated_at')
+    .replace("?,datetime('now')", "?,?,datetime('now')")
+    .replace('market=excluded.market,','market=excluded.market,source_provenance=excluded.source_provenance,');
+  const stmts=leads.map(x=>{
+    const args=[x.id,x.name,x.address,new Date(x.date).toISOString(),x.company,x.scope,x.score,JSON.stringify(x.categories),x.value,x.temperature,x.permit,x.permitStatus||'—',x.officialPermitValue||null,x.source,x.market||'Phoenix'];
+    if(x.market==='Dallas')args.push(JSON.stringify(dallasProvenance(x)));
+    return env.DB.prepare(x.market==='Dallas'?dallasSql:sql).bind(...args);
+  });
   for(let i=0;i<stmts.length;i+=40)await env.DB.batch(stmts.slice(i,i+40));
 }
 async function refresh(env,days=7){
@@ -1857,11 +1906,14 @@ async function refresh(env,days=7){
   return {leads,markets};
 }
 function hydrateStoredLead(x){
+  const {source_provenance,...storedFields}=x;
+  const provenance=x.market==='Dallas'?dallasProvenance(parseJson(source_provenance,{})||{}):{};
   const text=[x.name,x.scope,x.company].filter(Boolean).join(' ');
   const model=opportunityScore({text,status:x.permit_status||'',date:x.event_date,officialValue:x.official_value,address:x.address,company:x.company});
   const confidence=dataConfidence({company:x.company,officialValue:x.official_value,address:x.address,permit:x.permit,status:x.permit_status,scope:x.scope,source:x.source,market:x.market});
   return {
-    ...x,
+    ...storedFields,
+    ...provenance,
     date:x.event_date,
     permitStatus:x.permit_status||'—',
     officialPermitValue:x.official_value||null,
@@ -2302,7 +2354,7 @@ async function handleStripeWebhook(request,env){
   await env.DB.prepare(`INSERT INTO billing_events (event_id,type,processed_at) VALUES (?,?,datetime('now'))`).bind(evt.id,evt.type).run();return new Response('ok');
 }
 
-function marketFromSource(source=''){const s=String(source);if(s.includes('Tempe'))return 'Tempe';if(s.includes('Tucson'))return 'Tucson';if(s.includes('Scottsdale'))return 'Scottsdale';if(s.includes('Mesa'))return 'Mesa';if(s.includes('Chandler'))return 'Chandler';if(s.includes('Fort Worth')||s.includes('fort_worth'))return 'Fort Worth';return 'Phoenix';}
+function marketFromSource(source=''){const s=String(source);if(s.includes('Tempe'))return 'Tempe';if(s.includes('Tucson'))return 'Tucson';if(s.includes('Scottsdale'))return 'Scottsdale';if(s.includes('Mesa'))return 'Mesa';if(s.includes('Chandler'))return 'Chandler';if(s.includes('Fort Worth')||s.includes('fort_worth'))return 'Fort Worth';if(s.includes('Dallas')||s.includes('dallas_dallasnow'))return 'Dallas';return 'Phoenix';}
 function cleanMarkets(items,limit){const out=[];for(const x of Array.isArray(items)?items:[]){if(MARKETS.includes(x)&&!out.includes(x))out.push(x);if(out.length>=limit)break;}return out.length?out:['Phoenix'];}
 function userPlanActive(user){return ['active','trialing'].includes(user.subscription_status||'')&&PLANS[user.plan] ? user.plan : 'Beta';}
 function cleanIndustries(items,limit){const out=[];for(const x of Array.isArray(items)?items:[]){if(INDUSTRIES.includes(x)&&!out.includes(x))out.push(x);if(out.length>=limit)break;}return out.length?out:['Commercial services'];}
@@ -4782,6 +4834,24 @@ export default {
         const limit=clamp(Number(url.searchParams.get('limit')||120),1,500);
         const requested=(url.searchParams.get('markets')||'').split(',').map(x=>x.trim()).filter(Boolean);
         const markets=requested.length?requested.filter(x=>MARKETS.includes(x)):LIVE_MARKETS;
+
+        // Dallas direct diagnostics intentionally exercise the live DallasNow
+        // Submitted + Issued report client. Stored/public feed validation remains
+        // separate through /feed and the scheduled refresh/persist path.
+        if(requested.length===1&&requested[0]==='Dallas'){
+          try{
+            const fresh=clusterLeads(await fetchDallas(days,Math.max(limit*4,500)));
+            return json({
+              leads:fresh.slice(0,limit),
+              markets:['Dallas'],
+              source:'City of Dallas DallasNow Building — Submitted + Issued',
+              liveDirect:true,
+              generatedAt:nowIso()
+            },200,env);
+          }catch(e){
+            return json({error:'DallasNow source unavailable',code:'dallas_source_unavailable',detail:String(e?.message||e)},503,env);
+          }
+        }
 
         // During Chandler's live-source cutover, a single-market request should be
         // authoritative to the official Accela layer rather than an older D1 snapshot.

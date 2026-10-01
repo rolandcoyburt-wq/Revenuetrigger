@@ -1,0 +1,31 @@
+name: Dallas backend HOLD validation
+on:
+  push:
+    branches: [integration/dallas-market-v2]
+permissions:
+  contents: read
+jobs:
+  backend-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Backend regressions
+        run: |
+          node backend/tests/dallas-integration.test.mjs
+          node backend/tests/fort-worth-integration.test.mjs
+          node backend/tests/feed-readonly.test.mjs
+          node backend/tests/public-funnel.test.mjs
+          node backend/tests/checkout-disable.test.mjs
+      - name: Public funnel and checkout client regressions (read-only)
+        run: |
+          node tests/public-funnel.cjs
+          node tests/checkout-disable.cjs
+          node tests/funnel-preview-config.cjs
+      - name: Genuine Dallas report validation (no remote D1 writes or deployment)
+        run: node backend/tests/dallas-live-validation.mjs
