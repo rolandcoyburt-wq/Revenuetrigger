@@ -690,3 +690,6 @@ document.getElementById('leadList').addEventListener('click',e=>{
  const b=e.target.closest('[data-lead-action]');if(!b)return;
  if(b.dataset.leadAction==='view')openLead(b.dataset.id);else toggleSave(b.dataset.id);
 });
+
+// Reuse the existing passwordless form for the plans free-account entry point.
+$('#capture')?.addEventListener('submit',e=>{e.preventDefault();$('#signinEmail').value=$('#email').value;openSignin();$('#signinForm').requestSubmit()});
