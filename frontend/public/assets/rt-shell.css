@@ -77,3 +77,13 @@ html body #pricing.rt-home-plans .price.featured ul,html body #pricing.rt-home-p
 html body #pricing.rt-home-plans .price.featured .badge{background:#79efa6!important;color:#143b2a!important}
 html body.rt-marketing #pricing .price .btn-secondary{background:#fff!important;color:#143b2a!important;border-color:#fff!important}
 html body #pricing.rt-home-plans .price.featured .btn-primary{background:var(--green)!important;color:#102016!important;border-color:var(--green)!important;box-shadow:none!important}
+
+/* Shared mobile plan focus, including pages with legacy hover rules. */
+@media(max-width:620px){
+ html body #pricing .pricing .price{transition:transform .28s ease,border-color .28s ease,box-shadow .28s ease!important;transform:none!important}
+ html body #pricing .pricing .price.scroll-active{transform:translateY(-6px) scale(1.015)!important;border-color:#18c764!important;box-shadow:0 0 0 2px #18c764,0 16px 32px #10201626!important}
+}
+@media(max-width:620px) and (prefers-reduced-motion:reduce){
+ html body #pricing .pricing .price{transition:none!important}
+ html body #pricing .pricing .price.scroll-active{transform:none!important}
+}

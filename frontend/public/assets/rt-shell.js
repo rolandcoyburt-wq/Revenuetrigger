@@ -26,3 +26,38 @@
   if(e.key==='Tab'){const els=[...modal.querySelectorAll('a,button,input,select,[tabindex="0"]')].filter(x=>!x.disabled&&x.getClientRects().length);const first=els[0],last=els.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}}
  });
 })();
+
+/* Activate the plan nearest the mobile viewport center in either scroll direction. */
+(()=>{
+ const init=()=>{
+  const groups=[...document.querySelectorAll('.pricing')].map(section=>[...section.querySelectorAll('.price')]);
+  if(!groups.length)return;
+  const mobile=matchMedia('(max-width:620px)');let frame=0;
+  const paint=()=>{
+   frame=0;
+   const viewport=window.visualViewport;
+   const top=viewport?.offsetTop||0,height=viewport?.height||innerHeight,mid=top+height/2;
+   groups.forEach(cards=>{
+    let active=null,distance=Infinity;
+    if(mobile.matches)cards.forEach(card=>{
+     const rect=card.getBoundingClientRect();
+     if(rect.bottom<=top||rect.top>=top+height)return;
+     const delta=Math.abs((rect.top+rect.bottom)/2-mid);
+     if(delta<distance){active=card;distance=delta}
+    });
+    cards.forEach(card=>card.classList.toggle('scroll-active',card===active&&distance<height*.46));
+   });
+  };
+  const schedule=()=>{if(!frame)frame=requestAnimationFrame(paint)};
+  addEventListener('scroll',schedule,{passive:true});
+  addEventListener('resize',schedule,{passive:true});
+  addEventListener('pageshow',schedule);
+  window.visualViewport?.addEventListener('resize',schedule,{passive:true});
+  window.visualViewport?.addEventListener('scroll',schedule,{passive:true});
+  mobile.addEventListener('change',schedule);
+  const observer=new ResizeObserver(schedule);
+  groups.flat().forEach(card=>observer.observe(card));
+  paint();
+ };
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();

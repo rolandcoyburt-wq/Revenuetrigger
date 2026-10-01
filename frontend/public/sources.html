@@ -1231,7 +1231,6 @@ $$('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModa
 </script>
 
 <script>
-(()=>{const cards=[...document.querySelectorAll('.pricing .price')];if(!cards.length)return;let raf=0;const paint=()=>{raf=0;if(!matchMedia('(max-width:620px)').matches){cards.forEach(c=>c.classList.remove('scroll-active'));return}const mid=innerHeight/2;let best=null,d0=Infinity;cards.forEach(c=>{const r=c.getBoundingClientRect();if(r.bottom<=0||r.top>=innerHeight)return;const d=Math.abs((r.top+r.bottom)/2-mid);if(d<d0){d0=d;best=c}});cards.forEach(c=>c.classList.toggle('scroll-active',c===best&&d0<innerHeight*.46))};const q=()=>{if(!raf)raf=requestAnimationFrame(paint)};addEventListener('scroll',q,{passive:true});addEventListener('resize',q,{passive:true});paint()})();
 </script>
 
 <style>
