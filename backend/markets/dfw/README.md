@@ -1,0 +1,104 @@
+# Revenue Trigger — Dallas–Fort Worth market adapters
+
+This directory is intentionally additive. It does not edit the shared scoring, entity graph, lead rendering, Arizona adapters, D1 schema, or production market registry.
+
+## Source map
+
+| Market | Source | Role | Readiness | Notes |
+|---|---|---|---|---|
+| Fort Worth | CFW Open Data Development Permits View | Primary permit ingestion | Production-ready | Public ArcGIS table; updated hourly during business hours; includes permit type/subtype, project/work text, owner, dates/status, valuation, use, units and square feet. |
+| Fort Worth | CFW Certificates of Occupancy Table | Occupancy / opening signal | Production-ready | Public ArcGIS table; City states weekday 7am refresh. Strong occupant/project/address fields. |
+| Fort Worth | Zoning Cases Current | Early-pipeline enrichment | Enrichment-ready | Public ArcGIS layer with case number, dates, applicant, address, action and from/to zoning. |
+| Dallas | DallasNow / Accela public Building module | Primary current building-permit source | Provisional | Current official land-management system. Public reports include Building Active, Building Issued and Building Submitted, but a stable machine-readable report export still needs validation before production enablement. |
+| Dallas | Commercial Permit Activity Dashboard | Current commercial-permit cross-check | Provisional | Official current Tableau dashboard. Direct CSV/render probes have not produced a stable ingestion contract. |
+| Dallas | ROWMS Permit Detail + Permit Location | Supplemental construction / early-pipeline signal | Supplemental-ready | Public ArcGIS tables. Permit detail is joined to location by `EXTERNALFILENUM`; includes status, dates, work description, applicant company and contractors. This is not a replacement for DallasNow building permits. |
+| Dallas | Building Permits (`e7gq-4sah`) | Historical backfill only | Backfill-ready | Official Socrata dataset explicitly says it is historical and no longer updated after migration to DallasNow. |
+| Dallas | Base Zoning | Zoning enrichment | Enrichment-ready | Official polygon layer. Queried point-in-polygon by lead coordinates rather than bulk-ingested. |
+| Dallas | SUP / Planned Developments / PDS | Overlay enrichment | Enrichment-ready | Official City GIS layers for Special Use Permits, Planned Developments and Planned Development Subdistricts. |
+
+## Canonical DFW record
+
+Every permit source is normalized before it is mapped into the existing `leadFrom()` contract. The DFW layer preserves:
+
+- source/jurisdiction lineage and schema version
+- source record ID and permit/case number
+- raw type, subtype, category and status
+- canonical lifecycle stage
+- file/status/event dates with future-date sanity checks
+- normalized Texas address and coordinates when available
+- project/work/use fields
+- valuation, units and square feet with numeric guardrails
+- typed participants (`owner`, `contractor`, `applicant`, `occupant`)
+- a conservative `companyCandidate` only when a participant looks organizational
+- raw source record for debugging/schema-drift investigation
+
+`toLeadInput()` maps a normalized permit record to the current Revenue Trigger `leadFrom()` input shape without changing scoring or shared platform behavior.
+
+Dallas zoning stays separate from that opportunity contract. It enriches an existing lead by coordinates and does not create a standalone opportunity.
+
+## Source health and schema drift
+
+`health.js` defines explicit field contracts for the Fort Worth production/enrichment sources, Dallas ROW supplemental source pair, and Dallas zoning layers. It performs:
+
+- metadata/schema validation (required fields, Query capability, and pagination where required)
+- freshness validation using server-side counts over bounded lookback windows for feeds where recency is meaningful
+
+Freshness windows are bounded on both ends so implausible future municipal dates cannot make a stale source appear healthy. This specifically protects against anomalous future values observed in the Fort Worth CO feed. Static zoning polygon layers are schema/query checked rather than judged by filing recency. Health results are diagnostic only; they do not mutate shared market state or core scoring.
+
+## Live smoke check
+
+Run:
+
+```bash
+node backend/markets/dfw/live-smoke.mjs
+```
+
+The smoke runner checks Fort Worth source health, Dallas supplemental source health, Dallas zoning schema health, fetches small live samples from each enabled opportunity adapter, performs a Dallas zoning point-in-polygon probe, maps normalized permit records through `toLeadInput()`, and exits non-zero if a required health contract fails. It is intentionally read-only and does not write to D1, modify scoring, or change the production market registry.
+
+## Fort Worth adapter behavior
+
+`fetchFortWorthPermits()` uses a server-side `File_Date >= DATE 'YYYY-MM-DD'` filter and ArcGIS pagination. It intentionally uses `File_Date` as the primary freshness gate because municipal `Status_Date` values can occasionally be anomalous. `parseDate()` rejects implausibly future event dates, but the raw source value remains available under `raw`.
+
+`fetchFortWorthOccupancy()` reads the separate CO table and rejects impossible future CO dates. `fetchFortWorthZoningCases()` is a separate enrichment feed so zoning activity cannot overwrite or masquerade as building-permit activity.
+
+## Dallas adapter behavior
+
+`normalizeDallasNowRecord()` is ready for current DallasNow building records once a stable report/API payload is validated. The primary Dallas building-permit ingestion remains deliberately **disabled** by `dallasLiveSourceReadiness()` rather than shipping a brittle browser scraper.
+
+`fetchDallasRightOfWayPermits()` is a current supplemental feed. It:
+
+- filters by recent `CREATEDDATE` and defaults to commercial ROW permits
+- rejects implausibly future source dates
+- paginates the ROW permit-detail table
+- batch-joins the separate permit-location table by `EXTERNALFILENUM`
+- normalizes permit type/status, work/reason, applicant company, contractors and address into the same DFW record contract
+
+`fetchDallasZoningAtPoint()` enriches a geocoded Dallas lead with:
+
+- base zoning district
+- Special Use Permits
+- Planned Developments
+- Planned Development Subdistricts
+- ordinance, resolution, case, council-date and effective-date context where available
+
+The query uses WGS84 lead coordinates and ArcGIS `esriSpatialRelIntersects`. Historical zoning dates are allowed back to 1900 because older Dallas ordinances can still govern a current property; implausible future dates are still rejected.
+
+`fetchDallasHistoricalPermits()` is safe for historical model/backfill work only. It must never be used as the current Dallas building-permit feed.
+
+## Integration branch status
+
+This `integration/fort-worth-market-v1` branch is based on current `main` at `db5260fe16e0b9f81b36df71a50797a8b69cc7f3`.
+
+Fort Worth is intentionally wired into the core worker on this branch only:
+
+- `Fort Worth` is added to `MARKETS` and `LIVE_MARKETS`
+- `SOURCE_STATUS` identifies the City of Fort Worth Development Permits source
+- `fetchMarket('Fort Worth')` calls the validated Fort Worth permit adapter
+- normalized records map through the existing `leadFrom()` contract
+- no D1 schema or scoring changes are required
+
+Dallas remains unregistered in the core worker. Its ROW and zoning modules are carried on this branch for continuity with the DFW workstream, but the DallasNow primary building-permit feed remains disabled.
+
+The existing Territory `marketLimit: 6` entitlement is deliberately unchanged in this integration package. That is a product/plan decision rather than a data-source requirement and can be changed separately if Territory should select all seven live markets simultaneously.
+
+Do not merge or deploy this branch until the worker diff, DFW tests, live source smoke check, and Cloudflare preview behavior are reviewed.
