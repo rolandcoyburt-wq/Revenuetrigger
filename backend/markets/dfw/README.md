@@ -85,6 +85,20 @@ The query uses WGS84 lead coordinates and ArcGIS `esriSpatialRelIntersects`. His
 
 `fetchDallasHistoricalPermits()` is safe for historical model/backfill work only. It must never be used as the current Dallas building-permit feed.
 
-## Integration rule
+## Integration branch status
 
-Do not add Dallas or Fort Worth to the production `MARKETS` / `LIVE_MARKETS` constants until the DFW branch is rebased against the latest core-platform work and the minimal wiring change is reviewed. Fort Worth is ready for that integration review; Dallas now has a current supplemental ROW source plus production-usable zoning enrichment, but its primary DallasNow building-permit transport remains provisional. This directory can be rebased or cherry-picked independently.
+This `integration/fort-worth-market-v1` branch is based on current `main` at `db5260fe16e0b9f81b36df71a50797a8b69cc7f3`.
+
+Fort Worth is intentionally wired into the core worker on this branch only:
+
+- `Fort Worth` is added to `MARKETS` and `LIVE_MARKETS`
+- `SOURCE_STATUS` identifies the City of Fort Worth Development Permits source
+- `fetchMarket('Fort Worth')` calls the validated Fort Worth permit adapter
+- normalized records map through the existing `leadFrom()` contract
+- no D1 schema or scoring changes are required
+
+Dallas remains unregistered in the core worker. Its ROW and zoning modules are carried on this branch for continuity with the DFW workstream, but the DallasNow primary building-permit feed remains disabled.
+
+The existing Territory `marketLimit: 6` entitlement is deliberately unchanged in this integration package. That is a product/plan decision rather than a data-source requirement and can be changed separately if Territory should select all seven live markets simultaneously.
+
+Do not merge or deploy this branch until the worker diff, DFW tests, live source smoke check, and Cloudflare preview behavior are reviewed.
