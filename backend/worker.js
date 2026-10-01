@@ -14,6 +14,7 @@
 //   DEV_AUTH_BYPASS=false
 
 import { fetchFortWorthPermits } from './markets/dfw/fort-worth.js';
+import { fetchDallasNowBuildingRecords } from './markets/dfw/dallas-now.js';
 import { toLeadInput } from './markets/dfw/normalize.js';
 
 const PHX_PERMITS='https://maps.phoenix.gov/pub/rest/services/Public/Planning_Permit/MapServer/1/query';
@@ -25,8 +26,8 @@ const MESA_PERMITS='https://data.mesaaz.gov/resource/m2kk-w2hz.json';
 const CHANDLER_ACTIVE='https://gis.chandleraz.gov/appsanonymous/rest/services/DevelopmentServices/DSActiveProjects/MapServer';
 const CHANDLER_CONSTRUCTION='https://gis.chandleraz.gov/portalserver/rest/services/EM/DevelopmentServices/MapServer/56';
 const CHANDLER_ACCELA_PERMITS='https://gis.chandleraz.gov/appsanonymous/rest/services/Tolemi/Building_Blocks/MapServer/0/query';
-const MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler','Fort Worth'];
-const LIVE_MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler','Fort Worth'];
+const MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler','Fort Worth','Dallas'];
+const LIVE_MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler','Fort Worth','Dallas'];
 const SOURCE_STATUS={
   Phoenix:{status:'live',cadence:'City feed',source:'City of Phoenix Planning & Development'},
   Tempe:{status:'live',cadence:'Published weekly',source:'City of Tempe Building Safety'},
@@ -34,7 +35,8 @@ const SOURCE_STATUS={
   Scottsdale:{status:'live',cadence:'Official CSV permit report',source:'City of Scottsdale Building Permit Reports'},
   Mesa:{status:'live',cadence:'City open-data API',source:'City of Mesa Data Hub — Building Permits'},
   Chandler:{status:'live',cadence:'Official Accela/ArcGIS permit feed + Early Pipeline',source:'City of Chandler Accela permit layer + DSActiveProjects'},
-  'Fort Worth':{status:'live',cadence:'Updated hourly during business hours',source:'City of Fort Worth Development Services — Development Permits Open Data'}
+  'Fort Worth':{status:'live',cadence:'Updated hourly during business hours',source:'City of Fort Worth Development Services — Development Permits Open Data'},
+  Dallas:{status:'live',cadence:'Rolling 7-day DallasNow Building Submitted + Issued reports',source:'City of Dallas DallasNow Building'}
 };
 const INDUSTRIES=['Commercial services','HVAC','Electrical','Plumbing','Roofing','Landscaping','Security','Signage'];
 const PLANS={
@@ -1812,6 +1814,35 @@ async function fetchFortWorth(days=7,limit=500){
     .slice(0,safeLimit);
 }
 
+function dallasSourceLabel(record){
+  const observed=[...new Set((record.sourceObservations||[]).map(x=>x.report==='issued'?'Issued':'Submitted'))];
+  const lifecycle=observed.length?observed.join(' + '):'Building';
+  const url=record.sourceUrl||'';
+  return `City of Dallas DallasNow Building — ${lifecycle}${url?` — ${url}`:''}`;
+}
+async function fetchDallas(days=7,limit=500){
+  const safeLimit=Math.max(1,Number(limit)||500);
+  const records=await fetchDallasNowBuildingRecords({days:Math.max(1,Number(days)||7)});
+  const leads=records.map(record=>{
+    const input=toLeadInput(record);
+    const lead=leadFrom({...input,source:dallasSourceLabel(record)});
+    return {
+      ...lead,
+      sourceRecordId:record.sourceRecordId,
+      sourceUrl:record.sourceUrl||null,
+      dallasNowLink:record.dallasNowLink||null,
+      temporaryId:Boolean(record.temporaryId),
+      secondaryFingerprint:record.secondaryFingerprint||null,
+      sourceObservations:record.sourceObservations||[],
+      participantRole:record.companyCandidate?'applicant':null,
+      parcelNumber:record.parcelNumber||null,
+      councilDistrict:record.councilDistrict||null
+    };
+  }).sort((a,b)=>b.score-a.score||new Date(b.date)-new Date(a.date)).slice(0,safeLimit);
+  Object.defineProperty(leads,'_meta',{value:records._meta||null,enumerable:false});
+  return leads;
+}
+
 async function fetchMarket(market,days=7,limit=500,env=null){
   if(market==='Phoenix')return fetchPhoenix(days,limit);
   if(market==='Tempe')return fetchTempe(days,limit);
@@ -1820,6 +1851,7 @@ async function fetchMarket(market,days=7,limit=500,env=null){
   if(market==='Mesa')return fetchMesa(days,limit);
   if(market==='Chandler')return fetchChandlerAccelaPermits(days,limit);
   if(market==='Fort Worth')return fetchFortWorth(days,limit);
+  if(market==='Dallas')return fetchDallas(days,limit);
   return [];
 }
 async function persist(env,leads){
@@ -2271,7 +2303,7 @@ async function handleStripeWebhook(request,env){
   await env.DB.prepare(`INSERT INTO billing_events (event_id,type,processed_at) VALUES (?,?,datetime('now'))`).bind(evt.id,evt.type).run();return new Response('ok');
 }
 
-function marketFromSource(source=''){const s=String(source);if(s.includes('Tempe'))return 'Tempe';if(s.includes('Tucson'))return 'Tucson';if(s.includes('Scottsdale'))return 'Scottsdale';if(s.includes('Mesa'))return 'Mesa';if(s.includes('Chandler'))return 'Chandler';if(s.includes('Fort Worth')||s.includes('fort_worth'))return 'Fort Worth';return 'Phoenix';}
+function marketFromSource(source=''){const s=String(source);if(s.includes('Tempe'))return 'Tempe';if(s.includes('Tucson'))return 'Tucson';if(s.includes('Scottsdale'))return 'Scottsdale';if(s.includes('Mesa'))return 'Mesa';if(s.includes('Chandler'))return 'Chandler';if(s.includes('Fort Worth')||s.includes('fort_worth'))return 'Fort Worth';if(s.includes('Dallas')||s.includes('dallas_dallasnow'))return 'Dallas';return 'Phoenix';}
 function cleanMarkets(items,limit){const out=[];for(const x of Array.isArray(items)?items:[]){if(MARKETS.includes(x)&&!out.includes(x))out.push(x);if(out.length>=limit)break;}return out.length?out:['Phoenix'];}
 function userPlanActive(user){return ['active','trialing'].includes(user.subscription_status||'')&&PLANS[user.plan] ? user.plan : 'Beta';}
 function cleanIndustries(items,limit){const out=[];for(const x of Array.isArray(items)?items:[]){if(INDUSTRIES.includes(x)&&!out.includes(x))out.push(x);if(out.length>=limit)break;}return out.length?out:['Commercial services'];}
