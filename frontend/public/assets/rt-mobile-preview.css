@@ -3,6 +3,18 @@
 /* The market board replaces radar dots and their legacy shadowed labels. */
 html body #intelConsole #radar .rt-market-row::after{content:none!important;display:none!important}
 @media(max-width:700px){
+ /* Market Brief reads as three compact entries rather than tall cards. */
+ .rt-marketing #signalPreviews{display:block;border-top:1px solid var(--rt-line)}
+ .rt-marketing #signalPreviews .rt-preview-card{padding:16px 0;border:0;border-bottom:1px solid var(--rt-line);background:transparent;gap:0}
+ .rt-marketing #signalPreviews .rt-card-top{align-items:center;gap:10px}
+ .rt-marketing #signalPreviews .rt-preview-card h3{font-size:19px;line-height:1.25;min-height:0;margin:8px 0 4px}
+ .rt-marketing #signalPreviews .rt-card-address{font-size:11px;line-height:1.4;margin:0 0 10px}
+ .rt-marketing #signalPreviews .rt-card-company{display:none}
+ .rt-marketing #signalPreviews .rt-card-metrics{padding:0;align-items:center;gap:16px}
+ .rt-marketing #signalPreviews .rt-card-metrics>div{display:flex;align-items:baseline;gap:8px}
+ .rt-marketing #signalPreviews .rt-card-metrics small{font-size:9px;max-width:70px;line-height:1.25}
+ .rt-marketing #signalPreviews .rt-card-metrics strong{font-size:23px;margin:0;white-space:nowrap}
+ .rt-marketing #signalPreviews .rt-text-link{min-height:44px;margin:4px 0 -8px;padding:10px 0;font-size:12px}
  .rt-mobile-plans{display:block;margin:0 0 18px}
  .rt-plan-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:5px;border:1px solid #708378;border-radius:14px;background:#e5e9e1}
  .rt-plan-choices button{min-height:46px;border:0;border-radius:9px;background:transparent;color:#173c2b;font-family:inherit;font-weight:700;font-size:14px;line-height:1.2;cursor:pointer}
