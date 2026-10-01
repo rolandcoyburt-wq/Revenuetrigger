@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - integration/dallas-market-v1
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
