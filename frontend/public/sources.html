@@ -1117,7 +1117,7 @@ html[data-theme="light"] .source-flow-console:before{background:radial-gradient(
       <span class="eyebrow"><span class="dot"></span>Data engine</span>
       <h1>Every signal starts with a <em>source.</em></h1>
       <p>Revenue Trigger turns fragmented municipal permit and project data into one ranked opportunity stream while preserving each market's source and refresh cadence.</p>
-      <div class="source-meta"><span><b>07</b> live permit markets</span><span><b>01</b> early-pipeline market</span><span><b>AZ + TX</b> current coverage</span></div>
+      <div class="source-meta"><span><b>08</b> live permit markets</span><span><b>01</b> early-pipeline market</span><span><b>AZ + TX</b> current coverage</span></div>
     </div>
     <div class="source-flow-console" id="sourceFlowConsole" aria-label="Interactive Revenue Trigger source ingestion visualization">
       <div class="flow-head">
@@ -1133,6 +1133,7 @@ html[data-theme="light"] .source-flow-console:before{background:radial-gradient(
           <button class="flow-source" type="button" data-city="MESA" data-feed="Commercial permits"><span>MESA</span><small>API</small><i class="flow-source-dot"></i></button>
           <button class="flow-source" type="button" data-city="CHANDLER" data-feed="Live permits + early pipeline"><span>CHANDLER</span><small>PERMITS</small><i class="flow-source-dot"></i></button>
           <button class="flow-source" type="button" data-city="FORT WORTH" data-feed="Development permits"><span>FORT WORTH</span><small>PERMITS</small><i class="flow-source-dot"></i></button>
+          <button class="flow-source" type="button" data-city="DALLAS" data-feed="Building Submitted + Issued reports"><span>DALLAS</span><small>BUILDING</small><i class="flow-source-dot"></i></button>
         </div>
         <div class="flow-processor rt-process-track" aria-label="Source processing stages">
           <span><b>01</b> Ingest</span><i aria-hidden="true">→</i><span><b>02</b> Normalize</span><i aria-hidden="true">→</i><span><b>03</b> Score</span>
@@ -1144,13 +1145,13 @@ html[data-theme="light"] .source-flow-console:before{background:radial-gradient(
           <div class="flow-output-score"><span>PIPELINE</span><b>LIVE</b></div>
         </div>
       </div>
-      <div class="flow-foot"><span class="flow-foot-left"><i></i>7 source streams connected</span><span>INGEST → NORMALIZE → SCORE</span></div>
+      <div class="flow-foot"><span class="flow-foot-left"><i></i>8 source streams connected</span><span>INGEST → NORMALIZE → SCORE</span></div>
     </div>
   </div>
 </section>
 <section class="section sources-coverage" id="sources">
   <div class="wrap">
-    <div class="section-head"><div><span class="eyebrow">Current coverage</span><h2>Arizona + Fort Worth source network.</h2></div><p>This page is now the home for Revenue Trigger's expanding source network, market status and source cadence.</p></div>
+    <div class="section-head"><div><span class="eyebrow">Current coverage</span><h2>Arizona + Fort Worth + Dallas source network.</h2></div><p>This page is now the home for Revenue Trigger's expanding source network, market status and source cadence.</p></div>
     <div class="sources-page-grid">
       <div class="source"><span class="tag">Live</span><h3>Phoenix permits</h3><p>City of Phoenix Planning &amp; Development permit activity refreshed into Revenue Trigger.</p><div class="source-detail"><strong>Signal type:</strong> Permit activity</div></div>
       <div class="source"><span class="tag">Live · Weekly source</span><h3>Tempe permits</h3><p>City of Tempe Building Safety permit data published from its Accela open-data feed.</p><div class="source-detail"><strong>Signal type:</strong> Permit activity</div></div>
@@ -1159,14 +1160,15 @@ html[data-theme="light"] .source-flow-console:before{background:radial-gradient(
       <div class="source"><span class="tag">Live</span><h3>Mesa permits</h3><p>Current commercial permit activity is ingested from the City of Mesa Data Hub Building Permits API and normalized into Revenue Trigger.</p><div class="source-detail"><strong>Signal type:</strong> Commercial permits</div></div>
       <div class="source"><span class="tag">Live · Early Pipeline</span><h3>Chandler permits + projects</h3><p>Official Chandler Accela permit records now power the live opportunity feed, while PRE-TECH and approved projects remain available separately as Early Pipeline intelligence.</p><div class="source-detail"><strong>Signal type:</strong> Permit activity + pre-permit project activity</div></div>
       <div class="source"><span class="tag">Live</span><h3>Fort Worth permits</h3><p>City of Fort Worth Development Services Development Permits Open Data supplies permit activity to the stored opportunity feed.</p><div class="source-detail"><strong>Signal type:</strong> Development permits</div></div>
+      <div class="source"><span class="tag">Live</span><h3>Dallas permits</h3><p>City of Dallas DallasNow Building supplies building permit activity to the stored opportunity feed.</p><div class="source-detail"><strong>Cadence:</strong> Rolling 7-day Building Submitted + Issued reports</div></div>
     </div>
-    <div class="source-growth"><strong>Dallas is planned / not live.</strong> It is not included in current coverage. <strong>Built to expand.</strong> New municipalities and source types can be added here as Revenue Trigger rolls into additional Arizona and national markets without overcrowding the opportunity feed.</div>
+    <div class="source-growth"><strong>Built to expand.</strong> New municipalities and source types can be added here as Revenue Trigger rolls into additional Arizona and national markets without overcrowding the opportunity feed.</div>
   </div>
 </section>
 <section class="section sources-page-price rt-home-plans" id="pricing"><div class="wrap"><div class="section-head"><div><span class="eyebrow">Plans</span><h2>Pay for speed and relevance.</h2></div><p>Choose a plan based on how quickly you want opportunities delivered and how much history you need.</p></div><div class="pricing"><div class="price"><h3>Scout</h3><div class="money">$49 <small>/mo</small></div><ul><li>1 industry · 1 market</li><li>Weekly opportunity digest</li><li>7-day history</li><li>Saved opportunities</li></ul><button class="btn btn-secondary" onclick="buyPlan('Scout')">Choose Scout</button></div><div class="price featured"><span class="badge">BEST VALUE</span><h3>Hunter</h3><div class="money">$149 <small>/mo</small></div><ul><li>Up to 3 industries · 3 markets</li><li>Daily email digest</li><li>30-day history</li><li>Saved opportunities</li><li>CSV export</li></ul><button class="btn btn-primary" onclick="buyPlan('Hunter')">Choose Hunter</button></div><div class="price"><h3>Territory</h3><div class="money">$499 <small>/mo</small></div><ul><li>All live industries · up to 6 selected markets</li><li>Near-real-time high-intent alerts</li><li>90-day history</li><li>CSV export</li><li>Priority expansion features</li></ul><button class="btn btn-secondary" onclick="buyPlan('Territory')">Choose Territory</button></div></div><div class="cta"><div><h2>Start with a free account.</h2><p>Use passwordless sign-in, personalize your industry, save opportunities, then upgrade when you want automated delivery and deeper history.</p></div><form class="capture" id="capture"><input required type="email" id="email" placeholder="you@company.com"/><button>Send sign-in link</button></form></div></div></section>
 <section class="rt-final"><div class="wrap"><h2>The next opportunity<br>starts with a signal.</h2><a class="rt-button green" href="/signals">See opportunities <span aria-hidden="true">↗</span></a></div></section>
 </main>
-<footer class="wrap"><div>© 2026 Revenue Trigger • Arizona + Fort Worth</div><div>Public-data intelligence • Opportunity values are directional estimates</div></footer>
+<footer class="wrap"><div>© 2026 Revenue Trigger • Arizona + Fort Worth + Dallas</div><div>Public-data intelligence • Opportunity values are directional estimates</div></footer>
 <div class="modal" id="signinModal"><div class="modal-card small"><div class="modal-top"><div><img class="rt-signin-brand" src="/assets/RT-Logo-WHT-BG.svg?v=site-green" alt="Revenue Trigger"><span class="eyebrow">Passwordless access</span><h2 style="margin:12px 0 0">Sign in to Revenue Trigger</h2></div><button class="close" onclick="closeModal('signinModal')">×</button></div><p style="color:#98aaa2">We’ll email you a secure one-time link. No password required.</p><form id="signinForm"><div class="formrow"><label>Email</label><input id="signinEmail" required type="email" placeholder="you@company.com"></div><button class="btn btn-primary" style="width:100%;margin-top:14px">Send sign-in link</button></form><div class="notice" id="signinNotice" style="display:none"></div></div></div>
 <script>
 const CONFIG=RTConfig;
@@ -1196,6 +1198,7 @@ if(sourceFlowConsole){
   sourceFlowConsole.addEventListener('pointerleave',()=>{sourceFlowConsole.style.setProperty('--tilt-x','0deg');sourceFlowConsole.style.setProperty('--tilt-y','0deg')});
 }
 const flowCopy={
+  DALLAS:'City of Dallas DallasNow Building — Rolling 7-day Building Submitted + Issued reports, normalized into the stored opportunity feed.',
   'FORT WORTH':'City of Fort Worth development permit activity is normalized into the stored opportunity feed.',
   PHOENIX:'Permit activity normalized into the Revenue Trigger opportunity model.',
   TEMPE:'Weekly Building Safety data passes through the same scoring model.',
