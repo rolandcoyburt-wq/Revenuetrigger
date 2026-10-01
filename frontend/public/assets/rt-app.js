@@ -546,7 +546,7 @@ function renderPipeline(){
     ? `${pipelineSourceStatus==='degraded'?'Source degraded · ':''}${rows.length} ${coverageLabel} · ${baseRows.length} total at current stage/score`
     : `Live preview · ${rows.length} early-stage opportunities shown`;
 
-  list.innerHTML=rows.slice(0,120).map(x=>`
+  const pipelineCards=rows.slice(0,120).map(x=>`
     <div class="pipeline-lead">
       <div class="score">${esc(x.score)}</div>
       <div class="pipeline-main">
@@ -560,7 +560,11 @@ function renderPipeline(){
       <div class="pipeline-temperature ${x.temperature==='HOT'?'hot':x.temperature==='WARM'?'warm':x.temperature==='WATCH'?'watch':'low'}">${esc(x.temperature||'LOW')}</div>
       <div class="pipeline-actions"><button class="view" onclick="openPipelineLead('${String(x.id).replace(/'/g,"\\'")}')">${user?'View':'Reveal'}</button></div>
     </div>
-  `).join('') || '<div class="pipeline-empty">No pipeline opportunities match the current filters.</div>';
+  `).join('');
+  const publicGate=!user&&rows.length
+    ? `<div class="rt-public-gate rt-public-gate-compact"><span class="eyebrow">Earlier signal, deeper detail</span><h3>${pipelineRows.length} early-stage opportunities are available in this preview.</h3><p>Create a free account to reveal participants, project IDs and the full Early Pipeline detail.</p><button class="btn btn-primary" type="button" onclick="openSignin()">Create free account</button></div>`
+    : '';
+  list.innerHTML=pipelineCards+publicGate || '<div class="pipeline-empty">No pipeline opportunities match the current filters.</div>';
 }
 
 
