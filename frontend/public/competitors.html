@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#020806">
-<title>Competitor Intelligence | RevenueTrigger</title>
-<meta name="description" content="Search contractor and company activity tied to public permit data across RevenueTrigger markets.">
-<link rel="icon" type="image/png" href="/assets/FAVICON.png">
+<title>Competitor Intelligence | Revenue Trigger</title>
+<meta name="description" content="Search contractor and company activity tied to public permit data across Revenue Trigger markets.">
+<link rel="icon" type="image/svg+xml" href="/assets/revenuetrigger-icon.svg?v=site-green">
 
 <style>
 :root{
@@ -41,7 +41,7 @@ html[data-theme="light"] .brand-logo-light{display:block;height:36px;max-width:2
 
 /* Hero */
 .hero{position:relative;overflow:hidden;padding:76px 0 48px;border-bottom:1px solid #10291b}
-.hero:after{content:"";position:absolute;right:max(7vw,44px);top:10px;width:min(430px,32vw);aspect-ratio:1;background:url('/assets/revenuetrigger-icon.svg') center/contain no-repeat;opacity:.065;filter:drop-shadow(0 0 62px rgba(42,238,97,.42));pointer-events:none}
+.hero:after{content:"";position:absolute;right:max(7vw,44px);top:10px;width:min(430px,32vw);aspect-ratio:1;background:url('/assets/revenuetrigger-icon.svg?v=site-green') center/contain no-repeat;opacity:.065;filter:drop-shadow(0 0 62px rgba(42,238,97,.42));pointer-events:none}
 .hero-grid{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(390px,.95fr);gap:52px;align-items:center}
 .hero-copy h1{font-size:clamp(54px,6.6vw,86px);line-height:.94;letter-spacing:-.055em;margin:22px 0 20px;max-width:780px}
 .hero-copy h1 em{font-style:normal;color:var(--lime);text-shadow:0 0 34px rgba(42,238,97,.12)}
@@ -501,7 +501,12 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
 }
 </style>
 
-<link rel="stylesheet" href="/assets/rt-shell.css"><script src="/assets/rt-config.js"></script><script src="/assets/rt-format.js"></script><script src="/assets/rt-auth.js"></script></head>
+<link rel="stylesheet" href="/assets/rt-shell.css"><script src="/assets/rt-config.js"></script><script src="/assets/rt-format.js"></script><script src="/assets/rt-auth.js"></script><meta property="og:image" content="https://revenuetrigger.ai/assets/social-market-signal-v3.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://revenuetrigger.ai/assets/social-market-signal-v3.jpg">
+<meta property="og:title" content="Revenue Trigger — Find the money event">
+<meta name="twitter:title" content="Revenue Trigger — Find the money event">
+</head>
 <body class="rt-existing">
 <div id="rt-header" data-shell="app"></div>
 
@@ -513,9 +518,9 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
       <h1 class="competitor-hero-title">
         <span class="hero-line hero-line-1">See who is</span>
         <span class="hero-line hero-line-2"><em>active</em> in</span>
-        <span class="hero-line hero-line-3">your market.</span>
+        <span class="hero-line hero-line-3">your market<span class="rt-green-period">.</span></span>
       </h1>
-      <p>Search contractors and companies tied to public permit activity, compare recent project activity, and see where competitors are showing up across RevenueTrigger markets.</p>
+      <p>Search contractors and companies tied to public permit activity, compare recent project activity, and see where competitors are showing up across Revenue Trigger markets.</p>
       <div class="hero-actions">
         <a class="btn btn-primary" href="#competitor-tool">Explore competitor activity ↗</a>
         <a class="btn btn-secondary" href="/signals">Back to opportunities</a>
@@ -526,26 +531,13 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
     <div class="intel-console" id="intelConsole">
       <div class="console-head">
         <div class="console-head-title">
-          <img class="console-head-logo" src="/assets/revenuetrigger-logo.svg" alt="">
-          <span>MARKET ACTIVITY RADAR</span>
+          <img class="console-head-logo" src="/assets/revenuetrigger-logo.svg?v=site-green" alt="">
+          <span>MARKET INTELLIGENCE</span>
           <span class="console-head-light" aria-hidden="true"></span>
         </div>
-        <span class="console-live"><span class="pulse"></span>LIVE DATA</span>
+        <span class="console-live"><span class="pulse"></span>EXPLORE MARKETS</span>
       </div>
-      <div class="radar" id="radar">
-        <div class="cross-h"></div><div class="cross-v"></div>
-        <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
-        <div class="sweep"></div>
-        <div class="center-mark" id="competitorRadarCenter"><img src="/assets/revenuetrigger-logo.svg" alt="RevenueTrigger"></div>
-        <button class="node n1" type="button" data-market="Phoenix" data-label="PHOENIX" aria-label="Filter competitors to Phoenix"></button>
-        <button class="node n2" type="button" data-market="Tempe" data-label="TEMPE" aria-label="Filter competitors to Tempe"></button>
-        <button class="node n3" type="button" data-market="Chandler" data-label="CHANDLER" aria-label="Filter competitors to Chandler"></button>
-        <button class="node n4" type="button" data-market="Scottsdale" data-label="SCOTTSDALE" aria-label="Filter competitors to Scottsdale"></button>
-        <div class="radar-topo radar-topo-top" aria-hidden="true">33.4484° N<br>112.0740° W</div>
-        <div class="radar-topo radar-topo-bottom" aria-hidden="true">RT / ARIZONA<br>MARKET NET 04</div>
-        <span class="radar-bottom-light" aria-hidden="true"></span>
-        <span class="radar-interact-hint" id="competitorRadarHint">SELECT A MARKET TO FILTER</span>
-      </div>
+<div class="radar rt-market-board" id="radar"><div class="rt-board-label">Explore the market footprint <span>AZ + TX</span></div><button class="node rt-market-row" type="button" data-market="Phoenix" data-label="PHOENIX" aria-label="Filter competitors to Phoenix" style="--row:0"><span class="rt-market-number">01</span><span>Phoenix</span><span class="rt-market-trace" aria-hidden="true"></span><span aria-hidden="true">↗</span></button><button class="node rt-market-row" type="button" data-market="Tempe" data-label="TEMPE" aria-label="Filter competitors to Tempe" style="--row:1"><span class="rt-market-number">02</span><span>Tempe</span><span class="rt-market-trace" aria-hidden="true"></span><span aria-hidden="true">↗</span></button><button class="node rt-market-row" type="button" data-market="Tucson" data-label="TUCSON" aria-label="Filter competitors to Tucson" style="--row:2"><span class="rt-market-number">03</span><span>Tucson</span><span class="rt-market-trace" aria-hidden="true"></span><span aria-hidden="true">↗</span></button><button class="node rt-market-row" type="button" data-market="Scottsdale" data-label="SCOTTSDALE" aria-label="Filter competitors to Scottsdale" style="--row:3"><span class="rt-market-number">04</span><span>Scottsdale</span><span class="rt-market-trace" aria-hidden="true"></span><span aria-hidden="true">↗</span></button><button class="node rt-market-row" type="button" data-market="Mesa" data-label="MESA" aria-label="Filter competitors to Mesa" style="--row:4"><span class="rt-market-number">05</span><span>Mesa</span><span class="rt-market-trace" aria-hidden="true"></span><span aria-hidden="true">↗</span></button><button class="node rt-market-row" type="button" data-market="Chandler" data-label="CHANDLER" aria-label="Filter competitors to Chandler" style="--row:5"><span class="rt-market-number">06</span><span>Chandler</span><span class="rt-market-trace" aria-hidden="true"></span><span aria-hidden="true">↗</span></button><button class="node rt-market-row" type="button" data-market="Fort Worth" data-label="FORT WORTH" aria-label="Filter competitors to Fort Worth" style="--row:6"><span class="rt-market-number">07</span><span>Fort Worth</span><span class="rt-market-trace" aria-hidden="true"></span><span aria-hidden="true">↗</span></button><span class="radar-interact-hint" id="competitorRadarHint">SELECT A MARKET TO FILTER</span></div>
       <div class="console-metrics">
         <div class="metric"><small>Companies found</small><strong class="accent" id="heroCompanies">—</strong></div>
         <div class="metric"><small>Markets</small><strong id="heroMarkets">6</strong></div>
@@ -577,8 +569,8 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
         </select>
         <button class="btn btn-primary" id="competitorRun">Search competitors</button>
       </div>
-      <div class="competitor-note" id="competitorNote">Sign in to explore contractor activity across RevenueTrigger markets.</div>
-      <div class="competitor-list" id="competitorList"><div class="competitor-empty">Competitor Intelligence is available to signed-in RevenueTrigger users.</div></div>
+      <div class="competitor-note" id="competitorNote">Sign in to explore contractor activity across Revenue Trigger markets.</div>
+      <div class="competitor-list" id="competitorList"><div class="competitor-empty">Competitor Intelligence is available to signed-in Revenue Trigger users.</div></div>
       <div class="competitor-more" id="competitorMore">
         <button class="btn btn-secondary" id="competitorLoadMore">Load more competitors</button>
         <div class="competitor-countline" id="competitorCountline"></div>
@@ -588,9 +580,10 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
   </div>
 </section>
 <section class="section light-band" id="pricing"><div class="wrap"><div class="section-head"><div><span class="eyebrow">Plans</span><h2>Pay for speed and relevance.</h2></div><p>Choose a plan based on how quickly you want opportunities delivered and how much history you need.</p></div><div class="pricing"><div class="price"><h3>Scout</h3><div class="money">$49 <small>/mo</small></div><ul><li>1 industry · 1 market</li><li>Weekly opportunity digest</li><li>7-day history</li><li>Saved opportunities</li></ul><button class="btn btn-secondary" onclick="buyPlan('Scout')">Choose Scout</button></div><div class="price featured"><span class="badge">BEST VALUE</span><h3>Hunter</h3><div class="money">$149 <small>/mo</small></div><ul><li>Up to 3 industries · 3 markets</li><li>Daily email digest</li><li>30-day history</li><li>Saved opportunities</li><li>CSV export</li></ul><button class="btn btn-primary" onclick="buyPlan('Hunter')">Choose Hunter</button></div><div class="price"><h3>Territory</h3><div class="money">$499 <small>/mo</small></div><ul><li>All live industries · up to 6 selected markets</li><li>Near-real-time high-intent alerts</li><li>90-day history</li><li>CSV export</li><li>Priority expansion features</li></ul><button class="btn btn-secondary" onclick="buyPlan('Territory')">Choose Territory</button></div></div><div class="cta"><div><h2>Start with a free account.</h2><p>Use passwordless sign-in, personalize your industry, save opportunities, then upgrade when you want automated delivery and deeper history.</p></div><form class="capture" id="capture"><input required type="email" id="email" placeholder="you@company.com"/><button>Send sign-in link</button></form></div></div></section>
+<section class="rt-final"><div class="wrap"><h2>The next opportunity<br>starts with a signal.</h2><a class="rt-button green" href="/signals">See opportunities <span aria-hidden="true">↗</span></a></div></section>
 </main>
 
-<footer><div class="wrap" style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap"><span>RevenueTrigger</span><span>Public-data opportunity intelligence</span></div></footer>
+<footer><div class="wrap" style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap"><span>Revenue Trigger</span><span>Public-data opportunity intelligence</span></div></footer>
 
 <div class="modal" id="competitorProfileModal">
   <div class="modal-card" style="width:min(860px,100%);max-height:92vh;overflow:auto">
@@ -604,7 +597,7 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
 
 <div class="modal" id="signinModal">
   <div class="modal-card">
-    <div class="modal-top"><div><span class="eyebrow">Passwordless access</span><h2 style="margin:12px 0 0">Sign in to RevenueTrigger</h2></div><button class="close" onclick="closeModal('signinModal')">×</button></div>
+    <div class="modal-top"><div><img class="rt-signin-brand" src="/assets/RT-Logo-WHT-BG.svg?v=site-green" alt="Revenue Trigger"><span class="eyebrow">Passwordless access</span><h2 style="margin:12px 0 0">Sign in to Revenue Trigger</h2></div><button class="close" onclick="closeModal('signinModal')">×</button></div>
     <p style="color:#98aaa2">We’ll email you a secure one-time link. No password required.</p>
     <form id="signinForm"><div class="formrow"><label>Email</label><input id="signinEmail" required type="email" placeholder="you@company.com"></div><button class="btn btn-primary" style="width:100%;margin-top:14px">Send sign-in link</button></form>
     <div class="notice" id="signinNotice" style="display:none"></div>
@@ -792,7 +785,7 @@ async function loadRelationshipIntelligence(company){
 }
 function renderCompetitors(){
   const el=$('#competitorList'); if(!el)return;
-  if(!user){el.innerHTML='<div class="competitor-empty">Sign in to explore contractor activity across RevenueTrigger markets.</div>';return}
+  if(!user){el.innerHTML='<div class="competitor-empty">Sign in to explore contractor activity across Revenue Trigger markets.</div>';return}
   if(!competitorData.length){el.innerHTML='<div class="competitor-empty">No matching contractor activity found for these filters.</div>';return}
   el.innerHTML=competitorData.map((c,i)=>`
   <div class="competitor-row" id="competitorRow${i}">
@@ -877,34 +870,6 @@ $$('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModa
 const consoleEl=$('#intelConsole');
 const competitorRadarCenter=$('#competitorRadarCenter');
 const competitorNodes=$$('.radar .node');
-const canParallax=window.matchMedia('(hover:hover) and (pointer:fine)').matches &&
-  !window.matchMedia('(prefers-reduced-motion:reduce)').matches;
-
-if(canParallax){
-  consoleEl.addEventListener('pointermove',e=>{
-    const r=consoleEl.getBoundingClientRect();
-    const xp=Math.max(0,Math.min(100,((e.clientX-r.left)/r.width)*100));
-    const yp=Math.max(0,Math.min(100,((e.clientY-r.top)/r.height)*100));
-    consoleEl.style.setProperty('--px',xp+'%');
-    consoleEl.style.setProperty('--py',yp+'%');
-    const nx=xp/100-.5,ny=yp/100-.5;
-    consoleEl.style.setProperty('--tilt-x',(nx*2.2).toFixed(2)+'deg');
-    consoleEl.style.setProperty('--tilt-y',(-ny*1.7).toFixed(2)+'deg');
-    if(competitorRadarCenter){
-      competitorRadarCenter.style.transform=`translate(calc(-50% + ${(xp-50)*.075}px),calc(-50% + ${(yp-50)*.075}px))`;
-    }
-  },{passive:true});
-  consoleEl.addEventListener('pointerleave',()=>{
-    consoleEl.style.setProperty('--px','50%');
-    consoleEl.style.setProperty('--py','45%');
-    consoleEl.style.setProperty('--tilt-x','0deg');
-    consoleEl.style.setProperty('--tilt-y','0deg');
-    if(competitorRadarCenter)competitorRadarCenter.style.transform='translate(-50%,-50%)';
-  });
-}else{
-  consoleEl.style.transform='none';
-}
-
 function previewCompetitorMarket(node){
   competitorNodes.forEach(n=>n.classList.toggle('selected',n===node));
   const market=node?.dataset?.market||'';
@@ -934,17 +899,6 @@ competitorNodes.forEach(node=>{
 
 updateHeroMetrics();
 
-/* gently reposition radar nodes while keeping them interactive */
-let tick=0;
-setInterval(()=>{
-  tick++;
-  competitorNodes.forEach((n,i)=>{
-    const a=(tick*.42+i*1.45),rad=22+(i%2)*9;
-    n.style.left=(50+Math.cos(a)*rad)+'%';
-    n.style.top=(50+Math.sin(a)*rad*.72)+'%';
-  });
-},1900);
-
 (async()=>{const hp=new URLSearchParams(location.hash.replace(/^#/,''));const magic=hp.get('magic');if(magic){try{await verifyMagic(magic)}catch(e){$('#competitorNote').textContent=e.message}}else{const signed=await loadMe();if(signed){await loadWatchlist();resetCompetitorPagination();loadCompetitors()}else renderWatchlist()}})();
 
 
@@ -973,7 +927,6 @@ if(captureForm)captureForm.addEventListener('submit',async e=>{
 </script>
 
 <script>
-(()=>{const cards=[...document.querySelectorAll('.pricing .price')];if(!cards.length)return;let raf=0;const paint=()=>{raf=0;if(!matchMedia('(max-width:620px)').matches){cards.forEach(c=>c.classList.remove('scroll-active'));return}const mid=innerHeight/2;let best=null,d0=Infinity;cards.forEach(c=>{const r=c.getBoundingClientRect();if(r.bottom<=0||r.top>=innerHeight)return;const d=Math.abs((r.top+r.bottom)/2-mid);if(d<d0){d0=d;best=c}});cards.forEach(c=>c.classList.toggle('scroll-active',c===best&&d0<innerHeight*.46))};const q=()=>{if(!raf)raf=requestAnimationFrame(paint)};addEventListener('scroll',q,{passive:true});addEventListener('resize',q,{passive:true});paint()})();
 </script>
 </body>
 </html>

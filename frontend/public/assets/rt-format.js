@@ -3,7 +3,7 @@ window.RTFormat=(()=>{
 // Exact recurring UTF-8-as-CP437 artifacts confirmed in sanitized Arizona fixtures.
 // Do not guess at unknown sequences or transcode whole strings.
 function normalizeDisplayText(v=''){
-  return String(v??'').replace(/ΓÇö/g,'—').replace(/ΓÇ¥/g,'”');
+  return String(v??'').replace(/ΓÇö/g,'—').replace(/ΓÇ¥/g,'”').replace(/\bRevenueTrigger\b/g,'Revenue Trigger');
 }
 function preserveRedaction(v){return v.replace(/\[phone redacted\]/gi,'[PHONE REDACTED]')}
 function approxMoney(n){
@@ -18,8 +18,24 @@ function displayCompanyName(v=''){
   const raw=normalizeDisplayText(v).replace(/\s+/g,' ').trim();
   if(!raw||/^(not listed|unknown|n\/a|none|null|-+)$/i.test(raw))return 'Not listed';
   if(raw!==raw.toUpperCase())return raw;
-  const keepUpper=new Set(['LLC','LLP','LP','PLLC','USA','US','HVAC','GC','DBA','AZ','II','III','IV']);
+  const keepUpper=new Set(['LLC','LLP','LP','PLLC','USA','US','HVAC','GC','DBA','AZ','TX','II','III','IV']);
   return preserveRedaction(raw.toLowerCase().replace(/\b[a-z0-9][a-z0-9'&.-]*\b/g,w=>{const u=w.toUpperCase();return keepUpper.has(u)?u:w.charAt(0).toUpperCase()+w.slice(1)}));
+}
+function displayAddress(v=''){
+  const keep=new Set(['N','S','E','W','NE','NW','SE','SW','AZ','TX','US','USA','PO']);
+  return preserveRedaction(normalizeDisplayText(v).replace(/\b[A-Z][A-Z']*\b/g,w=>keep.has(w)?w:w[0]+w.slice(1).toLowerCase()));
+}
+function displayLabel(v=''){
+  const s=normalizeDisplayText(v).replace(/_/g,' ').trim();
+  if(!s||s!==s.toUpperCase())return s;
+  return preserveRedaction(s[0]+s.slice(1).toLowerCase());
+}
+function intelligenceText(v='',x={}){
+  let s=normalizeDisplayText(v);
+  if(x.company&&displayCompanyName(x.company)!=='Not listed')s=s.split(normalizeDisplayText(x.company).toUpperCase()).join(displayCompanyName(x.company)).split(normalizeDisplayText(x.company)).join(displayCompanyName(x.company));
+  if(x.address)s=s.split(normalizeDisplayText(x.address)).join(displayAddress(x.address));
+  s=s.replace(/\b(APPLICATION|ISSUED|APPROVED|PRE-TECH|NOW|OPEN|STABLE)\b/g,w=>w.toLowerCase());
+  return preserveRedaction(s.replace(/^([a-z])/,c=>c.toUpperCase()));
 }
 function cleanPermitText(v=''){
   return normalizeDisplayText(v)
@@ -56,7 +72,9 @@ function permitDescriptionText(x={}){
 }
 function feedHeadline(x={}){
   const generic=/^(other\s+commercial|commercial|commercial building|permit activity|building permit|other)$/i;
-  const raw=cleanPermitText(x.name||'');
+  const original=cleanPermitText(x.name||'');
+  const prefixed=/^x\s+team\s*\/{2,}\s*/i.test(original);
+  const raw=original.replace(/^x\s+team\s*\/{2,}\s*/i,'');
   let text=(!raw||generic.test(raw))?permitDescriptionText(x):raw;
   const source=(permitDescriptionText(x)||text||'').toLowerCase();
 
@@ -70,7 +88,7 @@ function feedHeadline(x={}){
   if(/roof/.test(source)&&/(replace|replacement|reroof|re-roof)/.test(source))return 'Commercial roof replacement';
   if(/(?:water heater|boiler)/.test(source)&&/(replace|replacement|install)/.test(source))return 'Water-heating equipment upgrade';
 
-  text=sentenceCasePermit(text||((x.market||'Arizona')+' permit activity'));
+  text=prefixed?displayCompanyName(text.toUpperCase()):sentenceCasePermit(text||((x.market||'Arizona')+' permit activity'));
   text=text.replace(/^\s*\d+[.)]\s*/,'');
   return truncateAtWord(text,62);
 }
@@ -78,5 +96,5 @@ function displayEventTitle(x={}){
   return feedHeadline(x);
 }
 
-return {normalizeDisplayText,approxMoney,displayCompanyName,displayEventTitle,cleanPermitText,sentenceCasePermit,truncateAtWord,permitDescriptionText,feedHeadline};
+return {displayAddress,displayLabel,intelligenceText,normalizeDisplayText,approxMoney,displayCompanyName,displayEventTitle,cleanPermitText,sentenceCasePermit,truncateAtWord,permitDescriptionText,feedHeadline};
 })();
