@@ -1919,6 +1919,37 @@ function feedOverallState(marketStates=[]){
   return 'partial';
 }
 
+// Public output is an allowlist. Never copy a source title, identifier or free text.
+function publicOpportunityTeaser(x={}){
+  const categories=(Array.isArray(x.categories)?x.categories:[]).filter(c=>INDUSTRIES.includes(c)).slice(0,4);
+  const trade=categories.find(c=>c!=='Commercial services');
+  const stage=[x.stage,x.lifecycle?.stage,x.permitStatus,x.permit_status]
+    .find(s=>['PRE-TECH','PLANNING','APPLICATION','PERMIT ISSUED','CONSTRUCTION','COMPLETE','APPROVED PROJECTS','UNDER CONSTRUCTION'].includes(s))||null;
+  const titles={HVAC:'Commercial HVAC activity',Electrical:'Commercial electrical activity',Plumbing:'Commercial plumbing activity',Roofing:'Commercial roofing activity',Landscaping:'Commercial landscaping activity',Security:'Commercial security activity',Signage:'Commercial signage activity'};
+  const date=x.date||x.event_date;
+  return {
+    id:`teaser_${crypto.randomUUID()}`,
+    market:LIVE_MARKETS.includes(x.market)?x.market:'',
+    name:titles[trade]||'Commercial project activity',
+    date:date&&Number.isFinite(Date.parse(date))?new Date(date).toISOString():null,
+    score:Number(x.score||0),
+    temperature:['HOT','WARM','WATCH','LOW'].includes(x.temperature)?x.temperature:temperatureForScore(Number(x.score||0)),
+    value:Number(x.value||0),
+    categories,
+    stage,
+    publicPreview:true
+  };
+}
+
+// These diagnostics can contain records or source errors with permit identifiers.
+// Keep their full behavior for signed-in users and existing internal admin callers.
+const PRIVATE_DIAGNOSTICS=new Set([
+  '/leads','/score-audit','/temperature-calibration','/backfill-preview',
+  '/historical-coverage','/relationship-gap-candidates','/relationship-candidates',
+  '/relationship-health','/tempe-enrichment-preview','/attribution-health',
+  '/tucson-recheck-preview','/source-health'
+]);
+
 async function readStoredFeed(env,{days=7,limit=120,markets=LIVE_MARKETS}={}){
   if(!env.DB)throw new Error('D1 binding unavailable');
 
@@ -3508,6 +3539,11 @@ export default {
     if(request.method==='OPTIONS')return new Response(null,{headers:cors(env)});
     const url=new URL(request.url),path=url.pathname.replace(/^\/api/,'');
     try{
+      if(PRIVATE_DIAGNOSTICS.has(path)){
+        const bearer=(request.headers.get('authorization')||'').replace(/^Bearer\s+/i,'').trim();
+        const admin=Boolean(env.ADMIN_TOKEN&&bearer===env.ADMIN_TOKEN);
+        if(!admin&&!await authUser(request,env))return json({error:'sign in required'},401,env);
+      }
       if(path==='/stripe/webhook'&&request.method==='POST')return await handleStripeWebhook(request,env);
       if(path==='/health'){const rocMeta=await rocRosterMeta(env);return json({ok:true,service:'RevenueTrigger V57',time:nowIso(),features:{auth:true,savedLeads:true,billing:!!env.STRIPE_SECRET_KEY,email:!!env.RESEND_API_KEY,multiMarket:true,azRoc:!!rocMeta?.active_batch},roc:rocMeta?{sourceAsOf:rocMeta.source_as_of,recordCount:Number(rocMeta.record_count||0),importedAt:rocMeta.imported_at}:null,markets:SOURCE_STATUS},200,env);}
       if(path==='/roc/meta'&&request.method==='GET'){
@@ -4300,6 +4336,7 @@ export default {
       }
       if(path==='/sources'&&request.method==='GET')return json({markets:SOURCE_STATUS,liveMarkets:LIVE_MARKETS,plannedMarkets:MARKETS.filter(m=>!LIVE_MARKETS.includes(m)),generatedAt:nowIso()},200,env);
       if(path==='/pipeline'&&request.method==='GET'){
+        const pipelineUser=await authUser(request,env);
         const market=(url.searchParams.get('market')||'Chandler').trim();
         if(market!=='Chandler')return json({error:'pipeline market not supported'},400,env);
 
@@ -4420,6 +4457,7 @@ export default {
             :null;
 
         if(pipelineSourceStatus==='unavailable'){
+          if(!pipelineUser)return json({ok:false,market:'Chandler',sourceStatus:pipelineSourceStatus,count:0,publicPreview:true,publicAvailable:0,message:pipelineSourceMessage,pipeline:[],generatedAt:nowIso()},200,env);
           return json({
             ok:false,
             market:'Chandler',
@@ -4468,6 +4506,19 @@ export default {
           }else participantStats.notListed++;
         }
         participantStats.listedShare=rows.length?Number((participantStats.listed/rows.length).toFixed(3)):0;
+
+        if(!pipelineUser){
+          return json({
+            ok:true,
+            market:'Chandler',
+            sourceStatus:pipelineSourceStatus,
+            count:rows.length,
+            publicPreview:true,
+            publicAvailable:rows.length,
+            pipeline:rows.slice(0,3).map(publicOpportunityTeaser),
+            generatedAt:nowIso()
+          },200,env);
+        }
 
         // V111 diagnostic-only shadow scoring for Early Pipeline. Production scores
         // remain unchanged. This specifically measures the two V110 safeguards in
@@ -4681,7 +4732,8 @@ export default {
       }
       if(path==='/feed'&&request.method==='GET'){
         const days=feedInt(url.searchParams.get('days'),7,1,30);
-        const limit=feedInt(url.searchParams.get('limit'),120,1,200);
+        const requestedLimit=feedInt(url.searchParams.get('limit'),8,1,200);
+        const publicLimit=Math.min(requestedLimit,8);
         const parsedMarkets=feedMarkets(url.searchParams.has('markets')?url.searchParams.get('markets'):null);
         if(!parsedMarkets.ok){
           return feedJson({
@@ -4693,15 +4745,32 @@ export default {
           },400,env);
         }
         try{
-          const data=await readStoredFeed(env,{days,limit,markets:parsedMarkets.markets});
-          return feedJson(data,200,env);
+          // /feed is the public proof layer. Read a wider stored pool so we can tell
+          // visitors how much activity exists, but only return a small redacted sample.
+          // Signed-in customers receive their full personalized feed from /dashboard.
+          const data=await readStoredFeed(env,{days,limit:Math.max(120,publicLimit),markets:parsedMarkets.markets});
+          const available=Number(data?.counts?.clusteredAvailable||data?.leads?.length||0);
+          const leads=(data.leads||[]).slice(0,publicLimit).map(publicOpportunityTeaser);
+          return feedJson({
+            ...data,
+            leads,
+            publicPreview:true,
+            query:{days,limit:publicLimit,markets:parsedMarkets.markets},
+            counts:{
+              ...(data.counts||{}),
+              returned:leads.length,
+              publicReturned:leads.length,
+              publicLimit,
+              available
+            }
+          },200,env);
         }catch(e){
           return feedJson({
             ok:false,
             state:'unavailable',
             leads:[],
             markets:parsedMarkets.markets,
-            query:{days,limit,markets:parsedMarkets.markets},
+            query:{days,limit:publicLimit,markets:parsedMarkets.markets},
             error:'stored_feed_unavailable',
             message:'Stored opportunity data is temporarily unavailable.',
             generatedAt:nowIso()

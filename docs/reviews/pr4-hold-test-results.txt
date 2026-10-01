@@ -1,0 +1,169 @@
+$ node backend/tests/feed-readonly.test.mjs
+PASS 01 route contains no refresh/fetchMarket/persist/authUser call
+PASS 02 feed runtime performs SELECT statements only
+PASS 03 Authorization header does not cause auth/session writes
+PASS 04 Chandler/Tucson reads make no external municipal requests
+PASS 05 empty requested market remains empty
+PASS 06 empty database remains honestly empty
+PASS 07 D1 error returns unavailable 503
+PASS 08 invalid explicit market returns 400
+PASS 09 all six Arizona market filters return only requested market
+PASS 10 days and limits clamp to approved bounds
+PASS 11 defaults are 7 days and at most 8 public opportunities
+PASS 12 feed reuses authoritative hydrateStoredLead and clusterLeads
+PASS 13 clustering occurs before final response limit
+PASS 14 public temperature stays authoritative while gated intelligence is omitted
+PASS 15 long descriptions and company availability are not exposed publicly
+PASS 16 fresh state uses stored updated_at only
+PASS 17 stale and partial states are distinguishable
+PASS 18 market metadata distinguishes empty from stale
+PASS 19 CORS and cache headers match approved public contract
+PASS 20 response shape is suitable for homepage/public Signals without demo fallback
+PASS 21 default feed includes Fort Worth with explicit empty state
+PASS 22 Fort Worth filter hydrates and clusters stored rows only
+PASS 23 Fort Worth empty stale unavailable and mixed states remain honest
+PASS 24 Dallas remains rejected and Fort Worth appears in allowlist
+
+24/24 checks passed
+(node:8) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/scratch/68d7f154ecd3/funnel-hold/backend/worker.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/scratch/68d7f154ecd3/funnel-hold/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Exit: 0
+
+$ node backend/tests/public-funnel.test.mjs
+(node:20) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/scratch/68d7f154ecd3/funnel-hold/backend/worker.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/scratch/68d7f154ecd3/funnel-hold/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+PASS anonymous blocked /leads
+PASS anonymous blocked /score-audit
+PASS anonymous blocked /temperature-calibration
+PASS anonymous blocked /backfill-preview
+PASS anonymous blocked /historical-coverage
+PASS anonymous blocked /relationship-gap-candidates
+PASS anonymous blocked /relationship-candidates
+PASS anonymous blocked /relationship-health
+PASS anonymous blocked /tempe-enrichment-preview
+PASS anonymous blocked /attribution-health
+PASS anonymous blocked /tucson-recheck-preview
+PASS anonymous blocked /source-health
+PASS anonymous blocked /roc/meta
+PASS anonymous blocked /roc/search
+PASS anonymous blocked /relationships
+PASS anonymous blocked /competitors
+PASS anonymous blocked /dashboard
+PASS anonymous blocked /saved
+PASS anonymous blocked /feedback
+PASS anonymous blocked /competitor-watchlist
+PASS anonymous blocked /changes
+PASS anonymous blocked /export.csv
+PASS anonymous blocked /admin/alerts-preview
+PASS anonymous blocked /admin/tucson-debug
+PASS anonymous blocked /admin/scottsdale-debug
+PASS anonymous blocked /admin/chandler-permits-debug
+PASS anonymous blocked /api/leads
+PASS anonymous blocked /api/score-audit
+PASS anonymous blocked /api/temperature-calibration
+PASS anonymous blocked /api/backfill-preview
+PASS anonymous blocked /api/historical-coverage
+PASS anonymous blocked /api/relationship-gap-candidates
+PASS anonymous blocked /api/relationship-candidates
+PASS anonymous blocked /api/relationship-health
+PASS anonymous blocked /api/tempe-enrichment-preview
+PASS anonymous blocked /api/attribution-health
+PASS anonymous blocked /api/tucson-recheck-preview
+PASS anonymous blocked /api/source-health
+PASS anonymous blocked /api/roc/meta
+PASS anonymous blocked /api/roc/search
+PASS anonymous blocked /api/relationships
+PASS anonymous blocked /api/competitors
+PASS anonymous blocked /api/dashboard
+PASS anonymous blocked /api/saved
+PASS anonymous blocked /api/feedback
+PASS anonymous blocked /api/competitor-watchlist
+PASS anonymous blocked /api/changes
+PASS anonymous blocked /api/export.csv
+PASS anonymous blocked /api/admin/alerts-preview
+PASS anonymous blocked /api/admin/tucson-debug
+PASS anonymous blocked /api/admin/scottsdale-debug
+PASS anonymous blocked /api/admin/chandler-permits-debug
+PASS expired session cannot access diagnostic records
+PASS teaser uses random identity and fixed title, not source fields or polluted categories/stage
+PASS public feed allowlist and max 8
+PASS public feed allowlist and max 8 /api
+PASS full diagnostics remain available to valid
+PASS full diagnostics remain available to internal-admin
+PASS authenticated dashboard retains full records, Saved, Fort Worth and six-market entitlement
+PASS pipeline limit/redaction  anonymous
+PASS pipeline limit/redaction  expired
+PASS pipeline limit/redaction  valid
+PASS pipeline limit/redaction /api anonymous
+PASS pipeline limit/redaction /api expired
+PASS pipeline limit/redaction /api valid
+PASS anonymous failed pipeline does not echo source errors or identifiers
+66/66 public funnel checks passed; only mocked D1/network used.
+Exit: 0
+
+$ node backend/tests/fort-worth-integration.test.mjs
+(node:32) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/scratch/68d7f154ecd3/funnel-hold/backend/markets/dfw/fort-worth.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/scratch/68d7f154ecd3/funnel-hold/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+PASS normalization preserves Fort Worth identity valuation participant and date
+PASS adapter pagination and deduplication use injected requests only
+PASS fetchMarket uses Fort Worth adapter and unchanged core leadFrom contract
+PASS source recognition registration and public metadata include only Fort Worth addition
+4/4 integration checks passed; all adapter requests mocked
+Exit: 0
+
+$ node backend/tests/checkout-disable.test.mjs
+(node:44) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/scratch/68d7f154ecd3/funnel-hold/backend/worker.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/scratch/68d7f154ecd3/funnel-hold/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+PASS 12 authenticated Worker route cases: disabled flag rejects every plan without contacting Stripe; enabled flag creates sandbox checkout requests. Stripe/D1 are mocked.
+Exit: 0
+
+$ node tests/public-funnel.cjs
+PASS logout clears memory, rendered rows and open detail immediately, even before logout HTTP resolves
+PASS dashboard authenticated headers completion after logout cannot restore detail
+PASS dashboard authenticated body completion after logout cannot restore detail
+PASS pipeline authenticated headers completion after logout cannot restore detail
+PASS pipeline authenticated body completion after logout cannot restore detail
+PASS expired dashboard session safely reloads both anonymous previews
+PASS expired me session safely reloads both anonymous previews
+PASS expired pipeline session safely reloads both anonymous previews
+PASS pipeline anonymous response for an expired token removes existing dashboard data
+PASS late me response cannot restore user or privileged changes
+PASS late billing/sync response cannot restore user or privileged changes
+PASS late preferences response cannot restore user or privileged changes
+PASS late changes response cannot restore user or privileged changes
+PASS authenticated dashboard retains detail and six selected-market entitlement
+PASS anonymous feed preserves fresh state and label
+PASS anonymous feed preserves stale state and label
+PASS anonymous feed preserves partial state and label
+PASS anonymous feed preserves empty state and label
+PASS anonymous feed preserves unavailable state and label
+PASS remaining aggregate count does not claim client-side filter matching
+PASS Reveal only opens sign-in while anonymous
+PASS encoding normalization and phone redaction remain intact
+22/22 frontend funnel checks passed.
+Exit: 0
+
+$ node tests/checkout-disable.cjs
+PASS 48 cases: current and retained preview handlers preserve all plans, signed-in checkout and signed-out sign-in; no real Stripe requests.
+Exit: 0
+
+$ node tests/funnel-preview-config.cjs
+PASS matching feature API/origins, preview-only D1, unchanged production config, checkout/Price IDs, Fort Worth and Dallas exclusion
+Exit: 0
+
+$ node --check frontend/public/assets/rt-app.js
+Exit: 0
+
+$ node --check backend/worker.js
+Exit: 0
+
+$ git diff --check
+Exit: 0

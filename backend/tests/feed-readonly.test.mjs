@@ -159,11 +159,11 @@ await check('10 days and limits clamp to approved bounds',async()=>{
   const low=await call('/feed?days=0&limit=0');
   assert.equal(low.body.query.days,1);assert.equal(low.body.query.limit,1);
   const high=await call('/feed?days=999&limit=999');
-  assert.equal(high.body.query.days,30);assert.equal(high.body.query.limit,200);
+  assert.equal(high.body.query.days,30);assert.equal(high.body.query.limit,8);
 });
-await check('11 defaults are 7 days and 120 opportunities',async()=>{
+await check('11 defaults are 7 days and at most 8 public opportunities',async()=>{
   const {body}=await call('/feed');
-  assert.equal(body.query.days,7);assert.equal(body.query.limit,120);
+  assert.equal(body.query.days,7);assert.equal(body.query.limit,8);
 });
 
 // 12–15: authoritative hydration and clustering.
@@ -179,21 +179,20 @@ await check('13 clustering occurs before final response limit',async()=>{
   ];
   const {body}=await call('/feed?markets=Phoenix&limit=2',{rows});
   assert.equal(body.leads.length,2);
-  const cluster=body.leads.find(x=>x.address==='777 Same St Phoenix AZ');
-  assert.ok(cluster);assert.equal(cluster.relatedPermitCount,2);assert.equal(cluster.projectCluster,true);
+  assert.equal(body.counts.clusteredAvailable,2);
+  assert.ok(body.leads.every(x=>!('address' in x)&&!('relatedPermitCount' in x)));
 });
-await check('14 temperature/lifecycle/action intelligence are authoritative hydrated output',async()=>{
+await check('14 public temperature stays authoritative while gated intelligence is omitted',async()=>{
   const {body}=await call('/feed?markets=Phoenix&limit=10');
   assert.ok(body.leads.length>0);
   for(const lead of body.leads){
     assert.ok(['HOT','WARM','WATCH','LOW'].includes(lead.temperature));
     assert.equal(lead.temperature,lead.score>=75?'HOT':lead.score>=60?'WARM':lead.score>=40?'WATCH':'LOW');
-    assert.ok(lead.scoreBreakdown&&typeof lead.scoreBreakdown==='object');
-    assert.ok(lead.lifecycle&&typeof lead.lifecycle==='object');
-    assert.ok(lead.actionIntelligence&&typeof lead.actionIntelligence==='object');
+    for(const field of ['scoreBreakdown','lifecycle','actionIntelligence'])assert.equal(field in lead,false);
+    assert.ok('stage' in lead);
   }
 });
-await check('15 missing and long fields survive hydration without fake replacements',async()=>{
+await check('15 long descriptions and company availability are not exposed publicly',async()=>{
   const rows=[row({
     id:'long-edge',
     market:'Phoenix',
@@ -206,9 +205,8 @@ await check('15 missing and long fields survive hydration without fake replaceme
   const {body}=await call('/feed?markets=Phoenix&limit=10',{rows});
   const lead=body.leads[0];
   assert.ok(lead);
-  assert.equal(lead.company,'Not listed');
-  assert.equal(lead.officialPermitValue,null);
-  assert.ok(String(lead.scope).length>100);
+  for(const field of ['company','officialPermitValue','scope'])assert.equal(field in lead,false);
+  assert.ok(!JSON.stringify(lead).includes('deliberately long municipal'));
 });
 
 // 16–18: data-state semantics.
@@ -268,8 +266,9 @@ await check('22 Fort Worth filter hydrates and clusters stored rows only',async(
   assert.deepEqual(body.markets,['Fort Worth']);
   assert.equal(body.leads.length,1);
   assert.equal(body.leads[0].market,'Fort Worth');
-  assert.equal(body.leads[0].relatedPermitCount,2);
-  assert.ok(body.leads[0].scoreBreakdown);
+  assert.equal(body.counts.clusteredAvailable,1);
+  assert.equal('relatedPermitCount' in body.leads[0],false);
+  assert.equal('scoreBreakdown' in body.leads[0],false);
   assert.equal(body.state,'fresh');
   assert.equal(db.statements.length,2);
   assert.ok(db.statements.every(x=>/^\s*SELECT\b/i.test(x)&&!/(sessions|users|market_cursors)/i.test(x)));

@@ -11,4 +11,4 @@ for(const disabled of ['true','false'])for(const path of ['/api/billing/checkout
  if(disabled==='true'){assert.equal(stripeCalls.length,before);assert.deepEqual(await response.json(),{error:'checkout_disabled'});}
  else{assert.equal(stripeCalls.length,before+1);const params=new URLSearchParams(stripeCalls.at(-1).options.body);assert.equal(params.get('success_url'),env.FRONTEND_URL+'/?billing=success');assert.equal(params.get('metadata[plan]'),plan);assert.equal((await response.json()).url,'https://checkout.stripe.test/qa');}
 }
-console.log('PASS 12 authenticated Worker route cases: production rejects every plan without contacting Stripe; preview creates sandbox checkout requests. Stripe/D1 are mocked.');
+console.log('PASS 12 authenticated Worker route cases: disabled flag rejects every plan without contacting Stripe; enabled flag creates sandbox checkout requests. Stripe/D1 are mocked.');
