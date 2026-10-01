@@ -1930,6 +1930,7 @@ function publicOpportunityTeaser(x={}){
     temperature:x.temperature||temperatureForScore(Number(x.score||0)),
     value:Number(x.value||0),
     categories:Array.isArray(x.categories)?x.categories.slice(0,4):[],
+    stage:x.stage||x.lifecycle?.stage||x.permitStatus||x.permit_status||null,
     permitStatus:x.permitStatus||x.permit_status||null,
     company:null,
     publicPreview:true
