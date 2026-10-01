@@ -189,3 +189,8 @@ html body .rt-why-now p strong{font-size:inherit;font-weight:750}
 @media (max-width:720px){
   .rt-public-gate{padding:24px 18px}
 }
+/* Readable section labels; record metadata and ticker typography stay separate. */
+html body :is(.rt-section-head,.section-head,.rt-product-copy,.rt-hero-copy,.hero-copy,.sources-hero-copy,.rt-app-intro,.changed-intro,.rt-decision-copy,.rt-preview-heading,.rt-momentum-strip,.rt-market-panel) :is(.rt-kicker,.eyebrow){font-size:13px!important;font-weight:600!important;line-height:1.5!important;letter-spacing:.06em!important;text-transform:uppercase}
+@media(max-width:700px){
+ html body :is(.rt-section-head,.section-head,.rt-product-copy,.rt-hero-copy,.hero-copy,.sources-hero-copy,.rt-app-intro,.changed-intro,.rt-decision-copy,.rt-preview-heading,.rt-momentum-strip,.rt-market-panel) :is(.rt-kicker,.eyebrow){font-size:12px!important}
+}
