@@ -949,7 +949,7 @@ setInterval(()=>{
 
 
 /* V88 — shared pricing checkout */
-async function buyPlan(plan){
+async function buyPlan(plan){if(RTConfig.checkoutDisabled)return;
   if(!user){
     localStorage.setItem('revenuetrigger_pending_plan',plan);
     openSignin();
