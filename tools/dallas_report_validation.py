@@ -169,18 +169,39 @@ def row_dicts(df, n=5):
         out.append(d)
     return out
 
-def report_number_set(df, headers):
-    candidates=[
-        find_col(headers,["record","number"]),
-        find_col(headers,["permit","number"]),
-        find_col(headers,["application","number"]),
-    ]
-    col=next((x for x in candidates if x),None)
-    if not col: return col,set()
-    vals={str(v).strip() for v in df[col].tolist() if pd.notna(v) and str(v).strip() and str(v).lower()!="nan"}
-    return col,vals
+def exact_col(headers, name):
+    for h in headers:
+        if str(h).strip().lower()==name.lower():
+            return h
+    return None
 
-def run_report(key, cfg):
+def value_set(df, col):
+    if not col or col not in df.columns: return set()
+    return {str(v).strip() for v in df[col].tolist() if pd.notna(v) and str(v).strip() and str(v).lower()!="nan"}
+
+def norm_text(v):
+    return re.sub(r"\\s+"," ",str(v or "").strip().upper())
+
+def nonempty_pct(df, col):
+    if not col or col not in df.columns or not len(df): return None
+    n=sum(1 for v in df[col].tolist() if pd.notna(v) and str(v).strip() and str(v).lower()!="nan")
+    return round(100*n/len(df),2)
+
+def date_bounds(df, col):
+    if not col or col not in df.columns: return None
+    vals=pd.to_datetime(df[col],errors="coerce").dropna()
+    if vals.empty: return None
+    return {"min":vals.min().strftime("%Y-%m-%d"),"max":vals.max().strftime("%Y-%m-%d"),"nonempty":int(vals.size)}
+
+def prefix_counts(vals):
+    from collections import Counter
+    out=Counter()
+    for v in vals:
+        m=re.match(r"([A-Z]+(?:-[A-Z]+)*)",str(v).upper())
+        out[m.group(1) if m else "OTHER"]+=1
+    return dict(out.most_common(20))
+
+def run_report(key, cfg, start=START, end=END, output_suffix=""):
     rid=cfg["id"]
     param_url=f"{BASE}/Report/ReportParameter.aspx?module=Building&reportID={rid}&reportType=LINK_REPORT_LIST"
     show_url=f"{BASE}/Report/ShowReport.aspx?module=Building&reportID={rid}&reportType=LINK_REPORT_LIST"
@@ -198,8 +219,8 @@ def run_report(key, cfg):
     district_field=form_field_by_label(soup,"Council District")
     hidden={i.get("name"):i.get("value","") for i in form.find_all("input") if i.get("type")=="hidden" and i.get("name")}
     post=dict(hidden)
-    post[start_field]=START
-    post[end_field]=END
+    post[start_field]=start
+    post[end_field]=end
     post[district_field]="ALL"
     post["__EVENTTARGET"]="btnSave"
     post["__EVENTARGUMENT"]=""
@@ -254,12 +275,44 @@ def run_report(key, cfg):
         source,rsp=candidates[-1]
         path=save_response_content(key,rsp,source)
         df,headers2,fmt,hrow=normalize_sheet(rsp.content)
-        num_col,nums=report_number_set(df,headers2)
+        record_col=exact_col(headers2,"Record ID")
+        link_col=exact_col(headers2,"DallasNow Link")
+        address_col=exact_col(headers2,"Record Address")
+        desc_col=exact_col(headers2,"Description of Work")
+        applicant_col=exact_col(headers2,"Applicant Name")
+        business_col=exact_col(headers2,"Applicant Business Name")
+        status_col=exact_col(headers2,"Record Status")
+        opened_col=exact_col(headers2,"Opened Date")
+        issued_col=exact_col(headers2,"Issued Date")
+        valuation_col=exact_col(headers2,"Valuation")
+        record_ids=value_set(df,record_col)
+        links=value_set(df,link_col)
         result.update({
             "ok":True,"binary_source":source,"download_path":path,"format":fmt,
             "header_row_index":hrow,"headers":headers2,"row_count":int(len(df)),
-            "field_presence":field_presence(headers2),"record_number_column":num_col,
-            "record_numbers":sorted(nums),"samples":row_dicts(df,5)
+            "field_presence":field_presence(headers2),
+            "record_number_column":record_col,
+            "record_numbers":sorted(record_ids),
+            "dallasnow_links":sorted(links),
+            "record_id_prefixes":prefix_counts(record_ids),
+            "date_bounds":{"opened":date_bounds(df,opened_col),"issued":date_bounds(df,issued_col)},
+            "completeness":{
+                "record_id_pct":nonempty_pct(df,record_col),
+                "status_pct":nonempty_pct(df,status_col),
+                "opened_date_pct":nonempty_pct(df,opened_col),
+                "issued_date_pct":nonempty_pct(df,issued_col),
+                "description_pct":nonempty_pct(df,desc_col),
+                "valuation_pct":nonempty_pct(df,valuation_col),
+                "applicant_name_pct":nonempty_pct(df,applicant_col),
+                "applicant_business_pct":nonempty_pct(df,business_col),
+                "address_pct":nonempty_pct(df,address_col)
+            },
+            "match_keys":{
+                "addresses":sorted({norm_text(v) for v in value_set(df,address_col)}),
+                "address_description":sorted({norm_text(str(row.get(address_col,"")))+"|"+norm_text(str(row.get(desc_col,""))) for _,row in df.iterrows() if address_col and desc_col and norm_text(row.get(address_col,""))}),
+                "address_business":sorted({norm_text(str(row.get(address_col,"")))+"|"+norm_text(str(row.get(business_col,""))) for _,row in df.iterrows() if address_col and business_col and norm_text(row.get(address_col,""))})
+            },
+            "samples":row_dicts(df,5)
         })
     return result
 
@@ -274,15 +327,60 @@ issued=summary["reports"].get("issued",{})
 submitted=summary["reports"].get("submitted",{})
 if issued.get("ok") and submitted.get("ok"):
     a=set(issued.get("record_numbers",[])); b=set(submitted.get("record_numbers",[]))
+    al=set(issued.get("dallasnow_links",[])); bl=set(submitted.get("dallasnow_links",[]))
+    ia=set(issued.get("match_keys",{}).get("addresses",[])); ib=set(submitted.get("match_keys",{}).get("addresses",[]))
+    iad=set(issued.get("match_keys",{}).get("address_description",[])); ibd=set(submitted.get("match_keys",{}).get("address_description",[]))
+    iab=set(issued.get("match_keys",{}).get("address_business",[])); ibb=set(submitted.get("match_keys",{}).get("address_business",[]))
     summary["overlap"]={
-        "issued_unique":len(a),"submitted_unique":len(b),
-        "intersection":len(a&b),
-        "issued_also_submitted_pct":round(100*len(a&b)/len(a),2) if a else None,
-        "submitted_also_issued_pct":round(100*len(a&b)/len(b),2) if b else None,
-        "sample_intersection":sorted(a&b)[:20],
+        "record_id":{"issued_unique":len(a),"submitted_unique":len(b),"intersection":len(a&b),"sample":sorted(a&b)[:20]},
+        "dallasnow_link":{"issued_unique":len(al),"submitted_unique":len(bl),"intersection":len(al&bl),"sample":sorted(al&bl)[:20]},
+        "address":{"intersection":len(ia&ib),"sample":sorted(ia&ib)[:20]},
+        "address_description":{"intersection":len(iad&ibd),"sample":sorted(iad&ibd)[:20]},
+        "address_business":{"intersection":len(iab&ibb),"sample":sorted(iab&ibb)[:20]}
     }
 else:
     summary["overlap"]={"available":False}
+
+# Deterministic one-day window check.
+summary["one_day_window"]={}
+for key,cfg in REPORTS.items():
+    try:
+        rr=run_report(key+"-oneday",cfg,start="09/30/2026",end="09/30/2026",output_suffix="oneday")
+        summary["one_day_window"][key]={
+            "ok":rr.get("ok"),"row_count":rr.get("row_count"),
+            "date_bounds":rr.get("date_bounds"),"error":rr.get("error")
+        }
+    except Exception as e:
+        summary["one_day_window"][key]={"ok":False,"error":repr(e)}
+
+def post_probe(rid, mode):
+    url=f"{BASE}/Report/ReportParameter.aspx?module=Building&reportID={rid}&reportType=LINK_REPORT_LIST"
+    s=requests.Session(); s.headers.update({"User-Agent":UA})
+    g=s.get(url,timeout=45); soup=BeautifulSoup(g.text,"html.parser"); form=soup.find("form")
+    start_field=form_field_by_label(soup,"Start Date"); end_field=form_field_by_label(soup,"End Date"); district_field=form_field_by_label(soup,"Council District")
+    hidden={i.get("name"):i.get("value","") for i in form.find_all("input") if i.get("type")=="hidden" and i.get("name")}
+    data=dict(hidden); data[start_field]=START; data[end_field]=END; data[district_field]="ALL"; data["__EVENTTARGET"]="btnSave"; data["__EVENTARGUMENT"]=""
+    poster=s
+    if mode=="no_cookies":
+        poster=requests.Session(); poster.headers.update({"User-Agent":UA})
+    if mode=="no_viewstate": data.pop("__VIEWSTATE",None)
+    if mode=="no_csrf": data.pop("ACA_CS_FIELD",None)
+    try:
+        p=poster.post(url,data=data,headers={"Referer":url,"Origin":"https://aca-prod.accela.com"},timeout=60,allow_redirects=True)
+        ct=(p.headers.get("content-type") or "").lower()
+        txt=p.text[:3000] if ("text" in ct or "html" in ct) else ""
+        return {"status":p.status_code,"url":p.url,"content_type":p.headers.get("content-type"),"length":len(p.content),
+                "csrf_error":"cross-site request forgery" in txt.lower(),"viewstate_error":"viewstate" in txt.lower(),
+                "showreport":"ShowReport.aspx" in txt}
+    except Exception as e:
+        return {"error":repr(e)}
+
+summary["transport_probes"]={
+    "full_flow_worked":bool(issued.get("ok") and submitted.get("ok")),
+    "issued_no_cookies":post_probe("8279","no_cookies"),
+    "issued_no_viewstate":post_probe("8279","no_viewstate"),
+    "issued_no_csrf":post_probe("8279","no_csrf")
+}
 
 with open(os.path.join(OUT,"summary.json"),"w") as f: json.dump(summary,f,indent=2)
 print("DALLAS_REPORT_VALIDATION_BEGIN")
