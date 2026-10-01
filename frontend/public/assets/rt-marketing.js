@@ -7,6 +7,7 @@ function homeNotice(message){const el=document.getElementById('callbackNotice');
 function syncHomeAccount(){document.getElementById('accountBtn').textContent=marketingUser?'Account':'Sign in'}
 async function buyPlan(plan){
  if(!['Scout','Hunter','Territory'].includes(plan))return;
+ if(location.hostname==='revenuetrigger.ai'||location.hostname==='www.revenuetrigger.ai')return;
  if(!marketingUser){RTAuth.set('revenuetrigger_pending_plan',plan);openSignin();return}
  try{const d=await RTAuth.request('/billing/checkout',{method:'POST',authenticated:true,body:{plan}});location.href=d.url}
  catch(e){homeNotice(e.message);if(!RTAuth.token()){marketingUser=null;syncHomeAccount();openSignin()}}
