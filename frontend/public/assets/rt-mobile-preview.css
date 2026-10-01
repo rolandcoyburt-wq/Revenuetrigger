@@ -1,5 +1,7 @@
 /* Preview-only mobile layout; desktop keeps the existing presentation. */
 .rt-mobile-plans,.rt-mobile-disclosure-toggle,.rt-mobile-filter-toggle{display:none}
+/* The market board replaces radar dots and their legacy shadowed labels. */
+html body #intelConsole #radar .rt-market-row::after{content:none!important;display:none!important}
 @media(max-width:700px){
  .rt-mobile-plans{display:block;margin:0 0 18px}
  .rt-plan-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:5px;border:1px solid #708378;border-radius:14px;background:#e5e9e1}

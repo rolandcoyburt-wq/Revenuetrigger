@@ -6,6 +6,7 @@ const {mock}=require('./fixtures.cjs');
   const p=await browser.newPage({viewport:{width,height:844}});await mock(p);const errors=[];p.on('pageerror',e=>errors.push(e.message));
   await p.goto('http://127.0.0.1:8765'+route);await p.waitForTimeout(350);
   const mobile=width<=700;
+  if(route==='/competitors')assert(await p.locator('.rt-market-row').evaluateAll(rows=>rows.every(row=>getComputedStyle(row,'::after').content==='none')));
   assert.equal(await p.locator('.pricing .price:visible').count(),mobile?1:3);
   if(mobile){
    assert.match(await p.locator('.pricing .price:visible h3').innerText(),/Hunter/);
