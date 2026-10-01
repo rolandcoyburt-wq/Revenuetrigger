@@ -100,3 +100,23 @@ body.rt-marketing #opportunities{background:#fff}
 .rt-marketing .rt-hero h1{font-size:clamp(28px,11.2cqw,68px)}
 .rt-headline-line{display:block;white-space:nowrap}
 .rt-headline-green{color:#078642}
+/* Give the ticker half its height of breathing room above the market brief. */
+.rt-ticker{transform:translateY(-50%)}
+.rt-ticker>.rt-ticker-inner{overflow:hidden;gap:24px}
+.rt-ticker-window{min-width:0;flex:1;overflow:hidden}
+.rt-ticker-track{display:flex;width:max-content;animation:rt-ticker-scroll 55s linear infinite}
+.rt-ticker-group{display:flex;gap:36px;padding-right:36px;flex-shrink:0;align-items:center}
+.rt-ticker:hover .rt-ticker-track,.rt-ticker:focus-within .rt-ticker-track,.rt-ticker.is-paused .rt-ticker-track{animation-play-state:paused}
+.rt-ticker-toggle{flex-shrink:0;border:1px solid var(--rt-line);background:transparent;color:var(--green-dark);width:34px;height:34px;cursor:pointer}
+@keyframes rt-ticker-scroll{to{transform:translateX(-50%)}}
+#opportunities .rt-section-head{grid-template-columns:1.5fr 1fr;gap:30px}
+#opportunities .rt-section-head h2{font-size:clamp(22px,3vw,44px);white-space:nowrap;letter-spacing:-.045em}
+.rt-movement-grid svg.rt-movement-symbol{display:block;width:56px;height:56px;color:var(--green-dark);margin-bottom:22px}
+.rt-icon-trend{stroke-dasharray:90;animation:rt-icon-draw 5s ease-in-out infinite}
+.rt-icon-dot{fill:var(--green-dark);transform-origin:42px 17px;animation:rt-icon-pulse 4s ease-in-out infinite}
+.rt-icon-layer{animation:rt-icon-lift 4s ease-in-out infinite}
+@keyframes rt-icon-draw{0%,100%{stroke-dashoffset:0}50%{stroke-dashoffset:30}}
+@keyframes rt-icon-pulse{50%{transform:scale(.7);opacity:.5}}
+@keyframes rt-icon-lift{50%{transform:translateY(-3px)}}
+@media(max-width:700px){#opportunities .rt-section-head{grid-template-columns:1fr}.rt-ticker>.rt-ticker-inner{gap:12px}.rt-ticker .rt-kicker{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.rt-ticker-track,.rt-icon-trend,.rt-icon-dot,.rt-icon-layer{animation:none}.rt-ticker-window{overflow-x:auto}.rt-ticker-group[aria-hidden]{display:none}.rt-ticker-toggle{display:none}}

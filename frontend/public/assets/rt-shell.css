@@ -51,3 +51,21 @@ body .rt-trigger-timeline li{min-width:0}
 /* Keep backend-provided intelligence readable in the light detail panel. */
 body .action-callout b,body .cluster-note strong{color:var(--graphite)!important}
 body .cluster-note{color:var(--rt-muted)!important}
+/* Shared plan palette and readable activity metrics. */
+html body #pricing{background:var(--paper)!important;color:var(--graphite)!important}
+html body #pricing .section-head h2,html body #pricing .section-head .eyebrow{color:var(--graphite)!important}
+html body #pricing .section-head p{color:var(--rt-muted)!important}
+html body #pricing .price{background:var(--graphite)!important;color:#f8f7f2!important;border-color:var(--graphite)!important}
+html body #pricing .price h3,html body #pricing .price .money{color:#f8f7f2!important}
+html body #pricing .price ul,html body #pricing .price .money small{color:#c4cec6!important}
+html body #pricing .price.featured{background:#e0eedc!important;color:var(--graphite)!important;border-color:var(--green-dark)!important}
+html body #pricing .price.featured h3,html body #pricing .price.featured .money{color:var(--graphite)!important}
+html body #pricing .price.featured ul,html body #pricing .price.featured .money small{color:#46574a!important}
+html body #pricing .price .btn-secondary{border:1px solid #87968a!important}
+body .changed-stat:not([hidden]){display:flex!important;flex-direction:column;justify-content:center;align-items:flex-start;gap:14px;padding:24px!important;min-width:0}
+body .changed-stat small{display:block;font:600 11px/1.5 ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase}
+body .changed-stat strong{display:block;font-size:clamp(32px,4vw,52px);line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+body .changed-stat[hidden]{display:none!important}
+html body #pricing .section-head .eyebrow{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}
+html body #pricing .price,html body #pricing .price:hover{box-shadow:none!important}
+html body #pricing .price::before,html body #pricing .price::after{display:none!important}

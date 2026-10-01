@@ -35,7 +35,8 @@ async function loadMarketingSignals(){
   document.getElementById('heroState').textContent=feed.label;
   document.getElementById('heroSignal').innerHTML=`<span class="rt-kicker">${esc(x.market)} / ${esc(x.permit||'Public record')}</span><h2>${esc(RTFormat.displayEventTitle(x))}</h2><p class="rt-muted">${esc(x.address||x.market)}</p>${triggerTimeline(x)}<div class="rt-command-value"><div><small>Estimated service opportunity</small><strong class="rt-money">${money(x)}</strong></div><div><small>Opportunity score</small><strong>${esc(x.score??'—')} <span style="font-size:12px;font-weight:500">/100</span></strong>${badge(x)}</div></div>${x.officialPermitValue?`<p class="rt-muted">Official permit valuation: ${esc(new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(x.officialPermitValue))}</p>`:''}${x.actionIntelligence?.whyNow?`<div class="rt-reason"><small>Why now</small><p>${esc(x.actionIntelligence.whyNow)}</p></div>`:''}<a class="rt-text-link" href="/signals">Explore the opportunity feed <span aria-hidden="true">↗</span></a>`;
   document.getElementById('signalPreviews').innerHTML=rows.map(x=>opportunityCard(x,{preview:true})).join('');
-  document.getElementById('marketTicker').innerHTML=rows.map(x=>`<span class="rt-ticker-item"><strong>${esc(x.market)}</strong> · ${esc(RTFormat.displayEventTitle(x))}${Number(x.value)>0?' · '+money(x):''}</span>`).join('');
+  const tickerItems=rows.map(x=>`<span class="rt-ticker-item"><strong>${esc(x.market)}</strong> · ${esc(RTFormat.displayEventTitle(x))}${Number(x.value)>0?' · '+money(x):''}</span>`).join('');
+  document.getElementById('marketTicker').innerHTML=`<div class="rt-ticker-group">${tickerItems}</div><div class="rt-ticker-group" aria-hidden="true">${tickerItems}</div>`;
   const rich=rows.find(x=>x.actionIntelligence&&Object.keys(x.actionIntelligence).length)||x;
   document.getElementById('decisionDemo').innerHTML=`<span class="rt-kicker">${esc(rich.market)} / ${esc(rich.permit||'Public record')}</span><h3>${esc(RTFormat.displayEventTitle(rich))}</h3>${decision(rich)||'<p class="rt-unavailable">Additional intelligence is not published for this record.</p>'}${triggerTimeline(rich)}`;
  }catch(e){
@@ -71,3 +72,6 @@ async function loadMarketingSignals(){
  }else if(q.get('billing')==='cancel'){homeNotice('Checkout canceled. You can choose a plan whenever you are ready.');q.delete('billing');history.replaceState({},'',location.pathname+(q.size?'?'+q.toString():'')+'#pricing')}
 })();
 loadMarketingSignals();
+
+const tickerToggle=document.querySelector('.rt-ticker-toggle');
+if(tickerToggle)tickerToggle.addEventListener('click',()=>{const paused=tickerToggle.getAttribute('aria-pressed')!=='true';tickerToggle.setAttribute('aria-pressed',String(paused));tickerToggle.setAttribute('aria-label',`${paused?'Resume':'Pause'} market activity scrolling`);tickerToggle.textContent=paused?'▶':'Ⅱ';document.querySelector('.rt-ticker').classList.toggle('is-paused',paused)});
