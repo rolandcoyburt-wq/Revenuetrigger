@@ -4746,6 +4746,24 @@ export default {
         const requested=(url.searchParams.get('markets')||'').split(',').map(x=>x.trim()).filter(Boolean);
         const markets=requested.length?requested.filter(x=>MARKETS.includes(x)):LIVE_MARKETS;
 
+        // Dallas direct diagnostics intentionally exercise the live DallasNow
+        // Submitted + Issued report client. Stored/public feed validation remains
+        // separate through /feed and the scheduled refresh/persist path.
+        if(requested.length===1&&requested[0]==='Dallas'){
+          try{
+            const fresh=clusterLeads(await fetchDallas(days,Math.max(limit*4,500)));
+            return json({
+              leads:fresh.slice(0,limit),
+              markets:['Dallas'],
+              source:'City of Dallas DallasNow Building — Submitted + Issued',
+              liveDirect:true,
+              generatedAt:nowIso()
+            },200,env);
+          }catch(e){
+            // Fall through to stored Dallas rows only when the live report source is unavailable.
+          }
+        }
+
         // During Chandler's live-source cutover, a single-market request should be
         // authoritative to the official Accela layer rather than an older D1 snapshot.
         // The scheduled refresh below also replaces Chandler's stored snapshot, so this
