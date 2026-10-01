@@ -4488,6 +4488,19 @@ export default {
         }
         participantStats.listedShare=rows.length?Number((participantStats.listed/rows.length).toFixed(3)):0;
 
+        if(!pipelineUser){
+          return json({
+            ok:true,
+            market:'Chandler',
+            sourceStatus:pipelineSourceStatus,
+            count:rows.length,
+            publicPreview:true,
+            publicAvailable:rows.length,
+            pipeline:rows.slice(0,3).map(publicOpportunityTeaser),
+            generatedAt:nowIso()
+          },200,env);
+        }
+
         // V111 diagnostic-only shadow scoring for Early Pipeline. Production scores
         // remain unchanged. This specifically measures the two V110 safeguards in
         // the place where they matter most: PRE-TECH rows with no reliable date.
@@ -4695,9 +4708,7 @@ export default {
             count:(contractorResult.rows||[]).length,
             error:contractorResult.error||null
           },
-          pipeline:pipelineUser?rows:rows.slice(0,3).map(publicOpportunityTeaser),
-          publicPreview:!pipelineUser,
-          publicAvailable:rows.length
+          pipeline:rows
         },200,env);
       }
       if(path==='/feed'&&request.method==='GET'){
