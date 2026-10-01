@@ -1793,8 +1793,8 @@ async function fetchChandler(days=7,limit=500){
 }
 async function fetchFortWorth(days=7,limit=500){
   const safeLimit=Math.max(1,Number(limit)||500);
-  const pageSize=Math.min(1000,Math.max(250,safeLimit));
-  const maxPages=Math.max(1,Math.min(5,Math.ceil(safeLimit/pageSize)+1));
+  const pageSize=1000;
+  const maxPages=Math.max(2,Math.min(5,Math.ceil(safeLimit/pageSize)+1));
   const records=await fetchFortWorthPermits({
     sinceDays:Math.max(1,Number(days)||7),
     pageSize,
