@@ -2,14 +2,14 @@ const CONFIG=RTConfig;
 const INDUSTRIES=['Commercial services','HVAC','Electrical','Plumbing','Roofing','Landscaping','Security','Signage'];
 const LIVE_MARKETS=RTConfig.markets;
 let leads=[],user=null,currentLead=null,savedOnly=false;
-let publicFeed=null,publicFeedRequest=0;
+let publicFeed=null,publicFeedRequest=0,personalizedFeed=null;
 let authGeneration=0,dashboardRequest=0,pipelineRequest=0;
 function authSnapshot(){return {generation:authGeneration,session:token()}}
 function authIsCurrent(snapshot){return snapshot.generation===authGeneration&&snapshot.session===token()}
 function clearAuthenticatedState(){
   ++authGeneration;++publicFeedRequest;++dashboardRequest;++pipelineRequest;
   localStorage.removeItem('revenuetrigger_session');localStorage.removeItem('signalhound_session');
-  user=null;leads=[];pipelineRows=[];currentLead=null;publicFeed=null;savedOnly=false;
+  user=null;leads=[];pipelineRows=[];currentLead=null;publicFeed=null;personalizedFeed=null;savedOnly=false;
   currentFeedback={relevance:null,outcome:null};
   for(const id of ['leadModal','pipelineModal','accountModal','onboardingModal'])closeModal(id);
   for(const id of ['leadList','pipelineList','mTitle','mGrid','mWhy','pTitle','pGrid','pWhy','mFeedbackState','changedMoves','changedMessage','aEmail','industryChecks','marketChecks','onboardingIndustries','onboardingMarkets']){
@@ -84,6 +84,18 @@ function openModal(id){$('#'+id).classList.add('open')}function closeModal(id){$
 function openSignin(){openModal('signinModal');setTimeout(()=>$('#signinEmail').focus(),50)}
 async function openAccount(){renderAccount();await syncBilling();openModal('accountModal')}
 function planActive(){return user&&['active','trialing'].includes(user.subscriptionStatus)?user.plan:'Beta'}
+function personalizedEmptyMessage(){
+  const prefs=personalizedFeed.preferences||{},score=prefs.minScore??70;
+  const summary=[(prefs.markets||[]).join(', '),(prefs.industries||[]).join(', '),Number(score)===0?'Any score':`${score}+ score`,`${personalizedFeed.historyDays||7}-day history`].filter(Boolean).join(' · ');
+  const view=[];
+  if($('#market').value!=='all')view.push($('#market').value);
+  if($('#industry').value!=='all')view.push($('#industry').value);
+  if(+$('#minScore').value>0)view.push(`${$('#minScore').value}+ score`);
+  if($('#search').value)view.push(`Search: ${$('#search').value}`);
+  if($('#savedFilter').value==='saved')view.push('Saved only');
+  if(leads.length)view.push(permitCompanyFilter==='listed'?'Company listed':'Company not listed');
+  return `No opportunities currently match your ${esc(personalizedFeed.plan)} preferences${leads.length?' and current view filters':''}.<br>${esc(summary)}${view.length?`<br>View: ${esc(view.join(' · '))}`:''}<br><button class="btn btn-secondary" type="button" onclick="openAccount()">Adjust preferences</button>`;
+}
 function render(){
   if(user)$('#publicFeedNotice').hidden=true;
   const market=$('#market').value,industry=$('#industry').value,min=+$(`#minScore`).value,q=$('#search').value.toLowerCase(),saved=$('#savedFilter').value==='saved',sort=$('#sortFeed')?.value||'score';
@@ -103,7 +115,7 @@ function render(){
   });
   $('#leadList').innerHTML=filtered.length?filtered.map(x=>RTUI.opportunityCard(x,{signedIn:Boolean(user)})).join(''):`<div class="empty">${permitCompanyFilter==='listed'&&baseFiltered.length&&listedCount===0
     ?`None of the current ${baseFiltered.length} opportunities include a published company name. Switch to Not Listed to view them.`
-    :!user&&publicFeed&&!leads.length?(publicFeed.state==='unavailable'?publicFeed.notice:'No stored opportunities are available for the selected markets and time window.'):'No signals match these filters.'}</div>`;
+    :!user&&publicFeed&&!leads.length?(publicFeed.state==='unavailable'?publicFeed.notice:'No stored opportunities are available for the selected markets and time window.'):user&&personalizedFeed?personalizedEmptyMessage():'No signals match these filters.'}</div>`;
   const hotCount=filtered.filter(x=>x.temperature==='HOT').length;
   const totalValue=filtered.reduce((s,x)=>s+Number(x.value||0),0);
   const avgScore=filtered.length?Math.round(filtered.reduce((s,x)=>s+Number(x.score||0),0)/filtered.length):0;
@@ -319,6 +331,7 @@ async function updateSelectedMarketSourceStatus(){
   }catch{}
 }
 async function loadPublic(){
+ personalizedFeed=null;
  const snapshot=authSnapshot();
  const requestId=++publicFeedRequest;
  const selected=$('#market')?.value||'all';
@@ -339,13 +352,14 @@ async function loadDashboard(){
   const snapshot=authSnapshot(),requestId=++dashboardRequest;
   const current=()=>authIsCurrent(snapshot)&&requestId===dashboardRequest;
   try{
-    const r=await fetch(`${CONFIG.apiBase}/dashboard?limit=200`,{headers:authHeaders()});
+    const r=await fetch(`${CONFIG.apiBase}/dashboard?limit=500`,{headers:authHeaders()});
     if(!current())return;
     if(r.status===401)return expireSession();
     if(!r.ok)throw new Error();
     const d=await r.json();
     if(!current())return;
     leads=d.leads||[];
+    personalizedFeed={plan:d.plan||planActive(),preferences:d.preferences||user.preferences,historyDays:d.historyDays||d.entitlements?.historyDays||user.entitlements?.historyDays};
     $('#feedStatus').textContent=`Personalized • ${leads.length} matched signals`;
     $('#feedExplainer').textContent=`Your ${planActive()} feed is filtered to your saved industry preferences and plan history.`;
     render();await updateSelectedMarketSourceStatus();
@@ -380,7 +394,7 @@ function updateUserUI(){
     if($('#exportTop'))$('#exportTop').style.display='none';
   }
 }
-function renderAccount(){if(!user){$('#accountLoggedOut').style.display='block';$('#accountLoggedIn').style.display='none';return}$('#accountLoggedOut').style.display='none';$('#accountLoggedIn').style.display='block';$('#aEmail').textContent=user.email;$('#aPlan').textContent=planActive();$('#aStatus').textContent=user.subscriptionStatus||'inactive';$('#aSaved').textContent=user.savedCount||0;$('#prefScore').value=String(user.preferences?.minScore||70);$('#prefAlert').value=user.entitlements?.alert||'none';const limit=user.entitlements?.industryLimit||1;$('#industryLimitText').textContent=`Your ${planActive()} plan allows ${limit} industr${limit===1?'y':'ies'}.`;$('#industryChecks').innerHTML=INDUSTRIES.map(i=>`<label class="check"><input type="checkbox" value="${esc(i)}" ${(user.preferences?.industries||[]).includes(i)?'checked':''}>${esc(i)}</label>`).join('');const marketLimit=user.entitlements?.marketLimit||1;$('#marketLimitText').textContent=`Your ${planActive()} plan allows ${marketLimit} market${marketLimit===1?'':'s'}.`;$('#marketChecks').innerHTML=LIVE_MARKETS.map(m=>`<label class="check"><input type="checkbox" value="${esc(m)}" ${(user.preferences?.markets||['Phoenix']).includes(m)?'checked':''}>${esc(m)}</label>`).join('');$('#exportBtn').disabled=!(user.entitlements?.export&&planActive()!=='Beta');$('#billingBtn').textContent=user.subscriptionStatus==='active'||user.subscriptionStatus==='trialing'?'Manage billing':'Upgrade plan'}
+function renderAccount(){if(!user){$('#accountLoggedOut').style.display='block';$('#accountLoggedIn').style.display='none';return}$('#accountLoggedOut').style.display='none';$('#accountLoggedIn').style.display='block';$('#aEmail').textContent=user.email;$('#aPlan').textContent=planActive();$('#aStatus').textContent=user.subscriptionStatus||'inactive';$('#aSaved').textContent=user.savedCount||0;$('#prefScore').value=String(user.preferences?.minScore??70);$('#prefAlert').value=user.entitlements?.alert||'none';const limit=user.entitlements?.industryLimit||1;$('#industryLimitText').textContent=`Your ${planActive()} plan allows ${limit} industr${limit===1?'y':'ies'}.`;$('#industryChecks').innerHTML=INDUSTRIES.map(i=>`<label class="check"><input type="checkbox" value="${esc(i)}" ${(user.preferences?.industries||[]).includes(i)?'checked':''}>${esc(i)}</label>`).join('');const marketLimit=user.entitlements?.marketLimit||1;$('#marketLimitText').textContent=`Your ${planActive()} plan allows ${marketLimit} market${marketLimit===1?'':'s'}.`;$('#marketChecks').innerHTML=LIVE_MARKETS.map(m=>`<label class="check"><input type="checkbox" value="${esc(m)}" ${(user.preferences?.markets||['Phoenix']).includes(m)?'checked':''}>${esc(m)}</label>`).join('');$('#exportBtn').disabled=!(user.entitlements?.export&&planActive()!=='Beta');$('#billingBtn').textContent=user.subscriptionStatus==='active'||user.subscriptionStatus==='trialing'?'Manage billing':'Upgrade plan'}
 
 function renderOnboarding(){
   if(!user)return;
@@ -403,7 +417,7 @@ function renderOnboarding(){
 
   $('#onboardingIndustryLimit').textContent=`Your ${planActive()} plan allows ${industryLimit} industr${industryLimit===1?'y':'ies'}.`;
   $('#onboardingMarketLimit').textContent=`Your ${planActive()} plan allows ${marketLimit} market${marketLimit===1?'':'s'}.`;
-  $('#onboardingScore').value=String(user.preferences?.minScore||60);
+  $('#onboardingScore').value=String(user.preferences?.minScore??60);
   $('#onboardingAlertNote').textContent=planActive()==='Beta'
     ? 'Beta accounts use the personalized dashboard. Automated alert delivery begins with a paid plan.'
     : `Your ${planActive()} plan includes ${user.entitlements?.alert||'plan-based'} alert delivery.`;

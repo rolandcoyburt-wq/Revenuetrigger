@@ -2229,7 +2229,7 @@ async function publicUser(env,user){
   if(!user)return null;
   const p=await env.DB.prepare('SELECT * FROM preferences WHERE user_id=?').bind(user.id).first();
   const saved=await env.DB.prepare('SELECT COUNT(*) AS n FROM saved_leads WHERE user_id=?').bind(user.id).first();
-  return {id:user.id,email:user.email,plan:safePlan(user.plan),subscriptionStatus:user.subscription_status||'inactive',savedCount:Number(saved?.n||0),onboardingComplete:Boolean(p?.updated_at),preferences:{industries:parseJson(p?.industries,['Commercial services']),markets:cleanMarkets(parseJson(p?.markets,['Phoenix']),PLANS[safePlan(user.plan)].marketLimit),minScore:Number(p?.min_score||70),alertFrequency:p?.alert_frequency||'none'},entitlements:PLANS[safePlan(user.plan)]};
+  return {id:user.id,email:user.email,plan:safePlan(user.plan),subscriptionStatus:user.subscription_status||'inactive',savedCount:Number(saved?.n||0),onboardingComplete:Boolean(p?.updated_at),preferences:{industries:parseJson(p?.industries,['Commercial services']),markets:cleanMarkets(parseJson(p?.markets,['Phoenix']),PLANS[safePlan(user.plan)].marketLimit),minScore:minimumScore(p?.min_score),alertFrequency:p?.alert_frequency||'none'},entitlements:PLANS[safePlan(user.plan)]};
 }
 
 async function sendEmail(env,{to,subject,html}){
@@ -2358,13 +2358,35 @@ function marketFromSource(source=''){const s=String(source);if(s.includes('Tempe
 function cleanMarkets(items,limit){const out=[];for(const x of Array.isArray(items)?items:[]){if(MARKETS.includes(x)&&!out.includes(x))out.push(x);if(out.length>=limit)break;}return out.length?out:['Phoenix'];}
 function userPlanActive(user){return ['active','trialing'].includes(user.subscription_status||'')&&PLANS[user.plan] ? user.plan : 'Beta';}
 function cleanIndustries(items,limit){const out=[];for(const x of Array.isArray(items)?items:[]){if(INDUSTRIES.includes(x)&&!out.includes(x))out.push(x);if(out.length>=limit)break;}return out.length?out:['Commercial services'];}
+function minimumScore(value){
+  if(value===null||value===undefined||value==='')return 70;
+  const score=Number(value);
+  return Number.isFinite(score)?clamp(score,0,99):70;
+}
 async function listLeadsForUser(env,user,{limit,days}={}){
   const effective=userPlanActive(user),ent=PLANS[effective],p=await env.DB.prepare('SELECT * FROM preferences WHERE user_id=?').bind(user.id).first();
-  const history=clamp(Number(days||ent.historyDays),1,ent.historyDays),max=clamp(Number(limit||120),1,effective==='Territory'?500:effective==='Hunter'?250:80);
-  const min=Number(p?.min_score||70),industries=cleanIndustries(parseJson(p?.industries,['Commercial services']),ent.industryLimit),markets=cleanMarkets(parseJson(p?.markets,['Phoenix']),ent.marketLimit);
-  const all=await stored(env,max*5,history)||[];const filtered=all.filter(x=>x.score>=min&&markets.includes(x.market||marketFromSource(x.source))&&x.categories?.some(c=>industries.includes(c))).slice(0,max);
+  const planMax=effective==='Territory'?500:effective==='Hunter'?250:80;
+  const history=feedInt(days,ent.historyDays,1,ent.historyDays),max=feedInt(limit,planMax,1,planMax);
+  const min=minimumScore(p?.min_score),industries=cleanIndustries(parseJson(p?.industries,['Commercial services']),ent.industryLimit),markets=cleanMarkets(parseJson(p?.markets,['Phoenix']),ent.marketLimit);
+  // Page the selected history/markets, not a globally ranked pool. Do not stop
+  // at a raw-row cap: clustering and industry matching can reduce any page.
+  const candidates=[],pageSize=500;let after=null;
+  while(true){
+    const sql=`SELECT * FROM leads WHERE datetime(event_date) >= datetime('now', ?)
+      AND market IN (${markets.map(()=>'?').join(',')})${min>0?' AND score >= ?':''}${after!==null?' AND id > ?':''}
+      ORDER BY id ASC LIMIT ?`;
+    const args=[`-${history} days`,...markets,...(min>0?[min]:[]),...(after!==null?[after]:[]),pageSize];
+    const rows=(await env.DB.prepare(sql).bind(...args).all()).results||[];
+    candidates.push(...rows.map(hydrateStoredLead));
+    if(rows.length<pageSize)break;
+    after=rows[rows.length-1].id;
+  }
+  const filtered=clusterLeads(candidates)
+    .filter(x=>x.score>=min&&x.categories?.some(c=>industries.includes(c)))
+    .sort((a,b)=>b.score-a.score||(Date.parse(b.date)||0)-(Date.parse(a.date)||0)||String(a.id).localeCompare(String(b.id)))
+    .slice(0,max);
   const savedRows=await env.DB.prepare('SELECT lead_id FROM saved_leads WHERE user_id=?').bind(user.id).all();const saved=new Set((savedRows.results||[]).map(x=>String(x.lead_id)));
-  return {leads:filtered.map(x=>({...x,saved:saved.has(String(x.id))})),plan:effective,entitlements:ent,preferences:{industries,minScore:min,markets,alertFrequency:p?.alert_frequency||ent.alert}};
+  return {leads:filtered.map(x=>({...x,saved:saved.has(String(x.id))})),plan:effective,entitlements:ent,historyDays:history,preferences:{industries,minScore:min,markets,alertFrequency:p?.alert_frequency||ent.alert}};
 }
 async function exportCsv(env,user){
   const effective=userPlanActive(user);if(!PLANS[effective].export)return json({error:'CSV export requires Hunter or Territory'},403,env);
@@ -2390,7 +2412,7 @@ async function alertCandidates(env,user,{scheduledDate=new Date(),forcePlan=null
   const prefs={
     industries:cleanIndustries(parseJson(p?.industries,['Commercial services']),ent.industryLimit),
     markets:cleanMarkets(parseJson(p?.markets,['Phoenix']),ent.marketLimit),
-    minScore:Number(p?.min_score||70)
+    minScore:minimumScore(p?.min_score)
   };
 
   const rule=alertRuleForPlan(effective,scheduledDate);
@@ -4899,7 +4921,7 @@ export default {
       }
       if(path==='/dashboard'&&request.method==='GET'){if(!user)return json({error:'unauthorized'},401,env);const d=await listLeadsForUser(env,user,{limit:url.searchParams.get('limit'),days:url.searchParams.get('days')});return json({...d,generatedAt:nowIso()},200,env);}
       if(path==='/preferences'&&request.method==='POST'){
-        if(!user)return json({error:'unauthorized'},401,env);const body=await request.json(),effective=userPlanActive(user),ent=PLANS[effective],industries=cleanIndustries(body.industries,ent.industryLimit),minScore=clamp(Number(body.minScore||70),45,99),markets=cleanMarkets(body.markets,ent.marketLimit);let alert=ent.alert;if(effective==='Beta')alert='none';
+        if(!user)return json({error:'unauthorized'},401,env);const body=await request.json(),effective=userPlanActive(user),ent=PLANS[effective],industries=cleanIndustries(body.industries,ent.industryLimit),minScore=minimumScore(body.minScore),markets=cleanMarkets(body.markets,ent.marketLimit);let alert=ent.alert;if(effective==='Beta')alert='none';
         await env.DB.prepare(`INSERT INTO preferences (user_id,industries,markets,min_score,alert_frequency,updated_at) VALUES (?,?,?,?,?,datetime('now')) ON CONFLICT(user_id) DO UPDATE SET industries=excluded.industries,markets=excluded.markets,min_score=excluded.min_score,alert_frequency=excluded.alert_frequency,updated_at=datetime('now')`).bind(user.id,JSON.stringify(industries),JSON.stringify(markets),minScore,alert).run();return json({ok:true,user:await publicUser(env,user)},200,env);
       }
       if(path==='/saved'&&request.method==='GET'){
@@ -4970,7 +4992,7 @@ export default {
         const ent=PLANS[activePlan]||PLANS.Beta;
         const markets=cleanMarkets(parseJson(p?.markets,['Phoenix']),ent.marketLimit);
         const industries=cleanIndustries(parseJson(p?.industries,['Commercial services']),ent.industryLimit);
-        const minScore=Number(p?.min_score||70);
+        const minScore=minimumScore(p?.min_score);
 
         // "Since yesterday" is a Phoenix/Arizona calendar window, not a rolling
         // 24-hour timestamp. Municipal feeds often publish a permit date at or
