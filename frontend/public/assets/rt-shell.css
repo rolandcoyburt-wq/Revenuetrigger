@@ -137,3 +137,55 @@ html body .rt-why-now{padding:18px 20px;margin:20px 0;background:#e0eedc;border:
 html body .rt-why-now>small{font-size:13px;font-weight:800;letter-spacing:.06em;color:#087a3a;display:block;text-transform:uppercase}
 html body .rt-why-now p{font-size:16px!important;line-height:1.7!important;margin:8px 0 0;color:var(--graphite)!important;overflow-wrap:anywhere}
 html body .rt-why-now p strong{font-size:inherit;font-weight:750}
+
+
+/* Public opportunity funnel */
+.rt-public-lock{
+  display:inline-flex;
+  align-items:center;
+  gap:.4rem;
+  color:var(--accent,#078642);
+  font-weight:800;
+}
+.rt-public-lock::before{
+  content:"";
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:currentColor;
+  box-shadow:0 0 0 4px color-mix(in srgb,currentColor 12%,transparent);
+}
+.rt-public-gate{
+  margin:18px 0 0;
+  padding:30px;
+  border:1px solid color-mix(in srgb,var(--accent,#078642) 34%,transparent);
+  background:linear-gradient(135deg,color-mix(in srgb,var(--accent,#078642) 9%,transparent),rgba(255,255,255,.02));
+  text-align:center;
+}
+.rt-public-gate[hidden]{display:none}
+.rt-public-gate h3{
+  margin:8px auto 10px;
+  max-width:720px;
+  font-size:clamp(1.45rem,2.4vw,2.2rem);
+}
+.rt-public-gate p{
+  max-width:680px;
+  margin:0 auto 18px;
+  color:var(--muted,#7f9188);
+}
+.rt-public-gate .btn{min-width:190px}
+.rt-public-gate-note{
+  display:block;
+  margin-top:10px;
+  color:var(--muted,#7f9188);
+  font-size:.82rem;
+}
+.rt-gated-field strong{
+  color:var(--accent,#078642);
+}
+.rt-public-lead .permit-company{
+  position:relative;
+}
+@media (max-width:720px){
+  .rt-public-gate{padding:24px 18px}
+}
