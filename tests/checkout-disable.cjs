@@ -6,12 +6,11 @@ function handler(source){const start=source.indexOf('async function buyPlan(plan
 (async()=>{
 let count=0;
 for(const preview of [false,true])for(const file of paths)for(const signedIn of [false,true])for(const plan of ['Scout','Hunter','Territory']){
- let requests=0,ui=0,writes=0;const c={window:{},location:{hostname:preview?'integration-frontend-fort-worth-v1-signalhound-phoenix.rolandcoyburt.workers.dev':'revenuetrigger.ai',href:''},user:signedIn?{id:'qa'}:null,marketingUser:signedIn?{id:'qa'}:null,localStorage:{setItem(){writes++}},openSignin(){ui++},toast(){ui++},alert(){ui++},homeNotice(){ui++},authHeaders:x=>x,RTAuth:{set(){writes++},token:()=>signedIn,request:async()=>{requests++;return {url:'https://checkout.stripe.test/qa'}}},fetch:async()=>{requests++;return {ok:true,json:async()=>({url:'https://checkout.stripe.test/qa'})}}};
+ let requests=0,ui=0,writes=0;const c={window:{},location:{hostname:preview?'integration-frontend-fort-worth-v1-signalhound-phoenix.rolandcoyburt.workers.dev':'revenuetrigger.ai',href:''},user:signedIn?{id:'qa'}:null,marketingUser:signedIn?{id:'qa'}:null,localStorage:{setItem(){writes++}},openSignin(){ui++},toast(){ui++},alert(){ui++},homeNotice(){ui++},authSnapshot:()=>({}),authIsCurrent:()=>true,expireSession(){throw Error("Unexpected expired session")},authHeaders:x=>x,RTAuth:{set(){writes++},token:()=>signedIn,request:async()=>{requests++;return {url:'https://checkout.stripe.test/qa'}}},fetch:async()=>{requests++;return {ok:true,json:async()=>({url:'https://checkout.stripe.test/qa'})}}};
  vm.createContext(c);vm.runInContext(read('assets/rt-config.js',preview),c);c.RTConfig=c.window.RTConfig;c.CONFIG=c.RTConfig;vm.runInContext(handler(read(file,preview)),c);await c.buyPlan(plan);
- if(!preview){assert.equal(requests,0);assert.equal(ui,0);assert.equal(writes,0);assert.equal(c.location.href,'');}
- else if(signedIn){assert.equal(requests,1);assert.equal(c.location.href,'https://checkout.stripe.test/qa');assert(c.RTConfig.apiBase.includes('integration-signal-command-fort-worth-v1'));}
+ if(signedIn){assert.equal(requests,1);assert.equal(c.location.href,'https://checkout.stripe.test/qa');assert(c.RTConfig.apiBase.includes(preview?'integration-signal-command-fort-worth-v1':'api.revenuetrigger.ai'));}
  else{assert.equal(requests,0);assert.equal(writes,1);assert(ui>=1);}
  count++;
 }
-console.log(`PASS ${count} cases: every production handler silently blocks all plans; retained preview handlers preserve signed-in checkout and signed-out sign-in.`);
+console.log(`PASS ${count} cases: current and retained preview handlers preserve all plans, signed-in checkout and signed-out sign-in; no real Stripe requests.`);
 })().catch(e=>{console.error(e);process.exit(1)});

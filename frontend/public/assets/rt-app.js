@@ -3,6 +3,23 @@ const INDUSTRIES=['Commercial services','HVAC','Electrical','Plumbing','Roofing'
 const LIVE_MARKETS=RTConfig.markets;
 let leads=[],user=null,currentLead=null,savedOnly=false;
 let publicFeed=null,publicFeedRequest=0;
+let authGeneration=0,dashboardRequest=0,pipelineRequest=0;
+function authSnapshot(){return {generation:authGeneration,session:token()}}
+function authIsCurrent(snapshot){return snapshot.generation===authGeneration&&snapshot.session===token()}
+function clearAuthenticatedState(){
+  ++authGeneration;++publicFeedRequest;++dashboardRequest;++pipelineRequest;
+  localStorage.removeItem('revenuetrigger_session');localStorage.removeItem('signalhound_session');
+  user=null;leads=[];pipelineRows=[];currentLead=null;publicFeed=null;savedOnly=false;
+  currentFeedback={relevance:null,outcome:null};
+  for(const id of ['leadModal','pipelineModal','accountModal','onboardingModal'])closeModal(id);
+  for(const id of ['leadList','pipelineList','mTitle','mGrid','mWhy','pTitle','pGrid','pWhy','mFeedbackState','changedMoves','changedMessage','aEmail','industryChecks','marketChecks','onboardingIndustries','onboardingMarkets']){
+    const el=$('#'+id);if(el)el.textContent='';
+  }
+  updateUserUI();renderAccount();render();
+}
+function reloadAnonymous(){return Promise.all([loadPublic(),loadPipeline(),loadChanges()])}
+function expireSession(){clearAuthenticatedState();return reloadAnonymous()}
+
 let permitCompanyFilter='listed',pipelineCompanyFilter='listed';
 
 const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
@@ -102,10 +119,10 @@ function render(){
       gate.hidden=true;
     }else{
       const available=Number(publicFeed?.counts?.available||publicFeed?.counts?.clusteredAvailable||filtered.length);
-      const shown=filtered.length;
+      const shown=Number(publicFeed?.counts?.publicReturned??leads.length);
       const remaining=Math.max(0,available-shown);
       $('#publicFeedGateCount').textContent=remaining>0
-        ? `${remaining} more opportunities detected in this view`
+        ? `${remaining} additional opportunities detected across this market window.`
         : 'More opportunity intelligence is available when you sign in';
       gate.hidden=false;
     }
@@ -138,19 +155,25 @@ function renderLeadFeedback(){
 }
 
 async function loadLeadFeedback(){
+  const snapshot=authSnapshot();
   currentFeedback={relevance:null,outcome:null};
   renderLeadFeedback();
   if(!user||!currentLead)return;
   try{
     const r=await fetch(`${CONFIG.apiBase}/feedback?leadId=${encodeURIComponent(currentLead.id)}`,{headers:authHeaders()});
+    if(!authIsCurrent(snapshot))return;
+    if(r.status===401)return expireSession();
     if(!r.ok)return;
     const d=await r.json();
+    if(!authIsCurrent(snapshot))return;
+    if(r.status===401)return expireSession();
     currentFeedback=d.feedback||currentFeedback;
     renderLeadFeedback();
   }catch{}
 }
 
 async function setLeadFeedback(action){
+  const snapshot=authSnapshot();
   if(!user){openSignin();return}
   if(!currentLead)return;
   try{
@@ -160,12 +183,15 @@ async function setLeadFeedback(action){
       body:JSON.stringify({leadId:currentLead.id,action})
     });
     const d=await r.json().catch(()=>({}));
+    if(!authIsCurrent(snapshot))return;
+    if(r.status===401)return expireSession();
     if(!r.ok)throw new Error(d.error||'Could not save feedback');
     currentFeedback=d.feedback||currentFeedback;
     renderLeadFeedback();
     const labels={useful:'Marked useful.',not_useful:'Marked not useful.',contacted:'Marked contacted.',won:'Marked won.',lost:'Marked lost.'};
     toast(labels[action]||'Feedback saved.');
   }catch(e){
+    if(!authIsCurrent(snapshot))return;
     toast(e.message||'Could not save feedback.');
   }
 }
@@ -217,6 +243,7 @@ function openLead(id){
 }
 
 async function loadChanges(){
+  const snapshot=authSnapshot();
   const msg=$('#changedMessage');if(!msg)return;
   if(!user){
     ['chgOpp','chgHot','chgMajor','chgComp'].forEach(id=>{const tile=document.getElementById(id)?.closest('.changed-stat');if(tile)tile.hidden=true;});
@@ -225,6 +252,7 @@ async function loadChanges(){
     try{
       const r=await fetch(`${CONFIG.apiBase}/changes-teaser`);
       const d=await r.json().catch(()=>({}));
+      if(!authIsCurrent(snapshot))return;
       if(!r.ok)throw new Error();
       const count=Number(d.opportunities||0);
       if(count>0){
@@ -238,6 +266,7 @@ async function loadChanges(){
         msg.textContent='No new WATCH+ opportunities since yesterday. Sign in to personalize what Revenue Trigger watches for you.';
       }
     }catch{
+      if(!authIsCurrent(snapshot))return;
       msg.textContent='Sign in to see the activity that deserves your attention today.';
     }
     return;
@@ -245,6 +274,8 @@ async function loadChanges(){
   try{
     const r=await fetch(`${CONFIG.apiBase}/changes`,{headers:authHeaders()});
     const d=await r.json().catch(()=>({}));
+    if(!authIsCurrent(snapshot))return;
+    if(r.status===401)return expireSession();
     if(!r.ok)throw new Error(d.error||'Could not load changes');
     const s=d.summary||{};
     const visibleStats=[
@@ -260,19 +291,23 @@ async function loadChanges(){
       : `No opportunities matched your current market, industry and score filters since yesterday.`;
     $('#changedMoves').innerHTML=(d.competitorMoves||[]).slice(0,2).map(x=>`<div class="watch-move">• ${esc(x.title)}</div>`).join('');
   }catch(e){
+    if(!authIsCurrent(snapshot))return;
     ['chgOpp','chgHot','chgMajor','chgComp'].forEach(id=>{const tile=document.getElementById(id)?.closest('.changed-stat');if(tile)tile.hidden=true;});
     document.querySelector('.changed-shell')?.setAttribute('data-visible-stats','0');
     msg.textContent='Could not load today’s change summary.';
   }
 }
 async function updateSelectedMarketSourceStatus(){
+  const snapshot=authSnapshot();
   if(!user)return; // Public feed freshness is owned by /feed, not upstream source health.
   const selected=$('#market')?.value||'all';
   $('#feedStatus').closest('.status')?.classList.remove('source-degraded');
   if(selected!=='Chandler')return;
   try{
-    const r=await fetch(`${CONFIG.apiBase}/source-health?market=Chandler&days=7`);
+    const r=await fetch(`${CONFIG.apiBase}/source-health?market=Chandler&days=7`,{headers:authHeaders()});
     const d=await r.json().catch(()=>({}));
+    if(!authIsCurrent(snapshot))return;
+    if(r.status===401)return expireSession();
     if(d.status==='degraded'||d.ok===false){
       const last=d.storedFallback?.lastRefresh;
       const suffix=last?` • last stored refresh ${new Date(last.replace(' ','T')+'Z').toLocaleString()}`:'';
@@ -284,22 +319,50 @@ async function updateSelectedMarketSourceStatus(){
   }catch{}
 }
 async function loadPublic(){
+ const snapshot=authSnapshot();
  const requestId=++publicFeedRequest;
  const selected=$('#market')?.value||'all';
  const marketParam=selected!=='all'?`&markets=${encodeURIComponent(selected)}`:'';
  const feed=await RTUI.readFeed(`days=7&limit=8${marketParam}`);
- if(requestId!==publicFeedRequest)return;
+ if(requestId!==publicFeedRequest||!authIsCurrent(snapshot))return;
  publicFeed=feed;leads=feed.rows;
  const available=Number(feed.counts?.available||feed.counts?.clusteredAvailable||leads.length);
- $('#feedStatus').textContent=feed.state==='unavailable'?feed.label:`Live preview • ${leads.length} of ${available||leads.length} opportunities`;
+ $('#feedStatus').textContent=`${feed.label} • ${leads.length} of ${available||leads.length} opportunities`;
  $('#feedExplainer').textContent='Explore a live sample of current money events. Create a free account to reveal company names, exact project details and your personalized feed.';
  const status=$('#feedStatus').closest('.status');
  status?.classList.remove('source-degraded');status?.setAttribute('data-feed-state',feed.state);
  const note=$('#publicFeedNotice');note.hidden=!feed.notice;note.textContent=feed.notice;note.dataset.state=feed.state;
  render();
 }
-async function loadDashboard(){if(!user)return loadPublic();try{const r=await fetch(`${CONFIG.apiBase}/dashboard?limit=200`,{headers:authHeaders()});if(r.status===401){localStorage.removeItem('revenuetrigger_session');localStorage.removeItem('signalhound_session');user=null;updateUserUI();return loadPublic()}if(!r.ok)throw new Error();const d=await r.json();leads=d.leads||[];$('#feedStatus').textContent=`Personalized • ${leads.length} matched signals`;$('#feedExplainer').textContent=`Your ${planActive()} feed is filtered to your saved industry preferences and plan history.`;render();await updateSelectedMarketSourceStatus();}catch(e){toast('Could not load personalized feed.');loadPublic()}}
-async function loadMe(){if(!token()){user=null;updateUserUI();return false}try{const r=await fetch(`${CONFIG.apiBase}/me`,{headers:authHeaders()});if(!r.ok)throw new Error();user=(await r.json()).user;updateUserUI();return true}catch{localStorage.removeItem('revenuetrigger_session');localStorage.removeItem('signalhound_session');user=null;updateUserUI();return false}}
+async function loadDashboard(){
+  if(!user)return loadPublic();
+  const snapshot=authSnapshot(),requestId=++dashboardRequest;
+  const current=()=>authIsCurrent(snapshot)&&requestId===dashboardRequest;
+  try{
+    const r=await fetch(`${CONFIG.apiBase}/dashboard?limit=200`,{headers:authHeaders()});
+    if(!current())return;
+    if(r.status===401)return expireSession();
+    if(!r.ok)throw new Error();
+    const d=await r.json();
+    if(!current())return;
+    leads=d.leads||[];
+    $('#feedStatus').textContent=`Personalized • ${leads.length} matched signals`;
+    $('#feedExplainer').textContent=`Your ${planActive()} feed is filtered to your saved industry preferences and plan history.`;
+    render();await updateSelectedMarketSourceStatus();
+  }catch(e){if(current()){toast('Could not load personalized feed.');loadPublic()}}
+}
+async function loadMe(){
+  const snapshot=authSnapshot();
+  if(!token()){clearAuthenticatedState();return false}
+  try{
+    const r=await fetch(`${CONFIG.apiBase}/me`,{headers:authHeaders()});
+    if(!authIsCurrent(snapshot))return false;
+    if(!r.ok)throw new Error();
+    const d=await r.json();
+    if(!authIsCurrent(snapshot))return false;
+    user=d.user;updateUserUI();return true;
+  }catch{if(authIsCurrent(snapshot))await expireSession();return false}
+}
 function updateUserUI(){
   const permitToggle=$('#permitCompanyToggle')?.closest('.company-toggle-wrap');
   const pipelineToggle=$('#pipelineCompanyToggle')?.closest('.company-toggle-wrap');
@@ -353,6 +416,7 @@ function maybeOpenOnboarding(){
 }
 
 async function completeOnboarding(){
+  const snapshot=authSnapshot();
   if(!user)return;
 
   const industryLimit=user.entitlements?.industryLimit||1;
@@ -376,6 +440,8 @@ async function completeOnboarding(){
       })
     });
     const d=await r.json().catch(()=>({}));
+    if(!authIsCurrent(snapshot))return;
+    if(r.status===401)return expireSession();
     if(!r.ok)throw new Error(d.error||'Could not build your feed.');
 
     user=d.user;
@@ -386,45 +452,63 @@ async function completeOnboarding(){
     await loadDashboard();
     document.querySelector('#signals')?.scrollIntoView({behavior:'smooth'});
   }catch(e){
+    if(!authIsCurrent(snapshot))return;
     toast(e.message||'Could not build your feed.');
   }
 }
 
 async function requestSignin(email){return RTAuth.requestSignin(email)}
-async function verifyMagic(raw){const r=await fetch(`${CONFIG.apiBase}/auth/verify`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token:raw})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Sign-in link failed');localStorage.setItem('revenuetrigger_session',d.session);localStorage.removeItem('signalhound_session');user=d.user;history.replaceState({},'',location.pathname+location.search);updateUserUI();toast('Signed in.');await loadDashboard();maybeOpenOnboarding();loadChanges();const pending=localStorage.getItem('revenuetrigger_pending_plan')||localStorage.getItem('signalhound_pending_plan');if(pending){localStorage.removeItem('revenuetrigger_pending_plan');localStorage.removeItem('signalhound_pending_plan');setTimeout(()=>buyPlan(pending),300)}}
+async function verifyMagic(raw){const snapshot=authSnapshot();const r=await fetch(`${CONFIG.apiBase}/auth/verify`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token:raw})});const d=await r.json().catch(()=>({}));if(!authIsCurrent(snapshot))return;if(r.status===401)return expireSession();if(!r.ok)throw new Error(d.error||'Sign-in link failed');++authGeneration;localStorage.setItem('revenuetrigger_session',d.session);localStorage.removeItem('signalhound_session');user=d.user;history.replaceState({},'',location.pathname+location.search);updateUserUI();toast('Signed in.');await loadDashboard();loadPipeline();maybeOpenOnboarding();loadChanges();const pending=localStorage.getItem('revenuetrigger_pending_plan')||localStorage.getItem('signalhound_pending_plan');if(pending){localStorage.removeItem('revenuetrigger_pending_plan');localStorage.removeItem('signalhound_pending_plan');setTimeout(()=>buyPlan(pending),300)}}
 $('#signinForm').addEventListener('submit',async e=>{e.preventDefault();const email=$('#signinEmail').value;$('#signinNotice').style.display='block';$('#signinNotice').textContent='Sending secure link…';try{const d=await requestSignin(email);if(d.dev&&d.magicLink){$('#signinNotice').innerHTML=`Development mode is enabled. <a style="color:#2aee61" href="${esc(d.magicLink)}">Open the sign-in link</a>.`}else $('#signinNotice').textContent='Check your email. The link expires in 15 minutes.'}catch(err){$('#signinNotice').textContent=err.message}});
-async function toggleSave(id){if(!user){openSignin();return}const x=leads.find(v=>String(v.id)===String(id));if(!x)return;const next=!x.saved;const r=await fetch(`${CONFIG.apiBase}/saved`,{method:'POST',headers:authHeaders({'content-type':'application/json'}),body:JSON.stringify({leadId:id,saved:next})});if(!r.ok){toast('Could not update saved lead.');return}x.saved=next;user.savedCount=Math.max(0,(user.savedCount||0)+(next?1:-1));updateUserUI();render();if(currentLead&&String(currentLead.id)===String(id)){$('#mSave').textContent=next?'★ Saved':'☆ Save opportunity'}toast(next?'Opportunity saved.':'Removed from saved.')}
+async function toggleSave(id){const snapshot=authSnapshot();if(!user){openSignin();return}const x=leads.find(v=>String(v.id)===String(id));if(!x)return;const next=!x.saved;const r=await fetch(`${CONFIG.apiBase}/saved`,{method:'POST',headers:authHeaders({'content-type':'application/json'}),body:JSON.stringify({leadId:id,saved:next})});if(!authIsCurrent(snapshot))return;if(r.status===401)return expireSession();if(!r.ok){toast('Could not update saved lead.');return}x.saved=next;user.savedCount=Math.max(0,(user.savedCount||0)+(next?1:-1));updateUserUI();render();if(currentLead&&String(currentLead.id)===String(id)){$('#mSave').textContent=next?'★ Saved':'☆ Save opportunity'}toast(next?'Opportunity saved.':'Removed from saved.')}
 function toggleCurrentSave(){if(currentLead)toggleSave(currentLead.id)}
 function showSavedOnly(){if(!user)return openSignin();$('#savedFilter').value='saved';savedOnly=true;document.querySelector('#signals').scrollIntoView({behavior:'smooth'});render()}
-async function savePreferences(){if(!user)return;const limit=user.entitlements?.industryLimit||1;let industries=$$('#industryChecks input:checked').map(x=>x.value);if(industries.length>limit){toast(`Your plan allows ${limit} industr${limit===1?'y':'ies'}.`);return}if(!industries.length){toast('Choose at least one industry.');return}const marketLimit=user.entitlements?.marketLimit||1;let markets=$$('#marketChecks input:checked').map(x=>x.value);if(markets.length>marketLimit){toast(`Your plan allows ${marketLimit} market${marketLimit===1?'':'s'}.`);return}if(!markets.length){toast('Choose at least one market.');return}const r=await fetch(`${CONFIG.apiBase}/preferences`,{method:'POST',headers:authHeaders({'content-type':'application/json'}),body:JSON.stringify({industries,markets,minScore:+$('#prefScore').value})});const d=await r.json().catch(()=>({}));if(!r.ok){toast(d.error||'Could not save preferences.');return}user=d.user;updateUserUI();renderAccount();closeModal('accountModal');toast('Preferences saved.');loadDashboard();loadChanges()}
-async function buyPlan(plan){if(RTConfig.checkoutDisabled)return;if(!user){localStorage.setItem('revenuetrigger_pending_plan',plan);openSignin();toast(`Sign in first to choose ${plan}.`);return}try{const r=await fetch(`${CONFIG.apiBase}/billing/checkout`,{method:'POST',headers:authHeaders({'content-type':'application/json'}),body:JSON.stringify({plan})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Checkout unavailable');location.href=d.url}catch(err){toast(err.message)}}
+async function savePreferences(){const snapshot=authSnapshot();if(!user)return;const limit=user.entitlements?.industryLimit||1;let industries=$$('#industryChecks input:checked').map(x=>x.value);if(industries.length>limit){toast(`Your plan allows ${limit} industr${limit===1?'y':'ies'}.`);return}if(!industries.length){toast('Choose at least one industry.');return}const marketLimit=user.entitlements?.marketLimit||1;let markets=$$('#marketChecks input:checked').map(x=>x.value);if(markets.length>marketLimit){toast(`Your plan allows ${marketLimit} market${marketLimit===1?'':'s'}.`);return}if(!markets.length){toast('Choose at least one market.');return}const r=await fetch(`${CONFIG.apiBase}/preferences`,{method:'POST',headers:authHeaders({'content-type':'application/json'}),body:JSON.stringify({industries,markets,minScore:+$('#prefScore').value})});const d=await r.json().catch(()=>({}));if(!authIsCurrent(snapshot))return;if(r.status===401)return expireSession();if(!r.ok){toast(d.error||'Could not save preferences.');return}user=d.user;updateUserUI();renderAccount();closeModal('accountModal');toast('Preferences saved.');loadDashboard();loadChanges()}
+async function buyPlan(plan){const snapshot=authSnapshot();if(RTConfig.checkoutDisabled)return;if(!user){localStorage.setItem('revenuetrigger_pending_plan',plan);openSignin();toast(`Sign in first to choose ${plan}.`);return}try{const r=await fetch(`${CONFIG.apiBase}/billing/checkout`,{method:'POST',headers:authHeaders({'content-type':'application/json'}),body:JSON.stringify({plan})});const d=await r.json();if(!authIsCurrent(snapshot))return;if(r.status===401)return expireSession();if(!r.ok)throw new Error(d.error||'Checkout unavailable');location.href=d.url}catch(err){toast(err.message)}}
 async function syncBilling(){
+  const snapshot=authSnapshot();
   if(!user)return null;
   try{
     const r=await fetch(`${CONFIG.apiBase}/billing/sync`,{method:'POST',headers:authHeaders()});
     const d=await r.json().catch(()=>({}));
+    if(!authIsCurrent(snapshot))return;
+    if(r.status===401)return expireSession();
     if(r.ok&&d.user){
       user=d.user;
       updateUserUI();
       renderAccount();
       return user;
     }
-  }catch(e){}
+  }catch(e){
+    if(!authIsCurrent(snapshot))return;}
   return null;
 }
-async function manageBilling(){if(!user)return;if(!['active','trialing','past_due'].includes(user.subscriptionStatus)){closeModal('accountModal');location.href='/#pricing';return}try{const r=await fetch(`${CONFIG.apiBase}/billing/portal`,{method:'POST',headers:authHeaders()});const d=await r.json();if(!r.ok)throw new Error(d.error||'Billing portal unavailable');location.href=d.url}catch(err){toast(err.message)}}
-async function exportCsv(){if(!user){openSignin();return}if(!(user.entitlements?.export&&planActive()!=='Beta')){toast('CSV export is available on Hunter and Territory.');return}const r=await fetch(`${CONFIG.apiBase}/export.csv`,{headers:authHeaders()});if(!r.ok){const d=await r.json().catch(()=>({}));toast(d.error||'Export failed');return}const blob=await r.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='revenuetrigger-leads.csv';a.click();URL.revokeObjectURL(url)}
-async function logout(){try{await fetch(`${CONFIG.apiBase}/logout`,{method:'POST',headers:authHeaders()})}catch{}localStorage.removeItem('revenuetrigger_session');localStorage.removeItem('signalhound_session');user=null;closeModal('accountModal');savedOnly=false;updateUserUI();toast('Signed out.');loadPublic()}
+async function manageBilling(){const snapshot=authSnapshot();if(!user)return;if(!['active','trialing','past_due'].includes(user.subscriptionStatus)){closeModal('accountModal');location.href='/#pricing';return}try{const r=await fetch(`${CONFIG.apiBase}/billing/portal`,{method:'POST',headers:authHeaders()});const d=await r.json();if(!authIsCurrent(snapshot))return;if(r.status===401)return expireSession();if(!r.ok)throw new Error(d.error||'Billing portal unavailable');location.href=d.url}catch(err){toast(err.message)}}
+async function exportCsv(){const snapshot=authSnapshot();if(!user){openSignin();return}if(!(user.entitlements?.export&&planActive()!=='Beta')){toast('CSV export is available on Hunter and Territory.');return}const r=await fetch(`${CONFIG.apiBase}/export.csv`,{headers:authHeaders()});if(!authIsCurrent(snapshot))return;if(r.status===401)return expireSession();if(!r.ok){const d=await r.json().catch(()=>({}));if(!authIsCurrent(snapshot))return;if(r.status===401)return expireSession();toast(d.error||'Export failed');return}const blob=await r.blob();if(!authIsCurrent(snapshot))return;const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='revenuetrigger-leads.csv';a.click();URL.revokeObjectURL(url)}
+async function logout(){
+  const headers=authHeaders();
+  clearAuthenticatedState();
+  toast('Signed out.');
+  const reloaded=reloadAnonymous();
+  try{await fetch(`${CONFIG.apiBase}/logout`,{method:'POST',headers})}catch{}
+  await reloaded;
+}
 
 let pipelineRows=[],pipelineSourceStatus='live';
 
 async function loadPipeline(){
+  const snapshot=authSnapshot(),requestId=++pipelineRequest;
+  const current=()=>authIsCurrent(snapshot)&&requestId===pipelineRequest;
   const status=$('#pipelineStatus');
   const list=$('#pipelineList');
   if(status)status.textContent='Loading Chandler early pipeline…';
   try{
     const r=await fetch(`${CONFIG.apiBase}/pipeline?market=Chandler`,user?{headers:authHeaders()}:{});
+    if(!current())return;
+    if(r.status===401)return expireSession();
     const d=await r.json().catch(()=>({}));
+    if(!current())return;
+    if(user&&d.publicPreview)return expireSession();
     if(!r.ok||d.ok===false||d.sourceStatus==='unavailable'){
       pipelineRows=[];
       if(status)status.textContent='Chandler source temporarily unavailable';
@@ -435,6 +519,7 @@ async function loadPipeline(){
     renderPipeline();
     if(d.sourceStatus==='degraded'&&status)status.textContent=`Source degraded • ${pipelineRows.length} Chandler early-pipeline opportunities`;
   }catch{
+    if(!current())return;
     pipelineRows=[];
     if(status)status.textContent='Chandler source temporarily unavailable';
     if(list)list.innerHTML='<div class="pipeline-empty pipeline-source-alert">The City of Chandler Early Pipeline source could not be reached. Try Refresh pipeline again shortly.</div>';

@@ -1919,23 +1919,36 @@ function feedOverallState(marketStates=[]){
   return 'partial';
 }
 
+// Public output is an allowlist. Never copy a source title, identifier or free text.
 function publicOpportunityTeaser(x={}){
+  const categories=(Array.isArray(x.categories)?x.categories:[]).filter(c=>INDUSTRIES.includes(c)).slice(0,4);
+  const trade=categories.find(c=>c!=='Commercial services');
+  const stage=[x.stage,x.lifecycle?.stage,x.permitStatus,x.permit_status]
+    .find(s=>['PRE-TECH','PLANNING','APPLICATION','PERMIT ISSUED','CONSTRUCTION','COMPLETE','APPROVED PROJECTS','UNDER CONSTRUCTION'].includes(s))||null;
+  const titles={HVAC:'Commercial HVAC activity',Electrical:'Commercial electrical activity',Plumbing:'Commercial plumbing activity',Roofing:'Commercial roofing activity',Landscaping:'Commercial landscaping activity',Security:'Commercial security activity',Signage:'Commercial signage activity'};
+  const date=x.date||x.event_date;
   return {
-    id:x.id,
-    market:x.market||marketFromSource(x.source)||'',
-    name:x.name||'Commercial activity',
-    address:x.market?x.market:'Market available after sign in',
-    date:x.date||x.event_date||null,
+    id:`teaser_${crypto.randomUUID()}`,
+    market:LIVE_MARKETS.includes(x.market)?x.market:'',
+    name:titles[trade]||'Commercial project activity',
+    date:date&&Number.isFinite(Date.parse(date))?new Date(date).toISOString():null,
     score:Number(x.score||0),
-    temperature:x.temperature||temperatureForScore(Number(x.score||0)),
+    temperature:['HOT','WARM','WATCH','LOW'].includes(x.temperature)?x.temperature:temperatureForScore(Number(x.score||0)),
     value:Number(x.value||0),
-    categories:Array.isArray(x.categories)?x.categories.slice(0,4):[],
-    stage:x.stage||x.lifecycle?.stage||x.permitStatus||x.permit_status||null,
-    permitStatus:x.permitStatus||x.permit_status||null,
-    company:null,
+    categories,
+    stage,
     publicPreview:true
   };
 }
+
+// These diagnostics can contain records or source errors with permit identifiers.
+// Keep their full behavior for signed-in users and existing internal admin callers.
+const PRIVATE_DIAGNOSTICS=new Set([
+  '/leads','/score-audit','/temperature-calibration','/backfill-preview',
+  '/historical-coverage','/relationship-gap-candidates','/relationship-candidates',
+  '/relationship-health','/tempe-enrichment-preview','/attribution-health',
+  '/tucson-recheck-preview','/source-health'
+]);
 
 async function readStoredFeed(env,{days=7,limit=120,markets=LIVE_MARKETS}={}){
   if(!env.DB)throw new Error('D1 binding unavailable');
@@ -3526,6 +3539,11 @@ export default {
     if(request.method==='OPTIONS')return new Response(null,{headers:cors(env)});
     const url=new URL(request.url),path=url.pathname.replace(/^\/api/,'');
     try{
+      if(PRIVATE_DIAGNOSTICS.has(path)){
+        const bearer=(request.headers.get('authorization')||'').replace(/^Bearer\s+/i,'').trim();
+        const admin=Boolean(env.ADMIN_TOKEN&&bearer===env.ADMIN_TOKEN);
+        if(!admin&&!await authUser(request,env))return json({error:'sign in required'},401,env);
+      }
       if(path==='/stripe/webhook'&&request.method==='POST')return await handleStripeWebhook(request,env);
       if(path==='/health'){const rocMeta=await rocRosterMeta(env);return json({ok:true,service:'RevenueTrigger V57',time:nowIso(),features:{auth:true,savedLeads:true,billing:!!env.STRIPE_SECRET_KEY,email:!!env.RESEND_API_KEY,multiMarket:true,azRoc:!!rocMeta?.active_batch},roc:rocMeta?{sourceAsOf:rocMeta.source_as_of,recordCount:Number(rocMeta.record_count||0),importedAt:rocMeta.imported_at}:null,markets:SOURCE_STATUS},200,env);}
       if(path==='/roc/meta'&&request.method==='GET'){
@@ -4439,6 +4457,7 @@ export default {
             :null;
 
         if(pipelineSourceStatus==='unavailable'){
+          if(!pipelineUser)return json({ok:false,market:'Chandler',sourceStatus:pipelineSourceStatus,count:0,publicPreview:true,publicAvailable:0,message:pipelineSourceMessage,pipeline:[],generatedAt:nowIso()},200,env);
           return json({
             ok:false,
             market:'Chandler',
