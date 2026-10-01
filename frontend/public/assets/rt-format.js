@@ -1,5 +1,11 @@
-/* Production display helpers shared unchanged by both experiences. */
+/* Display-only helpers shared by both experiences; stored records stay unchanged. */
 window.RTFormat=(()=>{
+// Exact recurring UTF-8-as-CP437 artifacts confirmed in sanitized Arizona fixtures.
+// Do not guess at unknown sequences or transcode whole strings.
+function normalizeDisplayText(v=''){
+  return String(v??'').replace(/ΓÇö/g,'—').replace(/ΓÇ¥/g,'”');
+}
+function preserveRedaction(v){return v.replace(/\[phone redacted\]/gi,'[PHONE REDACTED]')}
 function approxMoney(n){
   n=Number(n||0);
   if(!n)return '—';
@@ -9,14 +15,14 @@ function approxMoney(n){
   return '~'+usd+(Math.round(n/10)*10);
 }
 function displayCompanyName(v=''){
-  const raw=String(v||'').replace(/\s+/g,' ').trim();
+  const raw=normalizeDisplayText(v).replace(/\s+/g,' ').trim();
   if(!raw||/^(not listed|unknown|n\/a|none|null|-+)$/i.test(raw))return 'Not listed';
   if(raw!==raw.toUpperCase())return raw;
   const keepUpper=new Set(['LLC','LLP','LP','PLLC','USA','US','HVAC','GC','DBA','AZ','II','III','IV']);
-  return raw.toLowerCase().replace(/\b[a-z0-9][a-z0-9'&.-]*\b/g,w=>{const u=w.toUpperCase();return keepUpper.has(u)?u:w.charAt(0).toUpperCase()+w.slice(1)});
+  return preserveRedaction(raw.toLowerCase().replace(/\b[a-z0-9][a-z0-9'&.-]*\b/g,w=>{const u=w.toUpperCase();return keepUpper.has(u)?u:w.charAt(0).toUpperCase()+w.slice(1)}));
 }
 function cleanPermitText(v=''){
-  return String(v||'')
+  return normalizeDisplayText(v)
     .replace(/[\r\n]+/g,' ')
     .replace(/^\s*(?:\d+[.)]|[-•])\s*/,'')
     .replace(/\s+/g,' ')
@@ -33,10 +39,10 @@ function sentenceCasePermit(v=''){
     const acronyms=['HVAC','FACP','EV','ADA','LED','CCTV','CMU','PVC','RTU','VAV','AHU','CO2'];
     for(const a of acronyms)s=s.replace(new RegExp('\\b'+a.toLowerCase()+'\\b','g'),a);
   }
-  return s;
+  return preserveRedaction(s);
 }
 function truncateAtWord(v,max=62){
-  const s=String(v||'').trim();
+  const s=normalizeDisplayText(v).trim();
   if(s.length<=max)return s;
   const cut=s.slice(0,max+1);
   const at=cut.lastIndexOf(' ');
@@ -44,7 +50,7 @@ function truncateAtWord(v,max=62){
 }
 function permitDescriptionText(x={}){
   const generic=/^(other\s+commercial|commercial|commercial building|permit activity|building permit|other)$/i;
-  const parts=String(x.scope||'').split(/\s+[—–-]\s+/).map(cleanPermitText).filter(Boolean);
+  const parts=normalizeDisplayText(x.scope).split(/\s+[—–-]\s+/).map(cleanPermitText).filter(Boolean);
   const useful=parts.find(v=>v.length>=5&&!generic.test(v)&&!/^com$/i.test(v)&&!/^\d{3}\s*-/.test(v));
   return useful||'';
 }
@@ -72,5 +78,5 @@ function displayEventTitle(x={}){
   return feedHeadline(x);
 }
 
-return {approxMoney,displayCompanyName,displayEventTitle,cleanPermitText,sentenceCasePermit,truncateAtWord,permitDescriptionText,feedHeadline};
+return {normalizeDisplayText,approxMoney,displayCompanyName,displayEventTitle,cleanPermitText,sentenceCasePermit,truncateAtWord,permitDescriptionText,feedHeadline};
 })();

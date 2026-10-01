@@ -42,7 +42,7 @@ function initLightMouseGlow(){
 initLightMouseGlow();
 
 syncThemeUI();
-function esc(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function esc(s=''){return RTFormat.normalizeDisplayText(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function money(n){return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0,notation:n>=1e6?'compact':'standard'}).format(n||0)}
 const {approxMoney,displayCompanyName,displayEventTitle,cleanPermitText,sentenceCasePermit,truncateAtWord,permitDescriptionText,feedHeadline}=RTFormat;
 function setKpiValue(id,rawValue,displayValue){
