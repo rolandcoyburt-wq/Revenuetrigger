@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 
 const workerSource=await readFile(new URL('../worker.js',import.meta.url),'utf8');
-const mod=await import('data:text/javascript;base64,'+Buffer.from(workerSource).toString('base64'));
+// File URL preserves relative adapter-module resolution.
+const mod=await import(new URL('../worker.js',import.meta.url));
 const worker=mod.default;
 
 const ALLOWED='https://revenuetrigger.ai';
@@ -85,13 +86,15 @@ async function call(path,{rows=sampleRows(),dbOptions={},headers={}}={}){
   const db=new MockDB(rows,dbOptions);
   const req=new Request('https://api.revenuetrigger.ai/api'+path,{headers});
   const originalFetch=globalThis.fetch;
-  globalThis.fetch=async()=>{throw new Error('EXTERNAL_FETCH_FORBIDDEN')};
+  let externalAttempts=0;
+  globalThis.fetch=async()=>{externalAttempts++;throw new Error('EXTERNAL_FETCH_FORBIDDEN')};
   try{
     const response=await worker.fetch(req,{DB:db,ALLOWED_ORIGIN:ALLOWED});
     const body=await response.json();
     return {response,body,db};
   }finally{
     globalThis.fetch=originalFetch;
+    assert.equal(externalAttempts,0,'Feed must not attempt any external fetch');
   }
 }
 
@@ -243,6 +246,50 @@ await check('20 response shape is suitable for homepage/public Signals without d
   assert.ok(Array.isArray(body.markets));
   assert.ok(body.query&&body.counts&&body.freshness);
   assert.equal(workerSource.slice(workerSource.indexOf("if(path==='/feed'"),workerSource.indexOf("if(path==='/leads'",workerSource.indexOf("if(path==='/feed'"))).includes('SAMPLE'),false);
+});
+
+
+// Fort Worth integration: the existing LIVE_MARKETS-driven contract must extend
+// without fetching adapters, writing D1, or enabling Dallas.
+await check('21 default feed includes Fort Worth with explicit empty state',async()=>{
+  const {body,db}=await call('/feed');
+  assert.deepEqual(body.markets,[...markets,'Fort Worth']);
+  assert.equal(body.freshness.markets.find(x=>x.market==='Fort Worth').state,'empty');
+  assert.equal(body.state,'partial');
+  assert.equal(db.statements.length,2);
+});
+await check('22 Fort Worth filter hydrates and clusters stored rows only',async()=>{
+  const fw=row({id:'fw-a',market:'Fort Worth',address:'100 Main St Fort Worth TX',source:'City of Fort Worth Development Services',permit:'FW-A'});
+  const {response,body,db}=await call('/feed?markets=Fort%20Worth&limit=10',{
+    rows:[...sampleRows(),fw,{...fw,id:'fw-b',permit:'FW-B'}],
+    headers:{Authorization:'Bearer must-not-trigger-session-write'}
+  });
+  assert.equal(response.status,200);
+  assert.deepEqual(body.markets,['Fort Worth']);
+  assert.equal(body.leads.length,1);
+  assert.equal(body.leads[0].market,'Fort Worth');
+  assert.equal(body.leads[0].relatedPermitCount,2);
+  assert.ok(body.leads[0].scoreBreakdown);
+  assert.equal(body.state,'fresh');
+  assert.equal(db.statements.length,2);
+  assert.ok(db.statements.every(x=>/^\s*SELECT\b/i.test(x)&&!/(sessions|users|market_cursors)/i.test(x)));
+});
+await check('23 Fort Worth empty stale unavailable and mixed states remain honest',async()=>{
+  const path='/feed?markets=Fort%20Worth';
+  assert.equal((await call(path,{rows:[]})).body.state,'empty');
+  const fw=row({id:'fw',market:'Fort Worth',address:'1 Main St Fort Worth TX',updated_at:sqliteTime(-500)});
+  assert.equal((await call(path,{rows:[fw]})).body.state,'stale');
+  const mixed=await call('/feed?markets=Phoenix,Fort%20Worth',{rows:[...sampleRows(),fw]});
+  assert.equal(mixed.body.state,'partial');
+  assert.equal(mixed.body.freshness.markets.find(x=>x.market==='Fort Worth').state,'stale');
+  const failed=await call(path,{dbOptions:{fail:true}});
+  assert.equal(failed.response.status,503);assert.equal(failed.body.state,'unavailable');
+});
+await check('24 Dallas remains rejected and Fort Worth appears in allowlist',async()=>{
+  const {response,body,db}=await call('/feed?markets=Dallas');
+  assert.equal(response.status,400);assert.deepEqual(body.invalidMarkets,['Dallas']);
+  assert.ok(body.allowedMarkets.includes('Fort Worth'));assert.ok(!body.allowedMarkets.includes('Dallas'));
+  assert.equal(db.statements.length,0);
 });
 
 const failed=results.filter(x=>!x.ok);
