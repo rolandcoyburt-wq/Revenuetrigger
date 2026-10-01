@@ -295,7 +295,7 @@ await check('25 Dallas filter returns stored Dallas rows without municipal fetch
   const d=row({id:'dallas-a',market:'Dallas',address:'1445 Ross Ave Dallas TX',source:'City of Dallas DallasNow Building — Issued',permit:'COM-ALT-ADD-26-002263',company:'1445 ROSS AVE LLC',official_value:3200000});
   const {response,body,db}=await call('/feed?markets=Dallas&days=7&limit=20',{rows:[...sampleRows(),d]});
   assert.equal(response.status,200);assert.deepEqual(body.markets,['Dallas']);assert.equal(body.leads.length,1);
-  assert.equal(body.leads[0].market,'Dallas');assert.equal(body.leads[0].permit,'COM-ALT-ADD-26-002263');assert.equal(body.state,'fresh');
+  assert.equal(body.leads[0].market,'Dallas');assert.equal('permit' in body.leads[0],false);assert.match(body.leads[0].id,/^teaser_/);for(const secret of ['COM-ALT-ADD-26-002263','1445 ROSS AVE LLC','1445 Ross Ave','dallas-a'])assert(!JSON.stringify(body).includes(secret));assert.equal(body.state,'fresh');
   assert.equal(db.statements.length,2);
 });
 await check('26 Dallas plus Fort Worth mixed stored-feed query remains additive',async()=>{

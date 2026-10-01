@@ -531,6 +531,7 @@ function usableClusterAddress(lead={}){
     market?`${market} ARIZONA`:'',
     'ARIZONA','AZ'
   ].filter(Boolean));
+  if (market==='DALLAS' && /^(?:DALLAS\s*)?(?:TX|TEXAS)?(?:\s+\d{5}(?:-\d{4})?)?$/.test(addr)) return '';
   return generic.has(addr)?'':addr;
 }
 function clusterLeads(leads=[]){
@@ -1835,6 +1836,9 @@ async function fetchDallas(days=7,limit=500){
       secondaryFingerprint:record.secondaryFingerprint||null,
       sourceObservations:record.sourceObservations||[],
       participantRole:record.companyCandidate?'applicant':null,
+      participants:record.participants||[],
+      lineage:record.lineage||{},
+      identityHints:record.identityHints||{},
       parcelNumber:record.parcelNumber||null,
       councilDistrict:record.councilDistrict||null
     };
@@ -1854,12 +1858,25 @@ async function fetchMarket(market,days=7,limit=500,env=null){
   if(market==='Dallas')return fetchDallas(days,limit);
   return [];
 }
+const DALLAS_PROVENANCE_FIELDS=['sourceRecordId','sourceUrl','dallasNowLink','temporaryId','secondaryFingerprint','sourceObservations','participantRole','participants','lineage','identityHints','parcelNumber','councilDistrict'];
+function dallasProvenance(lead){
+  return Object.fromEntries(DALLAS_PROVENANCE_FIELDS.filter(key=>Object.hasOwn(lead,key)).map(key=>[key,lead[key]]));
+}
 async function persist(env,leads){
   if(!env.DB)return;
   const sql=`INSERT INTO leads (id,name,address,event_date,company,scope,score,categories,value,temperature,permit,permit_status,official_value,source,market,updated_at)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'))
     ON CONFLICT(id) DO UPDATE SET name=excluded.name,address=excluded.address,event_date=excluded.event_date,company=excluded.company,scope=excluded.scope,score=excluded.score,categories=excluded.categories,value=excluded.value,temperature=excluded.temperature,permit=excluded.permit,permit_status=excluded.permit_status,official_value=excluded.official_value,source=excluded.source,market=excluded.market,updated_at=datetime('now')`;
-  const stmts=leads.map(x=>env.DB.prepare(sql).bind(x.id,x.name,x.address,new Date(x.date).toISOString(),x.company,x.scope,x.score,JSON.stringify(x.categories),x.value,x.temperature,x.permit,x.permitStatus||'—',x.officialPermitValue||null,x.source,x.market||'Phoenix'));
+  // Other markets retain their existing storage path. Dallas needs structured
+  // provenance in addition to its human-readable source attribution.
+  const dallasSql=sql.replace('source,market,updated_at','source,market,source_provenance,updated_at')
+    .replace("?,datetime('now')", "?,?,datetime('now')")
+    .replace('market=excluded.market,','market=excluded.market,source_provenance=excluded.source_provenance,');
+  const stmts=leads.map(x=>{
+    const args=[x.id,x.name,x.address,new Date(x.date).toISOString(),x.company,x.scope,x.score,JSON.stringify(x.categories),x.value,x.temperature,x.permit,x.permitStatus||'—',x.officialPermitValue||null,x.source,x.market||'Phoenix'];
+    if(x.market==='Dallas')args.push(JSON.stringify(dallasProvenance(x)));
+    return env.DB.prepare(x.market==='Dallas'?dallasSql:sql).bind(...args);
+  });
   for(let i=0;i<stmts.length;i+=40)await env.DB.batch(stmts.slice(i,i+40));
 }
 async function refresh(env,days=7){
@@ -1889,11 +1906,14 @@ async function refresh(env,days=7){
   return {leads,markets};
 }
 function hydrateStoredLead(x){
+  const {source_provenance,...storedFields}=x;
+  const provenance=x.market==='Dallas'?dallasProvenance(parseJson(source_provenance,{})||{}):{};
   const text=[x.name,x.scope,x.company].filter(Boolean).join(' ');
   const model=opportunityScore({text,status:x.permit_status||'',date:x.event_date,officialValue:x.official_value,address:x.address,company:x.company});
   const confidence=dataConfidence({company:x.company,officialValue:x.official_value,address:x.address,permit:x.permit,status:x.permit_status,scope:x.scope,source:x.source,market:x.market});
   return {
-    ...x,
+    ...storedFields,
+    ...provenance,
     date:x.event_date,
     permitStatus:x.permit_status||'—',
     officialPermitValue:x.official_value||null,
@@ -4829,7 +4849,7 @@ export default {
               generatedAt:nowIso()
             },200,env);
           }catch(e){
-            // Fall through to stored Dallas rows only when the live report source is unavailable.
+            return json({error:'DallasNow source unavailable',code:'dallas_source_unavailable',detail:String(e?.message||e)},503,env);
           }
         }
 

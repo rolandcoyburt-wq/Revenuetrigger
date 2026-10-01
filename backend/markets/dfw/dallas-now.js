@@ -105,13 +105,19 @@ function parseReportForm(html) {
     if (attrs.for && text) labels[text] = attrs.for;
   }
 
-  const start = labels['start date'];
-  const end = labels['end date'];
-  const district = labels['council district'];
-  if (!start || !end || !district) throw new Error('DallasNow expected report parameter labels disappeared');
-
-  const selectPattern = new RegExp(`<select\\b[^>]*(?:id|name)=["']${district}["'][^>]*>[\\s\\S]*?<\\/select>`, 'i');
-  const districtSelect = form.match(selectPattern)?.[0] || '';
+  const controls = [...form.matchAll(/<(?:input|select)\b[^>]*>/gi)].map(m => parseAttributes(m[0]));
+  const resolve = label => {
+    const matches = controls.filter(control => control.id === labels[label]);
+    if (!labels[label] || matches.length !== 1 || !matches[0].name) {
+      throw new Error(`DallasNow report control missing or ambiguous: ${label}`);
+    }
+    return matches[0].name;
+  };
+  const start = resolve('start date');
+  const end = resolve('end date');
+  const district = resolve('council district');
+  const districtSelect = [...form.matchAll(/<select\b[^>]*>[\s\S]*?<\/select>/gi)]
+    .find(m => parseAttributes(m[0].match(/^<select\b[^>]*>/i)[0]).id === labels['council district'])?.[0] || '';
   if (!/value=["']ALL["']/i.test(districtSelect)) throw new Error('DallasNow Council District ALL option missing');
 
   return { hidden, controls: { start, end, district } };
@@ -167,11 +173,17 @@ async function unzipEntries(arrayBuffer) {
   const eocd = findEndOfCentralDirectory(bytes);
   const count = view.getUint16(eocd + 10, true);
   const directoryOffset = view.getUint32(eocd + 16, true);
+  const directorySize = view.getUint32(eocd + 12, true);
+  if (eocd + 22 + view.getUint16(eocd + 20, true) !== bytes.length ||
+      view.getUint16(eocd + 4, true) || view.getUint16(eocd + 6, true) ||
+      count !== view.getUint16(eocd + 8, true) || !count ||
+      directoryOffset + directorySize !== eocd) throw new Error('DallasNow XLSX ZIP directory is incomplete');
   const decoder = new TextDecoder();
   const entries = new Map();
   let pos = directoryOffset;
 
   for (let i = 0; i < count; i++) {
+    if (pos + 46 > eocd) throw new Error('DallasNow XLSX central directory is truncated');
     if (view.getUint32(pos, true) !== 0x02014b50) throw new Error('DallasNow XLSX central directory is malformed');
     const method = view.getUint16(pos + 10, true);
     const compressedSize = view.getUint32(pos + 20, true);
@@ -179,12 +191,21 @@ async function unzipEntries(arrayBuffer) {
     const extraLength = view.getUint16(pos + 30, true);
     const commentLength = view.getUint16(pos + 32, true);
     const localOffset = view.getUint32(pos + 42, true);
+    if (pos + 46 + nameLength + extraLength + commentLength > eocd || localOffset + 30 > directoryOffset ||
+        view.getUint16(pos + 8, true) & 1) throw new Error('DallasNow XLSX ZIP entry is malformed');
+    const expectedSize = view.getUint32(pos + 24, true);
+    const expectedCRC = view.getUint32(pos + 16, true);
     const name = decoder.decode(bytes.slice(pos + 46, pos + 46 + nameLength));
 
     if (view.getUint32(localOffset, true) !== 0x04034b50) throw new Error('DallasNow XLSX local ZIP header is malformed');
     const localNameLength = view.getUint16(localOffset + 26, true);
     const localExtraLength = view.getUint16(localOffset + 28, true);
     const dataStart = localOffset + 30 + localNameLength + localExtraLength;
+    if (dataStart + compressedSize > directoryOffset ||
+        decoder.decode(bytes.slice(localOffset + 30, localOffset + 30 + localNameLength)) !== name ||
+        view.getUint16(localOffset + 8, true) !== method || entries.has(name)) {
+      throw new Error('DallasNow XLSX ZIP entry is incomplete or inconsistent');
+    }
     const compressed = bytes.slice(dataStart, dataStart + compressedSize);
 
     let data;
@@ -192,10 +213,44 @@ async function unzipEntries(arrayBuffer) {
     else if (method === 8) data = await inflateRaw(compressed);
     else throw new Error(`DallasNow XLSX uses unsupported ZIP compression method ${method}`);
 
+    if (data.length !== expectedSize || crc32(data) !== expectedCRC) throw new Error('DallasNow XLSX ZIP integrity check failed');
     entries.set(name, data);
     pos += 46 + nameLength + extraLength + commentLength;
   }
+  if (pos !== eocd) throw new Error('DallasNow XLSX ZIP directory length mismatch');
   return entries;
+}
+
+function crc32(bytes) {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ ((crc & 1) ? 0xedb88320 : 0);
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+// Validate the entire XML document before extracting rows; regex extraction alone
+// silently ignores an unfinished row and can turn a truncated report into success.
+function validateXml(xml, root) {
+  const stack = [];
+  let offset = 0, roots = 0;
+  const tokens = /<\?[\s\S]*?\?>|<!--[\s\S]*?-->|<\/?[A-Za-z_][\w:.-]*(?:\s+(?:[^<>"']|"[^"<>]*"|'[^'<>]*')*)?\s*\/?>/g;
+  for (const match of xml.matchAll(tokens)) {
+    const text = xml.slice(offset, match.index);
+    if (text.includes('<') || (!stack.length && text.trim())) throw new Error('DallasNow malformed worksheet/XML content');
+    offset = match.index + match[0].length;
+    const tag = match[0];
+    if (tag.startsWith('<?') || tag.startsWith('<!--')) continue;
+    const name = tag.match(/^<\/?([\w:.-]+)/)[1];
+    if (tag.startsWith('</')) {
+      if (stack.pop() !== name) throw new Error('DallasNow mismatched worksheet/XML content');
+    } else {
+      if (!stack.length && (++roots !== 1 || name !== root)) throw new Error('DallasNow unexpected XML root');
+      if (!tag.endsWith('/>')) stack.push(name);
+    }
+  }
+  if (stack.length || roots !== 1 || xml.slice(offset).trim()) throw new Error('DallasNow truncated worksheet/XML content');
 }
 
 function xmlTextFromInlineString(cellXml) {
@@ -257,8 +312,24 @@ export async function parseDallasNowXlsx(arrayBuffer) {
   const entries = await unzipEntries(arrayBuffer);
   const sheetBytes = entries.get('xl/worksheets/sheet1.xml');
   if (!sheetBytes) throw new Error('DallasNow XLSX worksheet missing');
-  const decoder = new TextDecoder();
+  const decoder = new TextDecoder('utf-8', { fatal: true });
   const sheetXml = decoder.decode(sheetBytes);
+  for (const [path, root] of [['[Content_Types].xml', 'Types'], ['xl/workbook.xml', 'workbook'], ['xl/_rels/workbook.xml.rels', 'Relationships']]) {
+    if (!entries.has(path)) throw new Error(`DallasNow XLSX required workbook content missing: ${path}`);
+    validateXml(decoder.decode(entries.get(path)), root);
+  }
+  const workbookXml = decoder.decode(entries.get('xl/workbook.xml'));
+  const workbookRelationships = parseRelationships(decoder.decode(entries.get('xl/_rels/workbook.xml.rels')));
+  const sheetDeclared = [...workbookXml.matchAll(/<sheet\b[^>]*\/>/g)].some(m => {
+    const target = workbookRelationships.get(parseAttributes(m[0])['r:id']);
+    return target === 'worksheets/sheet1.xml' || target === '/xl/worksheets/sheet1.xml';
+  });
+  if (!sheetDeclared) throw new Error('DallasNow XLSX worksheet relationship missing');
+  validateXml(sheetXml, 'worksheet');
+  if (!/<sheetData\b[^>]*>[\s\S]*?<\/sheetData>/.test(sheetXml)) throw new Error('DallasNow worksheet sheetData missing');
+  for (const [path, root] of [['xl/sharedStrings.xml', 'sst'], ['xl/worksheets/_rels/sheet1.xml.rels', 'Relationships']]) {
+    if (entries.has(path)) validateXml(decoder.decode(entries.get(path)), root);
+  }
   const sharedStrings = entries.has('xl/sharedStrings.xml') ? parseSharedStrings(decoder.decode(entries.get('xl/sharedStrings.xml'))) : [];
   const relationships = entries.has('xl/worksheets/_rels/sheet1.xml.rels')
     ? parseRelationships(decoder.decode(entries.get('xl/worksheets/_rels/sheet1.xml.rels')))
@@ -310,9 +381,10 @@ async function fetchReport(report, { startDate, endDate, fetchFn = fetch } = {})
   const url = parameterUrl(report.id);
   const get = await fetchFn(url, {
     method: 'GET',
-    redirect: 'follow',
+    redirect: 'manual',
     headers: { accept: 'text/html,application/xhtml+xml' },
   });
+  if (get.status >= 300 && get.status < 400) throw new Error(`DallasNow ${report.label} unexpected redirect (${get.status}); report aborted`);
   jar.absorb(get);
   if (!get.ok) throw new Error(`DallasNow ${report.label} parameter GET failed: ${get.status}`);
   const html = await get.text();
@@ -327,7 +399,7 @@ async function fetchReport(report, { startDate, endDate, fetchFn = fetch } = {})
 
   const post = await fetchFn(url, {
     method: 'POST',
-    redirect: 'follow',
+    redirect: 'manual',
     headers: {
       accept: 'text/html,application/xhtml+xml',
       'content-type': 'application/x-www-form-urlencoded',
@@ -337,6 +409,7 @@ async function fetchReport(report, { startDate, endDate, fetchFn = fetch } = {})
     },
     body: body.toString(),
   });
+  if (post.status >= 300 && post.status < 400) throw new Error(`DallasNow ${report.label} unexpected redirect (${post.status}); report aborted`);
   jar.absorb(post);
   if (!post.ok) throw new Error(`DallasNow ${report.label} parameter POST failed: ${post.status}`);
   const postHtml = await post.text();
@@ -347,13 +420,14 @@ async function fetchReport(report, { startDate, endDate, fetchFn = fetch } = {})
   const reportUrl = showReportUrl(report.id);
   const xlsx = await fetchFn(reportUrl, {
     method: 'GET',
-    redirect: 'follow',
+    redirect: 'manual',
     headers: {
       accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,*/*',
       referer: url,
       ...(jar.header() ? { cookie: jar.header() } : {}),
     },
   });
+  if (xlsx.status >= 300 && xlsx.status < 400) throw new Error(`DallasNow ${report.label} unexpected redirect (${xlsx.status}); report aborted`);
   jar.absorb(xlsx);
   if (!xlsx.ok) throw new Error(`DallasNow ${report.label} XLSX GET failed: ${xlsx.status}`);
   const contentType = String(xlsx.headers.get('content-type') || '').toLowerCase();
@@ -369,6 +443,7 @@ function parseDallasAddress(value) {
   if (value === null || value === undefined) return normalizeAddress({ city: 'Dallas', state: 'TX' });
   const raw = String(value).trim();
   if (!raw) return normalizeAddress({ city: 'Dallas', state: 'TX' });
+  if (/^(?:Dallas[ ,]*)?(?:TX|Texas)?(?:\s+\d{5}(?:-\d{4})?)?$/i.test(raw)) return normalizeAddress({ city: 'Dallas', state: 'TX' });
   const compact = raw.replace(/\s*\n\s*/g, ', ').replace(/\s+/g, ' ').trim();
   const m = compact.match(/^(.*?)(?:(?:,\s*)|(?:\s+))Dallas,?\s*TX\s*(\d{5}(?:-\d{4})?)?$/i);
   if (m) return normalizeAddress({ full: m[1].replace(/,\s*$/,''), city: 'Dallas', state: 'TX', zip: m[2] });
@@ -388,12 +463,26 @@ function identityText(value) {
   return (cleanText(value) || '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
 }
 
+function dallasDate(value, field, { required, now }) {
+  const text = cleanText(value);
+  if (!text && !required) return null;
+  // Dallas reports use calendar dates. Reject Date.parse rollover and missing
+  // required dates rather than letting leadFrom supply a current timestamp.
+  const match = text?.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+\d{1,2}:\d{2}(?::\d{2})?(?:\s*[AP]M)?)?$/i);
+  const parsed = match ? parseDate(`${match[1]}/${match[2]}/${match[3]}`, { now, maxFutureDays: 2 }) : null;
+  const date = parsed ? new Date(parsed) : null;
+  if (!date || date.getUTCFullYear() !== Number(match[3]) || date.getUTCMonth() + 1 !== Number(match[1]) || date.getUTCDate() !== Number(match[2])) {
+    throw new Error(`DallasNow invalid required source date: ${field}`);
+  }
+  return parsed;
+}
+
 export function normalizeDallasNowRow(row, { observation, now = Date.now() } = {}) {
   if (!['submitted', 'issued'].includes(observation)) throw new Error('Dallas observation must be submitted or issued');
   const recordId = cleanText(row['Record ID']);
   if (!recordId) throw new Error('DallasNow Record ID missing');
-  const openedDate = parseDate(row['Opened Date'], { now, maxFutureDays: 2 });
-  const issuedDate = parseDate(row['Issued Date'], { now, maxFutureDays: 2 });
+  const openedDate = dallasDate(row['Opened Date'], 'Opened Date', { required: true, now });
+  const issuedDate = dallasDate(row['Issued Date'], 'Issued Date', { required: observation === 'issued', now });
   const rawStatus = cleanText(row['Record Status']);
   const status = rawStatus || (observation === 'submitted' ? 'Submitted' : 'Issued');
   const applicantName = cleanText(row['Applicant Name']);
@@ -419,7 +508,7 @@ export function normalizeDallasNowRow(row, { observation, now = Date.now() } = {
     statusRaw: status,
     fileDate: openedDate,
     statusDate: issuedDate,
-    eventDate: observation === 'issued' ? (issuedDate || openedDate) : openedDate,
+    eventDate: observation === 'issued' ? issuedDate : openedDate,
     address,
     projectName: null,
     workDescription,
