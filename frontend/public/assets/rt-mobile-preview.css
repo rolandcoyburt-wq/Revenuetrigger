@@ -1,0 +1,53 @@
+/* Preview-only mobile layout; desktop keeps the existing presentation. */
+.rt-mobile-plans,.rt-mobile-disclosure-toggle,.rt-mobile-filter-toggle{display:none}
+/* The market board replaces radar dots and their legacy shadowed labels. */
+html body #intelConsole #radar .rt-market-row::after{content:none!important;display:none!important}
+@media(max-width:700px){
+ /* Market Brief reads as three compact entries rather than tall cards. */
+ .rt-marketing #signalPreviews{display:block;border-top:1px solid var(--rt-line)}
+ .rt-marketing #signalPreviews .rt-preview-card{padding:16px 0;border:0;border-bottom:1px solid var(--rt-line);background:transparent;gap:0}
+ .rt-marketing #signalPreviews .rt-card-top{align-items:center;gap:10px}
+ .rt-marketing #signalPreviews .rt-preview-card h3{font-size:19px;line-height:1.25;min-height:0;margin:8px 0 4px}
+ .rt-marketing #signalPreviews .rt-card-address{font-size:11px;line-height:1.4;margin:0 0 10px}
+ .rt-marketing #signalPreviews .rt-card-company{display:none}
+ .rt-marketing #signalPreviews .rt-card-metrics{padding:0;align-items:center;gap:16px}
+ .rt-marketing #signalPreviews .rt-card-metrics>div{display:flex;align-items:baseline;gap:8px}
+ .rt-marketing #signalPreviews .rt-card-metrics small{font-size:9px;max-width:70px;line-height:1.25}
+ .rt-marketing #signalPreviews .rt-card-metrics strong{font-size:23px;margin:0;white-space:nowrap}
+ .rt-marketing #signalPreviews .rt-text-link{min-height:44px;margin:4px 0 -8px;padding:10px 0;font-size:12px}
+ .rt-mobile-plans{display:block;margin:0 0 18px}
+ .rt-plan-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:5px;border:1px solid #708378;border-radius:14px;background:#e5e9e1}
+ .rt-plan-choices button{min-height:46px;border:0;border-radius:9px;background:transparent;color:#173c2b;font-family:inherit;font-weight:700;font-size:14px;line-height:1.2;cursor:pointer}
+ .rt-plan-choices button[aria-pressed="true"]{background:#163c2b;color:#fff;box-shadow:0 2px 6px #0002}
+ .rt-compare-plans{display:block;margin:6px 0 0 auto;min-height:44px;background:none;border:0;color:inherit;font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:4px;cursor:pointer}
+ .pricing .rt-mobile-plan-hidden{display:none!important}
+ .pricing{grid-template-columns:minmax(0,1fr)!important}
+ #pricing .price{padding:24px!important}
+ #pricing .price ul{min-height:0!important;margin:18px 0 24px;line-height:1.8}
+ #pricing .price.scroll-active{transform:none!important}
+ #pricing .cta{margin:26px 0 0!important;padding:24px!important}
+ .rt-mobile-disclosure-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;min-height:48px;padding:10px 0;border:0;border-top:1px solid #8ca39666;background:none;color:inherit;font:inherit;font-size:14px;font-weight:650;cursor:pointer}
+ .rt-mobile-collapsed{display:none!important}
+ .rt-mobile-disclosure-body{min-width:0}
+ .sources-page-grid{grid-template-columns:1fr!important;gap:10px!important}
+ .sources-page-grid .source{padding:18px 20px!important}
+ .sources-page-grid .source h3{margin:6px 0 12px!important;font-size:21px!important}
+ .sources-page-grid .source .tag{font-size:11px!important}
+ .sources-page-grid .source p{padding:8px 0 12px}
+ .rt-market-panel{padding:22px!important}
+ .rt-market-panel .rt-market-list{margin-top:14px}
+ .rt-mobile-filter-toggle{display:flex;flex-direction:column;gap:6px;width:100%;text-align:left;border:1px solid #a5b4aa;border-radius:12px;background:#f4f5ed;color:#193d2a;padding:14px 16px;cursor:pointer}
+ .rt-mobile-filter-toggle strong{font-size:16px}
+ .rt-mobile-filter-toggle span{font-size:12px;line-height:1.5}
+ #signals .rt-mobile-filters-closed{display:none!important}
+ .rt-marketing .rt-block{padding-top:40px!important;padding-bottom:40px!important}
+ .rt-marketing .rt-section-head{margin-bottom:22px!important;gap:14px!important}
+ .rt-marketing .rt-flow{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ .rt-marketing .rt-flow article{padding:18px 14px}
+ .rt-marketing .rt-flow article h3{font-size:24px}
+ .rt-marketing .rt-flow article p{font-size:13px;line-height:1.55}
+ .rt-marketing .rt-preview-grid{gap:14px}
+ .rt-marketing .rt-product-grid{gap:20px}
+ .rt-final{padding:40px 0!important}
+ .rt-mobile-plans button:focus-visible,.rt-mobile-disclosure-toggle:focus-visible,.rt-mobile-filter-toggle:focus-visible{outline:3px solid #29ba65;outline-offset:3px}
+}
