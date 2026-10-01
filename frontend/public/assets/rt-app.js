@@ -2,14 +2,14 @@ const CONFIG=RTConfig;
 const INDUSTRIES=['Commercial services','HVAC','Electrical','Plumbing','Roofing','Landscaping','Security','Signage'];
 const LIVE_MARKETS=RTConfig.markets;
 let leads=[],user=null,currentLead=null,savedOnly=false;
-let publicFeed=null,publicFeedRequest=0;
+let publicFeed=null,publicFeedRequest=0,personalizedFeed=null;
 let authGeneration=0,dashboardRequest=0,pipelineRequest=0;
 function authSnapshot(){return {generation:authGeneration,session:token()}}
 function authIsCurrent(snapshot){return snapshot.generation===authGeneration&&snapshot.session===token()}
 function clearAuthenticatedState(){
   ++authGeneration;++publicFeedRequest;++dashboardRequest;++pipelineRequest;
   localStorage.removeItem('revenuetrigger_session');localStorage.removeItem('signalhound_session');
-  user=null;leads=[];pipelineRows=[];currentLead=null;publicFeed=null;savedOnly=false;
+  user=null;leads=[];pipelineRows=[];currentLead=null;publicFeed=null;personalizedFeed=null;savedOnly=false;
   currentFeedback={relevance:null,outcome:null};
   for(const id of ['leadModal','pipelineModal','accountModal','onboardingModal'])closeModal(id);
   for(const id of ['leadList','pipelineList','mTitle','mGrid','mWhy','pTitle','pGrid','pWhy','mFeedbackState','changedMoves','changedMessage','aEmail','industryChecks','marketChecks','onboardingIndustries','onboardingMarkets']){
@@ -84,6 +84,18 @@ function openModal(id){$('#'+id).classList.add('open')}function closeModal(id){$
 function openSignin(){openModal('signinModal');setTimeout(()=>$('#signinEmail').focus(),50)}
 async function openAccount(){renderAccount();await syncBilling();openModal('accountModal')}
 function planActive(){return user&&['active','trialing'].includes(user.subscriptionStatus)?user.plan:'Beta'}
+function personalizedEmptyMessage(){
+  const prefs=personalizedFeed.preferences||{},score=prefs.minScore??70;
+  const summary=[(prefs.markets||[]).join(', '),(prefs.industries||[]).join(', '),Number(score)===0?'Any score':`${score}+ score`,`${personalizedFeed.historyDays||7}-day history`].filter(Boolean).join(' · ');
+  const view=[];
+  if($('#market').value!=='all')view.push($('#market').value);
+  if($('#industry').value!=='all')view.push($('#industry').value);
+  if(+$('#minScore').value>0)view.push(`${$('#minScore').value}+ score`);
+  if($('#search').value)view.push(`Search: ${$('#search').value}`);
+  if($('#savedFilter').value==='saved')view.push('Saved only');
+  if(leads.length)view.push(permitCompanyFilter==='listed'?'Company listed':'Company not listed');
+  return `No opportunities currently match your ${esc(personalizedFeed.plan)} preferences${leads.length?' and current view filters':''}.<br>${esc(summary)}${view.length?`<br>View: ${esc(view.join(' · '))}`:''}<br><button class="btn btn-secondary" type="button" onclick="openAccount()">Adjust preferences</button>`;
+}
 function render(){
   if(user)$('#publicFeedNotice').hidden=true;
   const market=$('#market').value,industry=$('#industry').value,min=+$(`#minScore`).value,q=$('#search').value.toLowerCase(),saved=$('#savedFilter').value==='saved',sort=$('#sortFeed')?.value||'score';
@@ -103,7 +115,7 @@ function render(){
   });
   $('#leadList').innerHTML=filtered.length?filtered.map(x=>RTUI.opportunityCard(x,{signedIn:Boolean(user)})).join(''):`<div class="empty">${permitCompanyFilter==='listed'&&baseFiltered.length&&listedCount===0
     ?`None of the current ${baseFiltered.length} opportunities include a published company name. Switch to Not Listed to view them.`
-    :!user&&publicFeed&&!leads.length?(publicFeed.state==='unavailable'?publicFeed.notice:'No stored opportunities are available for the selected markets and time window.'):'No signals match these filters.'}</div>`;
+    :!user&&publicFeed&&!leads.length?(publicFeed.state==='unavailable'?publicFeed.notice:'No stored opportunities are available for the selected markets and time window.'):user&&personalizedFeed?personalizedEmptyMessage():'No signals match these filters.'}</div>`;
   const hotCount=filtered.filter(x=>x.temperature==='HOT').length;
   const totalValue=filtered.reduce((s,x)=>s+Number(x.value||0),0);
   const avgScore=filtered.length?Math.round(filtered.reduce((s,x)=>s+Number(x.score||0),0)/filtered.length):0;
@@ -319,6 +331,7 @@ async function updateSelectedMarketSourceStatus(){
   }catch{}
 }
 async function loadPublic(){
+ personalizedFeed=null;
  const snapshot=authSnapshot();
  const requestId=++publicFeedRequest;
  const selected=$('#market')?.value||'all';
@@ -339,13 +352,14 @@ async function loadDashboard(){
   const snapshot=authSnapshot(),requestId=++dashboardRequest;
   const current=()=>authIsCurrent(snapshot)&&requestId===dashboardRequest;
   try{
-    const r=await fetch(`${CONFIG.apiBase}/dashboard?limit=200`,{headers:authHeaders()});
+    const r=await fetch(`${CONFIG.apiBase}/dashboard?limit=500`,{headers:authHeaders()});
     if(!current())return;
     if(r.status===401)return expireSession();
     if(!r.ok)throw new Error();
     const d=await r.json();
     if(!current())return;
     leads=d.leads||[];
+    personalizedFeed={plan:d.plan||planActive(),preferences:d.preferences||user.preferences,historyDays:d.historyDays||d.entitlements?.historyDays||user.entitlements?.historyDays};
     $('#feedStatus').textContent=`Personalized • ${leads.length} matched signals`;
     $('#feedExplainer').textContent=`Your ${planActive()} feed is filtered to your saved industry preferences and plan history.`;
     render();await updateSelectedMarketSourceStatus();
@@ -380,8 +394,23 @@ function updateUserUI(){
     if($('#exportTop'))$('#exportTop').style.display='none';
   }
 }
-function renderAccount(){if(!user){$('#accountLoggedOut').style.display='block';$('#accountLoggedIn').style.display='none';return}$('#accountLoggedOut').style.display='none';$('#accountLoggedIn').style.display='block';$('#aEmail').textContent=user.email;$('#aPlan').textContent=planActive();$('#aStatus').textContent=user.subscriptionStatus||'inactive';$('#aSaved').textContent=user.savedCount||0;$('#prefScore').value=String(user.preferences?.minScore||70);$('#prefAlert').value=user.entitlements?.alert||'none';const limit=user.entitlements?.industryLimit||1;$('#industryLimitText').textContent=`Your ${planActive()} plan allows ${limit} industr${limit===1?'y':'ies'}.`;$('#industryChecks').innerHTML=INDUSTRIES.map(i=>`<label class="check"><input type="checkbox" value="${esc(i)}" ${(user.preferences?.industries||[]).includes(i)?'checked':''}>${esc(i)}</label>`).join('');const marketLimit=user.entitlements?.marketLimit||1;$('#marketLimitText').textContent=`Your ${planActive()} plan allows ${marketLimit} market${marketLimit===1?'':'s'}.`;$('#marketChecks').innerHTML=LIVE_MARKETS.map(m=>`<label class="check"><input type="checkbox" value="${esc(m)}" ${(user.preferences?.markets||['Phoenix']).includes(m)?'checked':''}>${esc(m)}</label>`).join('');$('#exportBtn').disabled=!(user.entitlements?.export&&planActive()!=='Beta');$('#billingBtn').textContent=user.subscriptionStatus==='active'||user.subscriptionStatus==='trialing'?'Manage billing':'Upgrade plan'}
+function renderAccount(){if(!user){$('#accountLoggedOut').style.display='block';$('#accountLoggedIn').style.display='none';return}$('#accountLoggedOut').style.display='none';$('#accountLoggedIn').style.display='block';$('#aEmail').textContent=user.email;$('#aPlan').textContent=planActive();$('#aStatus').textContent=user.subscriptionStatus||'inactive';$('#aSaved').textContent=user.savedCount||0;setPreferenceScore('#prefScore',user.preferences?.minScore??70);$('#prefAlert').value=user.entitlements?.alert||'none';const limit=user.entitlements?.industryLimit||1;$('#industryLimitText').textContent=`Your ${planActive()} plan allows ${limit} industr${limit===1?'y':'ies'}.`;$('#industryChecks').innerHTML=INDUSTRIES.map(i=>`<label class="check"><input type="checkbox" value="${esc(i)}" ${(user.preferences?.industries||[]).includes(i)?'checked':''}>${esc(i)}</label>`).join('');const marketLimit=user.entitlements?.marketLimit||1;$('#marketLimitText').textContent=`Your ${planActive()} plan allows ${marketLimit} market${marketLimit===1?'':'s'}.`;$('#marketChecks').innerHTML=LIVE_MARKETS.map(m=>`<label class="check"><input type="checkbox" value="${esc(m)}" ${(user.preferences?.markets||['Phoenix']).includes(m)?'checked':''}>${esc(m)}</label>`).join('');$('#exportBtn').disabled=!(user.entitlements?.export&&planActive()!=='Beta');$('#billingBtn').textContent=user.subscriptionStatus==='active'||user.subscriptionStatus==='trialing'?'Manage billing':'Upgrade plan'}
 
+function setPreferenceScore(selector,value){
+  const select=$(selector),score=Number(value);
+  select.querySelectorAll('[data-current-score]').forEach(option=>option.remove());
+  const valid=value!==null&&value!==undefined&&String(value).trim()!==''&&Number.isFinite(score)&&score>=0&&score<=99;
+  if(valid&&![...select.options].some(option=>option.value===String(score))){
+    const option=new Option(`${score}+ — Current preference`,String(score));
+    option.dataset.currentScore='true';select.add(option);
+  }
+  select.value=valid?String(score):'';
+}
+function selectedPreferenceScore(selector){
+  const value=$(selector).value,score=Number(value);
+  if(value.trim()===''||!Number.isFinite(score)||score<0||score>99){toast('Choose a valid minimum score, or Any score.');return null}
+  return score;
+}
 function renderOnboarding(){
   if(!user)return;
   const industryLimit=user.entitlements?.industryLimit||1;
@@ -403,7 +432,7 @@ function renderOnboarding(){
 
   $('#onboardingIndustryLimit').textContent=`Your ${planActive()} plan allows ${industryLimit} industr${industryLimit===1?'y':'ies'}.`;
   $('#onboardingMarketLimit').textContent=`Your ${planActive()} plan allows ${marketLimit} market${marketLimit===1?'':'s'}.`;
-  $('#onboardingScore').value=String(user.preferences?.minScore||60);
+  setPreferenceScore('#onboardingScore',user.preferences?.minScore??60);
   $('#onboardingAlertNote').textContent=planActive()==='Beta'
     ? 'Beta accounts use the personalized dashboard. Automated alert delivery begins with a paid plan.'
     : `Your ${planActive()} plan includes ${user.entitlements?.alert||'plan-based'} alert delivery.`;
@@ -418,6 +447,7 @@ function maybeOpenOnboarding(){
 async function completeOnboarding(){
   const snapshot=authSnapshot();
   if(!user)return;
+  const minScore=selectedPreferenceScore('#onboardingScore');if(minScore===null)return;
 
   const industryLimit=user.entitlements?.industryLimit||1;
   const marketLimit=user.entitlements?.marketLimit||1;
@@ -436,7 +466,7 @@ async function completeOnboarding(){
       body:JSON.stringify({
         industries,
         markets,
-        minScore:+$('#onboardingScore').value
+        minScore
       })
     });
     const d=await r.json().catch(()=>({}));
@@ -463,7 +493,7 @@ $('#signinForm').addEventListener('submit',async e=>{e.preventDefault();const em
 async function toggleSave(id){const snapshot=authSnapshot();if(!user){openSignin();return}const x=leads.find(v=>String(v.id)===String(id));if(!x)return;const next=!x.saved;const r=await fetch(`${CONFIG.apiBase}/saved`,{method:'POST',headers:authHeaders({'content-type':'application/json'}),body:JSON.stringify({leadId:id,saved:next})});if(!authIsCurrent(snapshot))return;if(r.status===401)return expireSession();if(!r.ok){toast('Could not update saved lead.');return}x.saved=next;user.savedCount=Math.max(0,(user.savedCount||0)+(next?1:-1));updateUserUI();render();if(currentLead&&String(currentLead.id)===String(id)){$('#mSave').textContent=next?'★ Saved':'☆ Save opportunity'}toast(next?'Opportunity saved.':'Removed from saved.')}
 function toggleCurrentSave(){if(currentLead)toggleSave(currentLead.id)}
 function showSavedOnly(){if(!user)return openSignin();$('#savedFilter').value='saved';savedOnly=true;document.querySelector('#signals').scrollIntoView({behavior:'smooth'});render()}
-async function savePreferences(){const snapshot=authSnapshot();if(!user)return;const limit=user.entitlements?.industryLimit||1;let industries=$$('#industryChecks input:checked').map(x=>x.value);if(industries.length>limit){toast(`Your plan allows ${limit} industr${limit===1?'y':'ies'}.`);return}if(!industries.length){toast('Choose at least one industry.');return}const marketLimit=user.entitlements?.marketLimit||1;let markets=$$('#marketChecks input:checked').map(x=>x.value);if(markets.length>marketLimit){toast(`Your plan allows ${marketLimit} market${marketLimit===1?'':'s'}.`);return}if(!markets.length){toast('Choose at least one market.');return}const r=await fetch(`${CONFIG.apiBase}/preferences`,{method:'POST',headers:authHeaders({'content-type':'application/json'}),body:JSON.stringify({industries,markets,minScore:+$('#prefScore').value})});const d=await r.json().catch(()=>({}));if(!authIsCurrent(snapshot))return;if(r.status===401)return expireSession();if(!r.ok){toast(d.error||'Could not save preferences.');return}user=d.user;updateUserUI();renderAccount();closeModal('accountModal');toast('Preferences saved.');loadDashboard();loadChanges()}
+async function savePreferences(){const snapshot=authSnapshot();if(!user)return;const minScore=selectedPreferenceScore('#prefScore');if(minScore===null)return;const limit=user.entitlements?.industryLimit||1;let industries=$$('#industryChecks input:checked').map(x=>x.value);if(industries.length>limit){toast(`Your plan allows ${limit} industr${limit===1?'y':'ies'}.`);return}if(!industries.length){toast('Choose at least one industry.');return}const marketLimit=user.entitlements?.marketLimit||1;let markets=$$('#marketChecks input:checked').map(x=>x.value);if(markets.length>marketLimit){toast(`Your plan allows ${marketLimit} market${marketLimit===1?'':'s'}.`);return}if(!markets.length){toast('Choose at least one market.');return}const r=await fetch(`${CONFIG.apiBase}/preferences`,{method:'POST',headers:authHeaders({'content-type':'application/json'}),body:JSON.stringify({industries,markets,minScore})});const d=await r.json().catch(()=>({}));if(!authIsCurrent(snapshot))return;if(r.status===401)return expireSession();if(!r.ok){toast(d.error||'Could not save preferences.');return}user=d.user;updateUserUI();renderAccount();closeModal('accountModal');toast('Preferences saved.');loadDashboard();loadChanges()}
 async function buyPlan(plan){const snapshot=authSnapshot();if(RTConfig.checkoutDisabled)return;if(!user){localStorage.setItem('revenuetrigger_pending_plan',plan);openSignin();toast(`Sign in first to choose ${plan}.`);return}try{const r=await fetch(`${CONFIG.apiBase}/billing/checkout`,{method:'POST',headers:authHeaders({'content-type':'application/json'}),body:JSON.stringify({plan})});const d=await r.json();if(!authIsCurrent(snapshot))return;if(r.status===401)return expireSession();if(!r.ok)throw new Error(d.error||'Checkout unavailable');location.href=d.url}catch(err){toast(err.message)}}
 async function syncBilling(){
   const snapshot=authSnapshot();
