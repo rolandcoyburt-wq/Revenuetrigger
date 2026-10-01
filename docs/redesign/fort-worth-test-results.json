@@ -1,0 +1,65 @@
+{
+  "validation": "Local UI with genuine stored preview feed records. Account/Saved/Competitors operations and state variants are mocked; no real account or billing writes.",
+  "results": [
+    {
+      "name": "Mixed feed, Fort Worth filter, detail 390px",
+      "status": "PASS"
+    },
+    {
+      "name": "Seven preference choices, Territory six-market cap, Saved 390px",
+      "status": "PASS"
+    },
+    {
+      "name": "Sources coverage and Dallas unavailable 390px",
+      "status": "PASS"
+    },
+    {
+      "name": "Competitor Fort Worth selection and encoding 390px",
+      "status": "PASS"
+    },
+    {
+      "name": "Homepage coverage and six-market plan copy 390px",
+      "status": "PASS"
+    },
+    {
+      "name": "Mixed feed, Fort Worth filter, detail 1366px",
+      "status": "PASS"
+    },
+    {
+      "name": "Seven preference choices, Territory six-market cap, Saved 1366px",
+      "status": "PASS"
+    },
+    {
+      "name": "Sources coverage and Dallas unavailable 1366px",
+      "status": "PASS"
+    },
+    {
+      "name": "Competitor Fort Worth selection and encoding 1366px",
+      "status": "PASS"
+    },
+    {
+      "name": "Homepage coverage and six-market plan copy 1366px",
+      "status": "PASS"
+    },
+    {
+      "name": "Fort Worth fresh state and freshness array",
+      "status": "PASS"
+    },
+    {
+      "name": "Fort Worth stale state and freshness array",
+      "status": "PASS"
+    },
+    {
+      "name": "Fort Worth partial state and freshness array",
+      "status": "PASS"
+    },
+    {
+      "name": "Fort Worth empty state and freshness array",
+      "status": "PASS"
+    },
+    {
+      "name": "Fort Worth unavailable state and freshness array",
+      "status": "PASS"
+    }
+  ]
+}

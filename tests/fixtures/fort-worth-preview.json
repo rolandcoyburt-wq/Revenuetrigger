@@ -1,0 +1,621 @@
+{
+  "provenance": "Combined preview read-only GET /api/feed?markets=Fort%20Worth,Mesa&days=7&limit=20; backend 4eda205b26793013e8297eb587ce1048f5e4442b; no refresh or adapter calls. Contact patterns sanitized locally only.",
+  "generatedAt": "2026-10-01T01:30:37.619Z",
+  "redactions": 0,
+  "leads": [
+    {
+      "id": "fort worth:PB26-13533313784036439771638800",
+      "name": "Take 5 Oil Change",
+      "address": "6732 BLUE MOUND RD, Fort Worth TX 76131",
+      "event_date": "2026-09-29T16:08:37.373Z",
+      "company": "BLUE MOUND STONE PARTNERS LP",
+      "scope": "Commercial Building Permit · New · Express oil change / quick lube vehicle service facility (auto-related use). Oil change service bays with service pits; no auto sales, body work or car wash. Accessory office, break area, back room (storage) and restroom. · Sales and Service · Service Station",
+      "score": 84,
+      "categories": [
+        "Plumbing",
+        "Commercial services"
+      ],
+      "value": 100117,
+      "temperature": "HOT",
+      "permit": "PB26-13533",
+      "source": "City of Fort Worth Development Services — Development Permits Open Data",
+      "updated_at": "2026-10-01 01:14:37",
+      "market": "Fort Worth",
+      "permit_status": "Pending",
+      "official_value": 850000,
+      "date": "2026-09-29T16:08:37.373Z",
+      "permitStatus": "Pending",
+      "officialPermitValue": 850000,
+      "scoreBreakdown": {
+        "projectStage": 22,
+        "recency": 18,
+        "projectValue": 13,
+        "tradeRelevance": 13,
+        "projectType": 10,
+        "prePermit": 6,
+        "companyBehavior": 2
+      },
+      "sellerFit": {
+        "HVAC": 0,
+        "Electrical": 0,
+        "Plumbing": 84,
+        "Roofing": 0,
+        "Landscaping": 0,
+        "Security": 0,
+        "Signage": 0,
+        "Commercial services": 82
+      },
+      "dataConfidence": {
+        "score": 100,
+        "reasons": [
+          "Company identified",
+          "Reported value present",
+          "Address present",
+          "Permit / project ID present",
+          "Stage/status present",
+          "Detailed description",
+          "Source attributed"
+        ]
+      },
+      "lifecycle": {
+        "stage": "APPLICATION",
+        "index": 2,
+        "steps": [
+          "PRE-TECH",
+          "PLANNING",
+          "APPLICATION",
+          "PERMIT ISSUED",
+          "CONSTRUCTION",
+          "COMPLETE"
+        ]
+      },
+      "checkedAt": "2026-10-01 01:14:37",
+      "relatedPermitCount": 2,
+      "relatedPermits": [
+        {
+          "id": "fort worth:PB26-13535313785436439921638800",
+          "permit": "PB26-13535",
+          "name": "Take 5 Oil Change/ Dumpster enclosure",
+          "score": 65,
+          "date": "2026-09-29T16:22:04.933Z",
+          "source": "City of Fort Worth Development Services — Development Permits Open Data"
+        }
+      ],
+      "projectCluster": true,
+      "actionIntelligence": {
+        "firstMover": 77,
+        "opportunityWindow": {
+          "label": "NOW",
+          "detail": "Next 14–30 days"
+        },
+        "buyingWindow": {
+          "label": "OPEN",
+          "detail": "Application-stage activity suggests vendor selection may still be active."
+        },
+        "velocity": {
+          "label": "RISING ↑",
+          "detail": "2 related project events detected in the current window."
+        },
+        "momentum": {
+          "label": "STABLE",
+          "detail": "Activity is continuing at a normal pace."
+        },
+        "whyNow": "APPLICATION activity was detected about a day ago. BLUE MOUND STONE PARTNERS LP is already associated with the public record, giving you a concrete company to research now. RevenueTrigger also grouped 2 related permit records at this location.",
+        "nextBestAction": {
+          "action": "CONTACT COMPANY ON PERMIT",
+          "reason": "The project is in application/review and BLUE MOUND STONE PARTNERS LP is already tied to the public record."
+        }
+      }
+    },
+    {
+      "id": "fort worth:PB26-134563136342364224126060042",
+      "name": "X TEAM /// MARTIN LUTHER KING JR. COMMUNITY CENTER REPLACEMENT AND AQUATIC CENTER",
+      "address": "26060042 FOR REVIEW ONLY WAY, Fort Worth TX 76119",
+      "event_date": "2026-09-28T08:54:39.070Z",
+      "company": "FORT WORTH HOUSING AUTHORITY",
+      "scope": "Commercial Building Permit · New · X TEAM /// THE PROJECT CONSISTS OF A NEW COMMUNITY CENTER OF APPROXIMATELY 28,000 SQUARE FEET. THE COMMUNITY CENTER WILL INCLUDE MULTI-USE SPACES, A SENIOR CENTER, YOUTH ACTIVITY CENTER, PUBLIC LIBRARY, AND SOCIAL SERVICES SPACES. THE NEW AQUATICS CENTER WILL INCLUDE AN EXTERIOR 8-LANE, 25-YARD LAP POOL, A SEPARATE EXTERIOR MULTI-PURPOSE LEISURE POOL OF APPROXIMATELY 2,540 SQUARE FEET OF WATER SURFACE AREA, AND SUPPORT SPACE(S). THE AQUATICS CENTER WILL ALSO INCLUDE AN AQUATICS BUILDING OF APPROXIMATELY 5,000 SQUARE FEET. · Mixed Use",
+      "score": 84,
+      "categories": [
+        "Landscaping",
+        "Commercial services"
+      ],
+      "value": 147231,
+      "temperature": "HOT",
+      "permit": "PB26-13456",
+      "source": "City of Fort Worth Development Services — Development Permits Open Data",
+      "updated_at": "2026-10-01 01:14:37",
+      "market": "Fort Worth",
+      "permit_status": "Pending",
+      "official_value": 33629365,
+      "date": "2026-09-28T08:54:39.070Z",
+      "permitStatus": "Pending",
+      "officialPermitValue": 33629365,
+      "scoreBreakdown": {
+        "projectStage": 22,
+        "recency": 18,
+        "projectValue": 15,
+        "tradeRelevance": 11,
+        "projectType": 10,
+        "prePermit": 6,
+        "companyBehavior": 2
+      },
+      "sellerFit": {
+        "HVAC": 0,
+        "Electrical": 0,
+        "Plumbing": 0,
+        "Roofing": 0,
+        "Landscaping": 72,
+        "Security": 0,
+        "Signage": 0,
+        "Commercial services": 82
+      },
+      "dataConfidence": {
+        "score": 100,
+        "reasons": [
+          "Company identified",
+          "Reported value present",
+          "Address present",
+          "Permit / project ID present",
+          "Stage/status present",
+          "Detailed description",
+          "Source attributed"
+        ]
+      },
+      "lifecycle": {
+        "stage": "APPLICATION",
+        "index": 2,
+        "steps": [
+          "PRE-TECH",
+          "PLANNING",
+          "APPLICATION",
+          "PERMIT ISSUED",
+          "CONSTRUCTION",
+          "COMPLETE"
+        ]
+      },
+      "checkedAt": "2026-10-01 01:14:37",
+      "relatedPermitCount": 1,
+      "relatedPermits": [],
+      "actionIntelligence": {
+        "firstMover": 77,
+        "opportunityWindow": {
+          "label": "NOW",
+          "detail": "Next 14–30 days"
+        },
+        "buyingWindow": {
+          "label": "OPEN",
+          "detail": "Application-stage activity suggests vendor selection may still be active."
+        },
+        "velocity": {
+          "label": "LOW",
+          "detail": "One recent project event detected."
+        },
+        "momentum": {
+          "label": "STABLE",
+          "detail": "Activity is continuing at a normal pace."
+        },
+        "whyNow": "APPLICATION activity was detected 3 days ago. FORT WORTH HOUSING AUTHORITY is already associated with the public record, giving you a concrete company to research now.",
+        "nextBestAction": {
+          "action": "CONTACT COMPANY ON PERMIT",
+          "reason": "The project is in application/review and FORT WORTH HOUSING AUTHORITY is already tied to the public record."
+        }
+      }
+    },
+    {
+      "id": "fort worth:PP26-1820531383343644513806524",
+      "name": "Reel Plumbing, LLC",
+      "address": "4801 MARINE CREEK PKWY, Fort Worth TX 76179",
+      "event_date": "2026-09-30T11:08:30.873Z",
+      "company": "TARRANT COUNTY JUNIOR COLLEGE",
+      "scope": "Plumbing Backflow · Standalone · Backflow",
+      "score": 75,
+      "categories": [
+        "Plumbing"
+      ],
+      "value": 7232,
+      "temperature": "HOT",
+      "permit": "PP26-18205",
+      "source": "City of Fort Worth Development Services — Development Permits Open Data",
+      "updated_at": "2026-10-01 01:14:37",
+      "market": "Fort Worth",
+      "permit_status": "Pending",
+      "official_value": null,
+      "date": "2026-09-30T11:08:30.873Z",
+      "permitStatus": "Pending",
+      "officialPermitValue": null,
+      "scoreBreakdown": {
+        "projectStage": 22,
+        "recency": 20,
+        "projectValue": 5,
+        "tradeRelevance": 14,
+        "projectType": 6,
+        "prePermit": 6,
+        "companyBehavior": 2
+      },
+      "sellerFit": {
+        "HVAC": 0,
+        "Electrical": 0,
+        "Plumbing": 96,
+        "Roofing": 0,
+        "Landscaping": 0,
+        "Security": 0,
+        "Signage": 0,
+        "Commercial services": 58
+      },
+      "dataConfidence": {
+        "score": 85,
+        "reasons": [
+          "Company identified",
+          "Address present",
+          "Permit / project ID present",
+          "Stage/status present",
+          "Detailed description",
+          "Source attributed"
+        ]
+      },
+      "lifecycle": {
+        "stage": "APPLICATION",
+        "index": 2,
+        "steps": [
+          "PRE-TECH",
+          "PLANNING",
+          "APPLICATION",
+          "PERMIT ISSUED",
+          "CONSTRUCTION",
+          "COMPLETE"
+        ]
+      },
+      "checkedAt": "2026-10-01 01:14:37",
+      "relatedPermitCount": 18,
+      "relatedPermits": [
+        {
+          "id": "fort worth:PP26-1820531383343644513797312",
+          "permit": "PP26-18205",
+          "name": "Reel Plumbing, LLC",
+          "score": 75,
+          "date": "2026-09-30T11:08:30.873Z",
+          "source": "City of Fort Worth Development Services — Development Permits Open Data"
+        },
+        {
+          "id": "fort worth:PP26-182053138334364451337465",
+          "permit": "PP26-18205",
+          "name": "Reel Plumbing, LLC",
+          "score": 75,
+          "date": "2026-09-30T11:08:30.873Z",
+          "source": "City of Fort Worth Development Services — Development Permits Open Data"
+        },
+        {
+          "id": "fort worth:PP26-1820531383343644512806524",
+          "permit": "PP26-18205",
+          "name": "Reel Plumbing, LLC",
+          "score": 75,
+          "date": "2026-09-30T11:08:30.873Z",
+          "source": "City of Fort Worth Development Services — Development Permits Open Data"
+        },
+        {
+          "id": "fort worth:PP26-1820531383343644512797312",
+          "permit": "PP26-18205",
+          "name": "Reel Plumbing, LLC",
+          "score": 75,
+          "date": "2026-09-30T11:08:30.873Z",
+          "source": "City of Fort Worth Development Services — Development Permits Open Data"
+        },
+        {
+          "id": "fort worth:PP26-182053138334364451237465",
+          "permit": "PP26-18205",
+          "name": "Reel Plumbing, LLC",
+          "score": 75,
+          "date": "2026-09-30T11:08:30.873Z",
+          "source": "City of Fort Worth Development Services — Development Permits Open Data"
+        },
+        {
+          "id": "fort worth:PP26-1820531383333644513806524",
+          "permit": "PP26-18205",
+          "name": "Reel Plumbing, LLC",
+          "score": 75,
+          "date": "2026-09-30T11:08:30.873Z",
+          "source": "City of Fort Worth Development Services — Development Permits Open Data"
+        },
+        {
+          "id": "fort worth:PP26-1820531383333644513797312",
+          "permit": "PP26-18205",
+          "name": "Reel Plumbing, LLC",
+          "score": 75,
+          "date": "2026-09-30T11:08:30.873Z",
+          "source": "City of Fort Worth Development Services — Development Permits Open Data"
+        },
+        {
+          "id": "fort worth:PP26-182053138333364451337465",
+          "permit": "PP26-18205",
+          "name": "Reel Plumbing, LLC",
+          "score": 75,
+          "date": "2026-09-30T11:08:30.873Z",
+          "source": "City of Fort Worth Development Services — Development Permits Open Data"
+        },
+        {
+          "id": "fort worth:PP26-1820531383333644512806524",
+          "permit": "PP26-18205",
+          "name": "Reel Plumbing, LLC",
+          "score": 75,
+          "date": "2026-09-30T11:08:30.873Z",
+          "source": "City of Fort Worth Development Services — Development Permits Open Data"
+        },
+        {
+          "id": "fort worth:PP26-1820531383333644512797312",
+          "permit": "PP26-18205",
+          "name": "Reel Plumbing, LLC",
+          "score": 75,
+          "date": "2026-09-30T11:08:30.873Z",
+          "source": "City of Fort Worth Development Services — Development Permits Open Data"
+        },
+        {
+          "id": "fort worth:PP26-182053138333364451237465",
+          "permit": "PP26-18205",
+          "name": "Reel Plumbing, LLC",
+          "score": 75,
+          "date": "2026-09-30T11:08:30.873Z",
+          "source": "City of Fort Worth Development Services — Development Permits Open Data"
+        },
+        {
+          "id": "fort worth:PP26-1820531383323644513806524",
+          "permit": "PP26-18205",
+          "name": "Reel Plumbing, LLC",
+          "score": 75,
+          "date": "2026-09-30T11:08:30.873Z",
+          "source": "City of Fort Worth Development Services — Development Permits Open Data"
+        },
+        {
+          "id": "fort worth:PP26-1820531383323644513797312",
+          "permit": "PP26-18205",
+          "name": "Reel Plumbing, LLC",
+          "score": 75,
+          "date": "2026-09-30T11:08:30.873Z",
+          "source": "City of Fort Worth Development Services — Development Permits Open Data"
+        },
+        {
+          "id": "fort worth:PP26-182053138332364451337465",
+          "permit": "PP26-18205",
+          "name": "Reel Plumbing, LLC",
+          "score": 75,
+          "date": "2026-09-30T11:08:30.873Z",
+          "source": "City of Fort Worth Development Services — Development Permits Open Data"
+        },
+        {
+          "id": "fort worth:PP26-1820531383323644512806524",
+          "permit": "PP26-18205",
+          "name": "Reel Plumbing, LLC",
+          "score": 75,
+          "date": "2026-09-30T11:08:30.873Z",
+          "source": "City of Fort Worth Development Services — Development Permits Open Data"
+        },
+        {
+          "id": "fort worth:PP26-1820531383323644512797312",
+          "permit": "PP26-18205",
+          "name": "Reel Plumbing, LLC",
+          "score": 75,
+          "date": "2026-09-30T11:08:30.873Z",
+          "source": "City of Fort Worth Development Services — Development Permits Open Data"
+        },
+        {
+          "id": "fort worth:PP26-182053138332364451237465",
+          "permit": "PP26-18205",
+          "name": "Reel Plumbing, LLC",
+          "score": 75,
+          "date": "2026-09-30T11:08:30.873Z",
+          "source": "City of Fort Worth Development Services — Development Permits Open Data"
+        }
+      ],
+      "projectCluster": true,
+      "actionIntelligence": {
+        "firstMover": 65,
+        "opportunityWindow": {
+          "label": "NOW",
+          "detail": "Next 14–30 days"
+        },
+        "buyingWindow": {
+          "label": "OPEN",
+          "detail": "Application-stage activity suggests vendor selection may still be active."
+        },
+        "velocity": {
+          "label": "HIGH ↑",
+          "detail": "18 related events detected in 1 days."
+        },
+        "momentum": {
+          "label": "ACCELERATING",
+          "detail": "Related project activity is arriving in a compressed time window."
+        },
+        "whyNow": "APPLICATION activity was detected within the last 24 hours. TARRANT COUNTY JUNIOR COLLEGE is already associated with the public record, giving you a concrete company to research now. RevenueTrigger also grouped 18 related permit records at this location.",
+        "nextBestAction": {
+          "action": "CONTACT COMPANY ON PERMIT",
+          "reason": "The project is in application/review and TARRANT COUNTY JUNIOR COLLEGE is already tied to the public record."
+        }
+      }
+    },
+    {
+      "id": "mesa:PMT26-17277",
+      "name": "Commercial/Industrial Projects",
+      "address": "9229 E UNIVERSITY DR",
+      "event_date": "2026-09-29T00:00:00.000Z",
+      "company": "Facility Innovations Group",
+      "scope": "Commercial/Industrial Projects — Installation of solar photovoltaic energy generation system on fuel island canopy(ies), including trenching to back exterior wall of store for feeder conductors to utility line side interconnection — Facility Innovations Group",
+      "score": 82,
+      "categories": [
+        "Electrical",
+        "Commercial services"
+      ],
+      "value": 21509,
+      "temperature": "HOT",
+      "permit": "PMT26-17277",
+      "source": "City of Mesa Data Hub — Building Permits",
+      "updated_at": "2026-10-01 01:14:37",
+      "market": "Mesa",
+      "permit_status": "In Review",
+      "official_value": null,
+      "date": "2026-09-29T00:00:00.000Z",
+      "permitStatus": "In Review",
+      "officialPermitValue": null,
+      "scoreBreakdown": {
+        "projectStage": 22,
+        "recency": 18,
+        "projectValue": 10,
+        "tradeRelevance": 14,
+        "projectType": 10,
+        "prePermit": 6,
+        "companyBehavior": 2
+      },
+      "sellerFit": {
+        "HVAC": 0,
+        "Electrical": 96,
+        "Plumbing": 0,
+        "Roofing": 0,
+        "Landscaping": 0,
+        "Security": 0,
+        "Signage": 0,
+        "Commercial services": 82
+      },
+      "dataConfidence": {
+        "score": 85,
+        "reasons": [
+          "Company identified",
+          "Address present",
+          "Permit / project ID present",
+          "Stage/status present",
+          "Detailed description",
+          "Source attributed"
+        ]
+      },
+      "lifecycle": {
+        "stage": "APPLICATION",
+        "index": 2,
+        "steps": [
+          "PRE-TECH",
+          "PLANNING",
+          "APPLICATION",
+          "PERMIT ISSUED",
+          "CONSTRUCTION",
+          "COMPLETE"
+        ]
+      },
+      "checkedAt": "2026-10-01 01:14:37",
+      "relatedPermitCount": 1,
+      "relatedPermits": [],
+      "actionIntelligence": {
+        "firstMover": 77,
+        "opportunityWindow": {
+          "label": "NOW",
+          "detail": "Next 14–30 days"
+        },
+        "buyingWindow": {
+          "label": "OPEN",
+          "detail": "Application-stage activity suggests vendor selection may still be active."
+        },
+        "velocity": {
+          "label": "LOW",
+          "detail": "One recent project event detected."
+        },
+        "momentum": {
+          "label": "STABLE",
+          "detail": "Activity is continuing at a normal pace."
+        },
+        "whyNow": "APPLICATION activity was detected 2 days ago. Facility Innovations Group is already associated with the public record, giving you a concrete company to research now.",
+        "nextBestAction": {
+          "action": "CONTACT COMPANY ON PERMIT",
+          "reason": "The project is in application/review and Facility Innovations Group is already tied to the public record."
+        }
+      }
+    },
+    {
+      "id": "mesa:PMT26-17504",
+      "name": "Commercial/Industrial Projects",
+      "address": "1733 S GREENFIELD RD",
+      "event_date": "2026-09-29T00:00:00.000Z",
+      "company": "Facility Innovations Group",
+      "scope": "Commercial/Industrial Projects — Installation of solar photovoltaic energy generation system on fuel island canopy, including trenching to back exterior wall of store for feeder conductors to utility line side interconnection — Facility Innovations Group",
+      "score": 82,
+      "categories": [
+        "Electrical",
+        "Commercial services"
+      ],
+      "value": 21509,
+      "temperature": "HOT",
+      "permit": "PMT26-17504",
+      "source": "City of Mesa Data Hub — Building Permits",
+      "updated_at": "2026-10-01 01:14:37",
+      "market": "Mesa",
+      "permit_status": "Submitted",
+      "official_value": null,
+      "date": "2026-09-29T00:00:00.000Z",
+      "permitStatus": "Submitted",
+      "officialPermitValue": null,
+      "scoreBreakdown": {
+        "projectStage": 22,
+        "recency": 18,
+        "projectValue": 10,
+        "tradeRelevance": 14,
+        "projectType": 10,
+        "prePermit": 6,
+        "companyBehavior": 2
+      },
+      "sellerFit": {
+        "HVAC": 0,
+        "Electrical": 96,
+        "Plumbing": 0,
+        "Roofing": 0,
+        "Landscaping": 0,
+        "Security": 0,
+        "Signage": 0,
+        "Commercial services": 82
+      },
+      "dataConfidence": {
+        "score": 85,
+        "reasons": [
+          "Company identified",
+          "Address present",
+          "Permit / project ID present",
+          "Stage/status present",
+          "Detailed description",
+          "Source attributed"
+        ]
+      },
+      "lifecycle": {
+        "stage": "APPLICATION",
+        "index": 2,
+        "steps": [
+          "PRE-TECH",
+          "PLANNING",
+          "APPLICATION",
+          "PERMIT ISSUED",
+          "CONSTRUCTION",
+          "COMPLETE"
+        ]
+      },
+      "checkedAt": "2026-10-01 01:14:37",
+      "relatedPermitCount": 1,
+      "relatedPermits": [],
+      "actionIntelligence": {
+        "firstMover": 77,
+        "opportunityWindow": {
+          "label": "NOW",
+          "detail": "Next 14–30 days"
+        },
+        "buyingWindow": {
+          "label": "OPEN",
+          "detail": "Application-stage activity suggests vendor selection may still be active."
+        },
+        "velocity": {
+          "label": "LOW",
+          "detail": "One recent project event detected."
+        },
+        "momentum": {
+          "label": "STABLE",
+          "detail": "Activity is continuing at a normal pace."
+        },
+        "whyNow": "APPLICATION activity was detected 2 days ago. Facility Innovations Group is already associated with the public record, giving you a concrete company to research now.",
+        "nextBestAction": {
+          "action": "CONTACT COMPANY ON PERMIT",
+          "reason": "The project is in application/review and Facility Innovations Group is already tied to the public record."
+        }
+      }
+    }
+  ]
+}

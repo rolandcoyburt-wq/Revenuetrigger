@@ -1,0 +1,130 @@
+{
+  "validation": "synthetic/local; no production requests",
+  "coreContract": "50dfbd8d53f69e7fadf07ef2fd8192f9b9ad6ac5",
+  "results": [
+    {
+      "name": "/ fresh 390px",
+      "status": "PASS"
+    },
+    {
+      "name": "/ stale 390px",
+      "status": "PASS"
+    },
+    {
+      "name": "/ partial 390px",
+      "status": "PASS"
+    },
+    {
+      "name": "/ empty 390px",
+      "status": "PASS"
+    },
+    {
+      "name": "/ unavailable 390px",
+      "status": "PASS"
+    },
+    {
+      "name": "/signals fresh 390px",
+      "status": "PASS"
+    },
+    {
+      "name": "/signals stale 390px",
+      "status": "PASS"
+    },
+    {
+      "name": "/signals partial 390px",
+      "status": "PASS"
+    },
+    {
+      "name": "/signals empty 390px",
+      "status": "PASS"
+    },
+    {
+      "name": "/signals unavailable 390px",
+      "status": "PASS"
+    },
+    {
+      "name": "/ fresh 1366px",
+      "status": "PASS"
+    },
+    {
+      "name": "/ stale 1366px",
+      "status": "PASS"
+    },
+    {
+      "name": "/ partial 1366px",
+      "status": "PASS"
+    },
+    {
+      "name": "/ empty 1366px",
+      "status": "PASS"
+    },
+    {
+      "name": "/ unavailable 1366px",
+      "status": "PASS"
+    },
+    {
+      "name": "/signals fresh 1366px",
+      "status": "PASS"
+    },
+    {
+      "name": "/signals stale 1366px",
+      "status": "PASS"
+    },
+    {
+      "name": "/signals partial 1366px",
+      "status": "PASS"
+    },
+    {
+      "name": "/signals empty 1366px",
+      "status": "PASS"
+    },
+    {
+      "name": "/signals unavailable 1366px",
+      "status": "PASS"
+    },
+    {
+      "name": "Honest http503 response",
+      "status": "PASS"
+    },
+    {
+      "name": "Honest malformed response",
+      "status": "PASS"
+    },
+    {
+      "name": "Honest missing-state response",
+      "status": "PASS"
+    },
+    {
+      "name": "Honest partial-empty response",
+      "status": "PASS"
+    },
+    {
+      "name": "Signed-in dashboard contract unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "Slow previous market cannot replace latest selection",
+      "status": "PASS"
+    },
+    {
+      "name": "Long text and sparse intelligence remain readable on mobile",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP 400 invalid_market is a request error: /",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP 400 invalid_market is a request error: /signals",
+      "status": "PASS"
+    },
+    {
+      "name": "Freshness array parses nulls and retains authoritative top-level state",
+      "status": "PASS"
+    },
+    {
+      "name": "Failed network never inserts sample records",
+      "status": "PASS"
+    }
+  ]
+}
