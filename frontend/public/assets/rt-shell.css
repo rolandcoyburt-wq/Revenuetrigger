@@ -194,3 +194,6 @@ html body :is(.rt-section-head,.section-head,.rt-product-copy,.rt-hero-copy,.her
 @media(max-width:700px){
  html body :is(.rt-section-head,.section-head,.rt-product-copy,.rt-hero-copy,.hero-copy,.sources-hero-copy,.rt-app-intro,.changed-intro,.rt-decision-copy,.rt-preview-heading,.rt-momentum-strip,.rt-market-panel) :is(.rt-kicker,.eyebrow){font-size:12px!important}
 }
+
+/* Horizontal brand lockup shared by all sign-in dialogs. */
+html body #signinModal .rt-signin-brand{display:block;width:190px;max-width:100%;height:auto;object-fit:contain;object-position:left center;margin:0 0 24px}
