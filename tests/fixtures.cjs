@@ -7,7 +7,7 @@ async function mock(page,options={}){
  await page.route('**/*',async route=>{
   const url=new URL(route.request().url());
   if(url.hostname==='127.0.0.1')return route.continue();
-  if(url.hostname!=='api.revenuetrigger.ai')return route.abort();
+  if(!['api.revenuetrigger.ai','integration-signal-command-fort-worth-v1-signalhound-api.rolandcoyburt.workers.dev'].includes(url.hostname))return route.abort();
   calls.push({path:url.pathname,query:url.search,method:route.request().method(),body:route.request().postData(),auth:route.request().headers().authorization});
   const path=url.pathname.replace('/api','');let body={ok:true};let status=200;
   if(options.fail?.includes(path)){status=503;body={error:'Synthetic unavailable response'};}

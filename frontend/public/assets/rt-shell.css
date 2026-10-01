@@ -48,3 +48,6 @@ body .rt-trigger-timeline li{min-width:0}
  body .rt-command-head{align-items:flex-start;gap:14px}
  body #heroState{text-align:right;max-width:52%;line-height:1.5}
 }
+/* Keep backend-provided intelligence readable in the light detail panel. */
+body .action-callout b,body .cluster-note strong{color:var(--graphite)!important}
+body .cluster-note{color:var(--rt-muted)!important}

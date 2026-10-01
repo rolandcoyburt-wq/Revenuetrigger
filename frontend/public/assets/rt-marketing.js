@@ -18,7 +18,7 @@ async function sendHomeLink(email){
 document.getElementById('signinForm').addEventListener('submit',async e=>{e.preventDefault();const button=e.currentTarget.querySelector('button');button.disabled=true;await sendHomeLink(document.getElementById('signinEmail').value);button.disabled=false});
 document.getElementById('capture').addEventListener('submit',async e=>{e.preventDefault();const email=document.getElementById('email').value;document.getElementById('signinEmail').value=email;openSignin();await sendHomeLink(email)});
 document.getElementById('signinModal').addEventListener('click',e=>{if(e.target.id==='signinModal')closeSignin()});
-document.getElementById('marketList').innerHTML=RTConfig.markets.map(m=>`<span>${RTUI.esc(m)}</span>`).join('');
+document.getElementById('marketList').innerHTML=RTConfig.markets.filter(m=>m!=='Fort Worth').map(m=>`<span>${RTUI.esc(m)}</span>`).join('');
 async function loadMarketingSignals(){
  const {esc,badge,opportunityCard,triggerTimeline,decision,money}=RTUI;
  let feed;

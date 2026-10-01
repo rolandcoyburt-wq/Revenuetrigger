@@ -271,7 +271,7 @@ async function loadPublic(){
  const feed=await RTUI.readFeed(`days=7&limit=${limit}${marketParam}`);
  if(requestId!==publicFeedRequest)return;
  publicFeed=feed;leads=feed.rows;
- $('#feedStatus').textContent=feed.state==='unavailable'?feed.label:`${feed.label} • ${leads.length} ${selected==='all'?'Arizona':selected} permit signals`;
+ $('#feedStatus').textContent=feed.state==='unavailable'?feed.label:`${feed.label} • ${leads.length} ${selected==='all'?'across live markets':selected} permit signals`;
  const status=$('#feedStatus').closest('.status');
  status?.classList.remove('source-degraded');status?.setAttribute('data-feed-state',feed.state);
  const note=$('#publicFeedNotice');note.hidden=!feed.notice;note.textContent=feed.notice;note.dataset.state=feed.state;

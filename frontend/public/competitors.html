@@ -501,7 +501,7 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
 }
 </style>
 
-<link rel="stylesheet" href="/assets/rt-shell.css"><script src="/assets/rt-config.js"></script><script src="/assets/rt-auth.js"></script></head>
+<link rel="stylesheet" href="/assets/rt-shell.css"><script src="/assets/rt-config.js"></script><script src="/assets/rt-format.js"></script><script src="/assets/rt-auth.js"></script></head>
 <body class="rt-existing">
 <div id="rt-header" data-shell="app"></div>
 
@@ -570,7 +570,7 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
       <div class="competitor-toolbar">
         <input id="competitorSearch" placeholder="Search contractor or company…">
         <select id="competitorMarket">
-          <option value="all">All markets</option><option>Phoenix</option><option>Tempe</option><option>Tucson</option><option>Scottsdale</option><option>Mesa</option><option>Chandler</option>
+          <option value="all">All markets</option><option>Phoenix</option><option>Tempe</option><option>Tucson</option><option>Scottsdale</option><option>Mesa</option><option>Chandler</option><option>Fort Worth</option>
         </select>
         <select id="competitorDays">
           <option value="30">Last 30 days</option><option value="90" selected>Last 90 days</option><option value="180">Last 180 days</option><option value="365">Last 12 months</option>
@@ -587,7 +587,7 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
     <div class="competitor-disclaimer">Company attribution reflects information published by the source jurisdiction and may represent the contractor, builder, owner, developer, applicant, architect, or engineer. It does not necessarily indicate who won a competitive bid.</div>
   </div>
 </section>
-<section class="section light-band" id="pricing"><div class="wrap"><div class="section-head"><div><span class="eyebrow">Plans</span><h2>Pay for speed and relevance.</h2></div><p>Choose a plan based on how quickly you want opportunities delivered and how much history you need.</p></div><div class="pricing"><div class="price"><h3>Scout</h3><div class="money">$49 <small>/mo</small></div><ul><li>1 industry · 1 market</li><li>Weekly opportunity digest</li><li>7-day history</li><li>Saved opportunities</li></ul><button class="btn btn-secondary" onclick="buyPlan('Scout')">Choose Scout</button></div><div class="price featured"><span class="badge">BEST VALUE</span><h3>Hunter</h3><div class="money">$149 <small>/mo</small></div><ul><li>Up to 3 industries · 3 markets</li><li>Daily email digest</li><li>30-day history</li><li>Saved opportunities</li><li>CSV export</li></ul><button class="btn btn-primary" onclick="buyPlan('Hunter')">Choose Hunter</button></div><div class="price"><h3>Territory</h3><div class="money">$499 <small>/mo</small></div><ul><li>All live industries · all markets</li><li>Near-real-time high-intent alerts</li><li>90-day history</li><li>CSV export</li><li>Priority expansion features</li></ul><button class="btn btn-secondary" onclick="buyPlan('Territory')">Choose Territory</button></div></div><div class="cta"><div><h2>Start with a free account.</h2><p>Use passwordless sign-in, personalize your industry, save opportunities, then upgrade when you want automated delivery and deeper history.</p></div><form class="capture" id="capture"><input required type="email" id="email" placeholder="you@company.com"/><button>Send sign-in link</button></form></div></div></section>
+<section class="section light-band" id="pricing"><div class="wrap"><div class="section-head"><div><span class="eyebrow">Plans</span><h2>Pay for speed and relevance.</h2></div><p>Choose a plan based on how quickly you want opportunities delivered and how much history you need.</p></div><div class="pricing"><div class="price"><h3>Scout</h3><div class="money">$49 <small>/mo</small></div><ul><li>1 industry · 1 market</li><li>Weekly opportunity digest</li><li>7-day history</li><li>Saved opportunities</li></ul><button class="btn btn-secondary" onclick="buyPlan('Scout')">Choose Scout</button></div><div class="price featured"><span class="badge">BEST VALUE</span><h3>Hunter</h3><div class="money">$149 <small>/mo</small></div><ul><li>Up to 3 industries · 3 markets</li><li>Daily email digest</li><li>30-day history</li><li>Saved opportunities</li><li>CSV export</li></ul><button class="btn btn-primary" onclick="buyPlan('Hunter')">Choose Hunter</button></div><div class="price"><h3>Territory</h3><div class="money">$499 <small>/mo</small></div><ul><li>All live industries · up to 6 selected markets</li><li>Near-real-time high-intent alerts</li><li>90-day history</li><li>CSV export</li><li>Priority expansion features</li></ul><button class="btn btn-secondary" onclick="buyPlan('Territory')">Choose Territory</button></div></div><div class="cta"><div><h2>Start with a free account.</h2><p>Use passwordless sign-in, personalize your industry, save opportunities, then upgrade when you want automated delivery and deeper history.</p></div><form class="capture" id="capture"><input required type="email" id="email" placeholder="you@company.com"/><button>Send sign-in link</button></form></div></div></section>
 </main>
 
 <footer><div class="wrap" style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap"><span>RevenueTrigger</span><span>Public-data opportunity intelligence</span></div></footer>
@@ -653,7 +653,7 @@ syncThemeUI();
 let user=null, competitorData=[],watchlist=[],competitorTotal=0,competitorLimit=50;
 function token(){return RTAuth.token()}
 function authHeaders(extra={}){const t=token();return {...extra,...(t?{Authorization:`Bearer ${t}`}:{})}}
-function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function esc(v){return RTFormat.normalizeDisplayText(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function openModal(id){$('#'+id)?.classList.add('show')} function closeModal(id){$('#'+id)?.classList.remove('show')}
 function openSignin(){openModal('signinModal');setTimeout(()=>$('#signinEmail')?.focus(),50)}
 function accountAction(){if(user){location.href='/signals?account=1';return}openSignin()}
