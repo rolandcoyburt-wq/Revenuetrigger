@@ -2229,6 +2229,7 @@ async function stripePost(env,path,params){
   const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data?.error?.message||`Stripe ${r.status}`);return data;
 }
 async function createCheckout(request,env,user){
+  if(env.BILLING_CHECKOUT_DISABLED==='true')return json({error:'checkout_disabled'},403,env);
   const {plan}=await request.json();if(!['Scout','Hunter','Territory'].includes(plan))return json({error:'invalid plan'},400,env);
   const price=stripePrice(env,plan);if(!price||String(price).includes('REPLACE_'))return json({error:`Stripe price for ${plan} is not configured`},503,env);
   const frontend=String(env.FRONTEND_URL||env.ALLOWED_ORIGIN||'').replace(/\/$/,'');

@@ -9,6 +9,7 @@ database_name = "signalhound"
 database_id = "5b0156dc-1646-4233-abf7-5d65ef30a317"
 
 [vars]
+BILLING_CHECKOUT_DISABLED = "true"
 ALLOWED_ORIGIN = "https://revenuetrigger.ai"
 FRONTEND_URL = "https://revenuetrigger.ai"
 DEV_AUTH_BYPASS = "false"
@@ -25,6 +26,7 @@ STRIPE_PRICE_TERRITORY = "price_1UIfKRQtkZRdtmROuFOtSulQ"
 crons = ["17 * * * *"]
 
 [previews.vars]
+BILLING_CHECKOUT_DISABLED = "false"
 ALLOWED_ORIGIN = "https://integration-frontend-fort-worth-v1-signalhound-phoenix.rolandcoyburt.workers.dev"
 FRONTEND_URL = "https://integration-frontend-fort-worth-v1-signalhound-phoenix.rolandcoyburt.workers.dev"
 DEV_AUTH_BYPASS = "false"
