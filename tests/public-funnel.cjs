@@ -16,7 +16,7 @@ function harness(){
    closest:s=>element(selector+' '+s),setAttribute(k,v){this[k]=v},getAttribute(k){return this[k]},querySelectorAll:()=>[],addEventListener(){},focus(){},scrollIntoView(){}};
   nodes.set(selector,el);return el;
  }
- const c={console,Date,Intl,URL,URLSearchParams,Response,Promise,setTimeout:()=>0,clearTimeout(){},location:{search:'',hash:'',pathname:'/signals'},history:{replaceState(){}},document:{querySelector:element,querySelectorAll:()=>[],getElementById:id=>element('#'+id),documentElement:element('html'),body:element('body')},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},matchMedia:()=>({matches:false}),addEventListener(){}};
+ const c={console,Date,Intl,URL,URLSearchParams,Response,Promise,setTimeout:()=>0,clearTimeout(){},location:{hostname:'revenuetrigger.ai',search:'',hash:'',pathname:'/signals'},history:{replaceState(){}},document:{querySelector:element,querySelectorAll:()=>[],getElementById:id=>element('#'+id),documentElement:element('html'),body:element('body')},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},matchMedia:()=>({matches:false}),addEventListener(){}};
  c.window=c;
  c.handle=async(url,options)=>{
   const path=new URL(url).pathname;
