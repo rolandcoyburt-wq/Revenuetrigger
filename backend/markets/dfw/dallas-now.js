@@ -366,11 +366,12 @@ async function fetchReport(report, { startDate, endDate, fetchFn = fetch } = {})
 }
 
 function parseDallasAddress(value) {
-  const text = cleanText(value);
-  if (!text) return normalizeAddress({ city: 'Dallas', state: 'TX' });
-  const compact = text.replace(/\s*\n\s*/g, ', ').replace(/\s+/g, ' ').trim();
-  const m = compact.match(/^(.*?)(?:,\s*)Dallas,?\s*TX\s*(\d{5}(?:-\d{4})?)?$/i);
-  if (m) return normalizeAddress({ full: m[1], city: 'Dallas', state: 'TX', zip: m[2] });
+  if (value === null || value === undefined) return normalizeAddress({ city: 'Dallas', state: 'TX' });
+  const raw = String(value).trim();
+  if (!raw) return normalizeAddress({ city: 'Dallas', state: 'TX' });
+  const compact = raw.replace(/\s*\n\s*/g, ', ').replace(/\s+/g, ' ').trim();
+  const m = compact.match(/^(.*?)(?:(?:,\s*)|(?:\s+))Dallas,?\s*TX\s*(\d{5}(?:-\d{4})?)?$/i);
+  if (m) return normalizeAddress({ full: m[1].replace(/,\s*$/,''), city: 'Dallas', state: 'TX', zip: m[2] });
   return normalizeAddress({ full: compact, city: 'Dallas', state: 'TX' });
 }
 
