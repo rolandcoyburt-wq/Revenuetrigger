@@ -120,3 +120,4 @@ body.rt-marketing #opportunities{background:#fff}
 @keyframes rt-icon-lift{50%{transform:translateY(-3px)}}
 @media(max-width:700px){#opportunities .rt-section-head{grid-template-columns:1fr}.rt-ticker>.rt-ticker-inner{gap:12px}.rt-ticker .rt-kicker{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.rt-ticker-track,.rt-icon-trend,.rt-icon-dot,.rt-icon-layer{animation:none}.rt-ticker-window{overflow-x:auto}.rt-ticker-group[aria-hidden]{display:none}.rt-ticker-toggle{display:none}}
+html body.rt-marketing #pricing .price.featured .money small{color:#fff!important}
