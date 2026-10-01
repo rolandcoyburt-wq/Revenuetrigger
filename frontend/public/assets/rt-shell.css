@@ -137,3 +137,8 @@ html body .rt-why-now{padding:18px 20px;margin:20px 0;background:#e0eedc;border:
 html body .rt-why-now>small{font-size:13px;font-weight:800;letter-spacing:.06em;color:#087a3a;display:block;text-transform:uppercase}
 html body .rt-why-now p{font-size:16px!important;line-height:1.7!important;margin:8px 0 0;color:var(--graphite)!important;overflow-wrap:anywhere}
 html body .rt-why-now p strong{font-size:inherit;font-weight:750}
+/* Readable section labels; record metadata and ticker typography stay separate. */
+html body :is(.rt-section-head,.section-head,.rt-product-copy,.rt-hero-copy,.hero-copy,.sources-hero-copy,.rt-app-intro,.changed-intro,.rt-decision-copy,.rt-preview-heading,.rt-momentum-strip,.rt-market-panel) :is(.rt-kicker,.eyebrow){font-size:13px!important;font-weight:600!important;line-height:1.5!important;letter-spacing:.06em!important;text-transform:uppercase}
+@media(max-width:700px){
+ html body :is(.rt-section-head,.section-head,.rt-product-copy,.rt-hero-copy,.hero-copy,.sources-hero-copy,.rt-app-intro,.changed-intro,.rt-decision-copy,.rt-preview-heading,.rt-momentum-strip,.rt-market-panel) :is(.rt-kicker,.eyebrow){font-size:12px!important}
+}
