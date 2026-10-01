@@ -20,6 +20,25 @@ document.getElementById('signinForm').addEventListener('submit',async e=>{e.prev
 document.getElementById('capture').addEventListener('submit',async e=>{e.preventDefault();const email=document.getElementById('email').value;document.getElementById('signinEmail').value=email;openSignin();await sendHomeLink(email)});
 document.getElementById('signinModal').addEventListener('click',e=>{if(e.target.id==='signinModal')closeSignin()});
 document.getElementById('marketList').innerHTML=RTConfig.markets.filter(m=>m!=='Fort Worth').map(m=>`<span>${RTUI.esc(m)}</span>`).join('');
+// Hero-only context uses public teaser fields, never hidden Action Intelligence.
+function heroPublicContext(x,now=new Date()){
+ const {esc}=RTUI;
+ const labels={'APPLICATION':'Application','PERMIT ISSUED':'Permit issued','PRE-TECH':'Pre-technical review','PLANNING':'Planning','APPROVED PROJECTS':'Approved project','CONSTRUCTION':'Construction','UNDER CONSTRUCTION':'Construction','COMPLETE':'Completed project'};
+ const stage=labels[x.stage]||'Project';
+ let timing='';
+ const event=x.date?new Date(x.date):null;
+ if(event&&Number.isFinite(event.getTime())){
+  const day=d=>Date.UTC(d.getFullYear(),d.getMonth(),d.getDate());
+  const age=Math.round((day(now)-day(event))/86400000);
+  timing=age===0?' today':age===1?' yesterday':` on ${event.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+ }
+ const summary=`${stage} activity recorded${timing}.`;
+ const value=Number(x.value)>0?` Estimated service opportunity: ${RTUI.money(x)}.`:'';
+ const why=`<div class="rt-reason rt-why-now"><small>Why now</small><p>${esc(summary+value)} <button type="button" class="rt-hero-reveal" onclick="openSignin()">Sign in to see available company and project details.</button></p></div>`;
+ const steps=[['APPLICATION','Application'],['PERMIT ISSUED','Permit issued'],['CONTRACTOR ASSIGNED','Contractor assigned']];
+ const timeline=`<section class="rt-project-stage" aria-label="Published project stage"><small>Project stage</small><strong>${esc(labels[x.stage]||'Not published')}</strong><ol class="rt-hero-stage-track">${steps.map(([key,label])=>`<li${x.stage===key?' aria-current="step"':''}><span>${label} <span class="rt-hero-stage-dot" aria-hidden="true">${x.stage===key?'●':'○'}</span></span><span class="sr-only">${x.stage===key?' — published stage':' — not confirmed'}</span></li>`).join('')}</ol><p class="rt-hero-stage-key">Filled dot: published stage. Hollow dots: not confirmed.</p></section>`;
+ return {why,timeline};
+}
 async function loadMarketingSignals(){
  const {esc,badge,opportunityCard,triggerTimeline,decision,money}=RTUI;
  let feed;
@@ -31,9 +50,9 @@ async function loadMarketingSignals(){
   if(feed.state==='unavailable')throw new Error('Feed unavailable');
   const rows=feed.rows.slice(0,3);
   if(!rows.length){document.getElementById('heroState').textContent='No current records';throw new Error('No current opportunities were returned. Open the feed to explore markets and filters.')}
-  const x=rows[0];
+  const x=rows[0],heroContext=heroPublicContext(x);
   document.getElementById('heroState').textContent=feed.label;
-  document.getElementById('heroSignal').innerHTML=`<span class="rt-kicker">${esc(x.market)} / ${esc(x.permit||'Public record')}</span><div class="rt-hero-priority"><h2>${esc(RTFormat.displayEventTitle(x))}</h2>${badge(x)}</div><p class="rt-muted">${esc(RTFormat.displayAddress(x.address||x.market))}</p>${triggerTimeline(x)}<div class="rt-command-value"><div><small>Estimated service opportunity</small><strong class="rt-money">${money(x)}</strong></div><div><small>Opportunity score</small><strong class="rt-hero-score">${esc(x.score??'—')} <span>/100</span></strong></div></div>${x.officialPermitValue?`<p class="rt-muted">Official permit valuation: ${esc(new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(x.officialPermitValue))}</p>`:''}${RTUI.whyNow(x)}<a class="rt-text-link" href="/signals">Explore the opportunity feed <span aria-hidden="true">↗</span></a>`;
+  document.getElementById('heroSignal').innerHTML=`<span class="rt-kicker">${esc(x.market)} / ${esc(x.permit||'Public record')}</span><div class="rt-hero-priority"><h2>${esc(RTFormat.displayEventTitle(x))}</h2>${badge(x)}</div><p class="rt-muted">${esc(RTFormat.displayAddress(x.address||x.market))}</p>${heroContext.timeline}<div class="rt-command-value"><div><small>Estimated service opportunity</small><strong class="rt-money">${money(x)}</strong></div><div><small>Opportunity score</small><strong class="rt-hero-score">${esc(x.score??'—')} <span>/100</span></strong></div></div>${x.officialPermitValue?`<p class="rt-muted">Official permit valuation: ${esc(new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(x.officialPermitValue))}</p>`:''}${heroContext.why}<a class="rt-text-link" href="/signals">Explore the opportunity feed <span aria-hidden="true">↗</span></a>`;
   document.getElementById('signalPreviews').innerHTML=rows.map(x=>opportunityCard(x,{preview:true})).join('');
   const tickerItems=rows.map(x=>`<span class="rt-ticker-item"><strong>${esc(x.market)}</strong> · ${esc(RTFormat.displayEventTitle(x))}${Number(x.value)>0?' · '+money(x):''}</span>`).join('');
   document.getElementById('marketTicker').innerHTML=`<div class="rt-ticker-group">${tickerItems}</div><div class="rt-ticker-group" aria-hidden="true">${tickerItems}</div>`;

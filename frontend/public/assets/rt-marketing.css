@@ -133,3 +133,14 @@ html body.rt-marketing #pricing .price.featured .money small{color:#fff!importan
 .rt-command-value{grid-template-rows:auto auto;row-gap:5px}
 .rt-command-value>div{display:grid;grid-template-rows:subgrid;grid-row:span 2}
 .rt-command-value .rt-money,.rt-command-value .rt-hero-score{font-size:38px;line-height:1.1;margin-top:0;align-self:baseline;font-variant-numeric:tabular-nums}
+
+/* Public context is exclusive to the homepage hero card. */
+#heroSignal .rt-hero-stage-track{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;list-style:none;padding:0;margin:18px 0 8px}
+#heroSignal .rt-hero-stage-track li{position:relative;min-width:0;font-size:12px;line-height:1.45;color:var(--rt-muted)}
+#heroSignal .rt-hero-stage-track li:not(:last-child):after{content:'→';position:absolute;right:-14px;top:0;color:var(--rt-muted)}
+#heroSignal .rt-hero-stage-track li[aria-current]{color:var(--green-dark);font-weight:750}
+#heroSignal .rt-hero-stage-dot{white-space:nowrap;color:var(--green-dark)}
+#heroSignal .rt-hero-stage-key{font-size:10px;color:var(--rt-muted);margin:0}
+#heroSignal .rt-hero-reveal{display:inline;padding:0;border:0;background:none;color:var(--green-dark);font:inherit;font-weight:650;text-align:left;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+#heroSignal .rt-hero-reveal:focus-visible{outline:2px solid var(--green-dark);outline-offset:3px}
+#heroSignal .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
