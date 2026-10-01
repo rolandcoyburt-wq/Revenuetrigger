@@ -181,6 +181,15 @@ await check('worker routes Dallas through unchanged leadFrom scoring and preserv
   }finally{globalThis.fetch=original}
 });
 
+await check('single-market /api/leads request uses the live Dallas adapter path',async()=>{
+  const original=globalThis.fetch;globalThis.fetch=mockDallasFetch();
+  try{
+    const res=await core.default.fetch(new Request('https://preview.invalid/api/leads?markets=Dallas&days=7&limit=20'),{});
+    const data=await res.json();assert.equal(res.status,200);assert.equal(data.liveDirect,true);
+    assert.deepEqual(data.markets,['Dallas']);assert.equal(data.leads.length,3);assert.ok(data.leads.every(x=>x.market==='Dallas'));
+  }finally{globalThis.fetch=original}
+});
+
 await check('Dallas registration is additive and Territory market limit remains six',async()=>{
   const expected=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler','Fort Worth','Dallas'];
   assert.deepEqual(core.MARKETS,expected);assert.deepEqual(core.LIVE_MARKETS,expected);assert.equal(core.PLANS.Territory.marketLimit,6);
