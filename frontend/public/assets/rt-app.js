@@ -78,7 +78,7 @@ function render(){
   const notListedBtn=$('#permitCompanyToggle [data-value="not-listed"]');
   if(listedBtn)listedBtn.textContent=`Listed (${listedCount})`;
   if(notListedBtn)notListedBtn.textContent=`Not Listed (${notListedCount})`;
-  const filtered=baseFiltered.filter(x=>permitCompanyFilter==='listed'?hasListedCompany(x):!hasListedCompany(x));
+  const filtered=user?baseFiltered.filter(x=>permitCompanyFilter==='listed'?hasListedCompany(x):!hasListedCompany(x)):baseFiltered;
   filtered.sort((a,b)=>{
     if(sort==='newest')return (new Date(b.date).getTime()||0)-(new Date(a.date).getTime()||0);
     if(sort==='oldest')return (new Date(a.date).getTime()||0)-(new Date(b.date).getTime()||0);
@@ -96,6 +96,20 @@ function render(){
   setKpiValue('kAvg',avgScore,String(avgScore));
   if(!user&&publicFeed?.state==='unavailable')for(const id of ['kSignals','kHot','kValue','kAvg'])$('#'+id).textContent='—';
   $('#feedKpis')?.classList.toggle('all-zero',filtered.length===0);
+  const gate=$('#publicFeedGate');
+  if(gate){
+    if(user){
+      gate.hidden=true;
+    }else{
+      const available=Number(publicFeed?.counts?.available||publicFeed?.counts?.clusteredAvailable||filtered.length);
+      const shown=filtered.length;
+      const remaining=Math.max(0,available-shown);
+      $('#publicFeedGateCount').textContent=remaining>0
+        ? `${remaining} more opportunities detected in this view`
+        : 'More opportunity intelligence is available when you sign in';
+      gate.hidden=false;
+    }
+  }
 
 }
 
@@ -157,6 +171,12 @@ async function setLeadFeedback(action){
 }
 
 function openLead(id){
+  if(!user){
+    RTAuth.set('revenuetrigger_return_to','/signals');
+    openSignin();
+    toast('Create a free account or sign in to reveal the company and full opportunity details.');
+    return;
+  }
   const x=leads.find(v=>String(v.id)===String(id));if(!x)return;currentLead=x;
   const fits=Object.entries(x.sellerFit||{}).sort((a,b)=>b[1]-a[1]).filter(([k,v])=>v>=20).slice(0,5);
   const fitText=fits.length?fits.map(([k,v])=>`${k} ${v}`).join(' • '):(x.categories||[]).join(', ');
@@ -267,11 +287,12 @@ async function loadPublic(){
  const requestId=++publicFeedRequest;
  const selected=$('#market')?.value||'all';
  const marketParam=selected!=='all'?`&markets=${encodeURIComponent(selected)}`:'';
- const limit=selected!=='all'?200:120;
- const feed=await RTUI.readFeed(`days=7&limit=${limit}${marketParam}`);
+ const feed=await RTUI.readFeed(`days=7&limit=8${marketParam}`);
  if(requestId!==publicFeedRequest)return;
  publicFeed=feed;leads=feed.rows;
- $('#feedStatus').textContent=feed.state==='unavailable'?feed.label:`${feed.label} • ${leads.length} ${selected==='all'?'across live markets':selected} permit signals`;
+ const available=Number(feed.counts?.available||feed.counts?.clusteredAvailable||leads.length);
+ $('#feedStatus').textContent=feed.state==='unavailable'?feed.label:`Live preview • ${leads.length} of ${available||leads.length} opportunities`;
+ $('#feedExplainer').textContent='Explore a live sample of current money events. Create a free account to reveal company names, exact project details and your personalized feed.';
  const status=$('#feedStatus').closest('.status');
  status?.classList.remove('source-degraded');status?.setAttribute('data-feed-state',feed.state);
  const note=$('#publicFeedNotice');note.hidden=!feed.notice;note.textContent=feed.notice;note.dataset.state=feed.state;
@@ -279,7 +300,23 @@ async function loadPublic(){
 }
 async function loadDashboard(){if(!user)return loadPublic();try{const r=await fetch(`${CONFIG.apiBase}/dashboard?limit=200`,{headers:authHeaders()});if(r.status===401){localStorage.removeItem('revenuetrigger_session');localStorage.removeItem('signalhound_session');user=null;updateUserUI();return loadPublic()}if(!r.ok)throw new Error();const d=await r.json();leads=d.leads||[];$('#feedStatus').textContent=`Personalized • ${leads.length} matched signals`;$('#feedExplainer').textContent=`Your ${planActive()} feed is filtered to your saved industry preferences and plan history.`;render();await updateSelectedMarketSourceStatus();}catch(e){toast('Could not load personalized feed.');loadPublic()}}
 async function loadMe(){if(!token()){user=null;updateUserUI();return false}try{const r=await fetch(`${CONFIG.apiBase}/me`,{headers:authHeaders()});if(!r.ok)throw new Error();user=(await r.json()).user;updateUserUI();return true}catch{localStorage.removeItem('revenuetrigger_session');localStorage.removeItem('signalhound_session');user=null;updateUserUI();return false}}
-function updateUserUI(){if(user){$('#accountBtn').textContent=user.email.split('@')[0];$('#accountBtn').classList.add('live');$('#savedFilter').style.display='inline-block';if($('#exportTop'))$('#exportTop').style.display=user.entitlements?.export&&planActive()!=='Beta'?'inline-flex':'none'}else{$('#accountBtn').textContent='Sign in';$('#accountBtn').classList.remove('live');$('#savedFilter').style.display='none';$('#savedFilter').value='all';if($('#exportTop'))$('#exportTop').style.display='none'}}
+function updateUserUI(){
+  const permitToggle=$('#permitCompanyToggle')?.closest('.company-toggle-wrap');
+  const pipelineToggle=$('#pipelineCompanyToggle')?.closest('.company-toggle-wrap');
+  if(user){
+    $('#accountBtn').textContent=user.email.split('@')[0];$('#accountBtn').classList.add('live');
+    $('#savedFilter').style.display='inline-block';
+    if(permitToggle)permitToggle.style.display='';
+    if(pipelineToggle)pipelineToggle.style.display='';
+    if($('#exportTop'))$('#exportTop').style.display=user.entitlements?.export&&planActive()!=='Beta'?'inline-flex':'none';
+  }else{
+    $('#accountBtn').textContent='Sign in';$('#accountBtn').classList.remove('live');
+    $('#savedFilter').style.display='none';$('#savedFilter').value='all';
+    if(permitToggle)permitToggle.style.display='none';
+    if(pipelineToggle)pipelineToggle.style.display='none';
+    if($('#exportTop'))$('#exportTop').style.display='none';
+  }
+}
 function renderAccount(){if(!user){$('#accountLoggedOut').style.display='block';$('#accountLoggedIn').style.display='none';return}$('#accountLoggedOut').style.display='none';$('#accountLoggedIn').style.display='block';$('#aEmail').textContent=user.email;$('#aPlan').textContent=planActive();$('#aStatus').textContent=user.subscriptionStatus||'inactive';$('#aSaved').textContent=user.savedCount||0;$('#prefScore').value=String(user.preferences?.minScore||70);$('#prefAlert').value=user.entitlements?.alert||'none';const limit=user.entitlements?.industryLimit||1;$('#industryLimitText').textContent=`Your ${planActive()} plan allows ${limit} industr${limit===1?'y':'ies'}.`;$('#industryChecks').innerHTML=INDUSTRIES.map(i=>`<label class="check"><input type="checkbox" value="${esc(i)}" ${(user.preferences?.industries||[]).includes(i)?'checked':''}>${esc(i)}</label>`).join('');const marketLimit=user.entitlements?.marketLimit||1;$('#marketLimitText').textContent=`Your ${planActive()} plan allows ${marketLimit} market${marketLimit===1?'':'s'}.`;$('#marketChecks').innerHTML=LIVE_MARKETS.map(m=>`<label class="check"><input type="checkbox" value="${esc(m)}" ${(user.preferences?.markets||['Phoenix']).includes(m)?'checked':''}>${esc(m)}</label>`).join('');$('#exportBtn').disabled=!(user.entitlements?.export&&planActive()!=='Beta');$('#billingBtn').textContent=user.subscriptionStatus==='active'||user.subscriptionStatus==='trialing'?'Manage billing':'Upgrade plan'}
 
 function renderOnboarding(){
@@ -386,7 +423,7 @@ async function loadPipeline(){
   const list=$('#pipelineList');
   if(status)status.textContent='Loading Chandler early pipeline…';
   try{
-    const r=await fetch(`${CONFIG.apiBase}/pipeline?market=Chandler`);
+    const r=await fetch(`${CONFIG.apiBase}/pipeline?market=Chandler`,user?{headers:authHeaders()}:{});
     const d=await r.json().catch(()=>({}));
     if(!r.ok||d.ok===false||d.sourceStatus==='unavailable'){
       pipelineRows=[];
@@ -431,6 +468,12 @@ function pipelineSummary(x){
 }
 
 function openPipelineLead(id){
+  if(!user){
+    RTAuth.set('revenuetrigger_return_to','/signals#pipeline');
+    openSignin();
+    toast('Create a free account or sign in to reveal Early Pipeline details.');
+    return;
+  }
   const x=pipelineRows.find(v=>String(v.id)===String(id));
   if(!x)return;
 
@@ -496,10 +539,12 @@ function renderPipeline(){
   const pipelineNotListedBtn=$('#pipelineCompanyToggle [data-value="not-listed"]');
   if(pipelineListedBtn)pipelineListedBtn.textContent=`Listed (${pipelineListedCount})`;
   if(pipelineNotListedBtn)pipelineNotListedBtn.textContent=`Not Listed (${pipelineNotListedCount})`;
-  const rows=baseRows.filter(x=>pipelineCompanyFilter==='listed'?Boolean(String(x.company||'').trim()):!String(x.company||'').trim());
+  const rows=user?baseRows.filter(x=>pipelineCompanyFilter==='listed'?Boolean(String(x.company||'').trim()):!String(x.company||'').trim()):baseRows;
 
   const coverageLabel=pipelineCompanyFilter==='listed'?'Listed':'Not Listed';
-  $('#pipelineStatus').textContent=`${pipelineSourceStatus==='degraded'?'Source degraded · ':''}${rows.length} ${coverageLabel} · ${baseRows.length} total at current stage/score`;
+  $('#pipelineStatus').textContent=user
+    ? `${pipelineSourceStatus==='degraded'?'Source degraded · ':''}${rows.length} ${coverageLabel} · ${baseRows.length} total at current stage/score`
+    : `Live preview · ${rows.length} early-stage opportunities shown`;
 
   list.innerHTML=rows.slice(0,120).map(x=>`
     <div class="pipeline-lead">
@@ -510,10 +555,10 @@ function renderPipeline(){
         <div class="pipeline-permit">${esc(x.permit||'—')}<span class="pipeline-inline-stage"> · ${esc(pipelineStageLabel(x.stage))}</span></div>
       </div>
       <div class="pipeline-stage">${esc(pipelineStageLabel(x.stage))}</div>
-      <div class="pipeline-company-cell">${x.company?`<strong>${esc(displayCompanyName(x.company))}</strong><small>${esc(x.companyRole||'Participant')}</small>`:'<span class="company-missing">Not listed</span>'}</div>
+      <div class="pipeline-company-cell">${user?(x.company?`<strong>${esc(displayCompanyName(x.company))}</strong><small>${esc(x.companyRole||'Participant')}</small>`:'<span class="company-missing">Not listed</span>'):'<span class="rt-public-lock">Sign in to reveal</span>'}</div>
       <div class="chips pipeline-seller">${(x.categories||[]).slice(0,2).map(c=>`<span class="chip">${esc(c)}</span>`).join(' ')}</div>
       <div class="pipeline-temperature ${x.temperature==='HOT'?'hot':x.temperature==='WARM'?'warm':x.temperature==='WATCH'?'watch':'low'}">${esc(x.temperature||'LOW')}</div>
-      <div class="pipeline-actions"><button class="view" onclick="openPipelineLead('${String(x.id).replace(/'/g,"\\'")}')">View</button></div>
+      <div class="pipeline-actions"><button class="view" onclick="openPipelineLead('${String(x.id).replace(/'/g,"\\'")}')">${user?'View':'Reveal'}</button></div>
     </div>
   `).join('') || '<div class="pipeline-empty">No pipeline opportunities match the current filters.</div>';
 }
