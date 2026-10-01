@@ -2,10 +2,10 @@
 (()=>{
  const host=document.getElementById('rt-header');if(!host)return;
  const app=location.pathname!=='/'&&location.pathname!=='/index.html';
- const links=app?[['Home','/'],['Opportunities','/signals'],['Early Pipeline','/signals#pipeline'],['Competitors','/competitors'],['Sources','/sources'],['Pricing','/#pricing'],['Saved','/signals?saved=1']]:[['Product','/#product'],['Solutions','/#solutions'],['Markets','/#markets'],['Pricing','/#pricing'],['Sources','/sources']];
+ const links=app?[['Home','/'],['Opportunities','/signals'],['Early Pipeline','/signals#pipeline'],['Competitors','/competitors'],['Sources','/sources'],['Pricing','/#pricing'],['Saved','/signals?saved=1']]:[['Opportunities','/signals'],['Competitors','/competitors'],['How it works','/#product'],['Markets','/#markets'],['Pricing','/#pricing'],['Sources','/sources']];
  const active=href=>href===(location.pathname+location.search+location.hash)||href===location.pathname&&!location.search&&!location.hash;
  const nav=links.map(([label,href])=>`<a href="${href}"${active(href)?' aria-current="page"':''}>${label}</a>`).join('');
- host.innerHTML=`<header class="rt-topbar"><nav class="rt-nav wrap" aria-label="${app?'Application':'Main'} navigation"><a href="/" class="rt-brand"><img src="/assets/RT-Logo-WHT-BG.svg?v=site-green" alt="Revenue Trigger"></a><div class="rt-links">${nav}</div><button id="accountBtn" class="rt-account" type="button">Sign in</button>${app?'':'<a class="rt-nav-cta" href="/signals">See opportunities <span aria-hidden="true">↗</span></a>'}<details class="rt-menu"><summary aria-label="Open navigation">Menu <span aria-hidden="true">☰</span></summary><div>${nav}${app?'':'<a href="/signals">See opportunities ↗</a>'}</div></details></nav></header>`;
+ host.innerHTML=`<header class="rt-topbar"><nav class="rt-nav wrap" aria-label="${app?'Application':'Main'} navigation"><a href="/" class="rt-brand"><img src="/assets/RT-Logo-WHT-BG.svg?v=site-green" alt="Revenue Trigger"></a><div class="rt-links">${nav}</div><button id="accountBtn" class="rt-account" type="button">Sign in</button><details class="rt-menu"><summary aria-label="Open navigation">Menu <span aria-hidden="true">☰</span></summary><div>${nav}</div></details></nav></header>`;
  document.getElementById('accountBtn').addEventListener('click',()=>{
   if(typeof window.openAccount==='function')window.openAccount();
   else if(typeof window.accountAction==='function')window.accountAction();
