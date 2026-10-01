@@ -2368,23 +2368,27 @@ async function listLeadsForUser(env,user,{limit,days}={}){
   const planMax=effective==='Territory'?500:effective==='Hunter'?250:80;
   const history=feedInt(days,ent.historyDays,1,ent.historyDays),max=feedInt(limit,planMax,1,planMax);
   const min=minimumScore(p?.min_score),industries=cleanIndustries(parseJson(p?.industries,['Commercial services']),ent.industryLimit),markets=cleanMarkets(parseJson(p?.markets,['Phoenix']),ent.marketLimit);
-  // Page the selected history/markets, not a globally ranked pool. Do not stop
-  // at a raw-row cap: clustering and industry matching can reduce any page.
-  const candidates=[],pageSize=500;let after=null;
-  while(true){
-    const sql=`SELECT * FROM leads WHERE datetime(event_date) >= datetime('now', ?)
-      AND market IN (${markets.map(()=>'?').join(',')})${min>0?' AND score >= ?':''}${after!==null?' AND id > ?':''}
-      ORDER BY id ASC LIMIT ?`;
-    const args=[`-${history} days`,...markets,...(min>0?[min]:[]),...(after!==null?[after]:[]),pageSize];
-    const rows=(await env.DB.prepare(sql).bind(...args).all()).results||[];
-    candidates.push(...rows.map(hydrateStoredLead));
-    if(rows.length<pageSize)break;
-    after=rows[rows.length-1].id;
+  // Exhaust every selected market. Clusters never cross market boundaries, so
+  // release each market's candidates after clustering instead of retaining six
+  // full hydrated populations. Top-K after matching is safe, never a raw-row cap.
+  const rank=(a,b)=>b.score-a.score||(Date.parse(b.date)||0)-(Date.parse(a.date)||0)||String(a.id).localeCompare(String(b.id));
+  let filtered=[];const pageSize=500;
+  for(const market of markets){
+    const candidates=[];let after=null;
+    while(true){
+      const sql=`SELECT *,datetime(event_date) AS feed_cursor_date FROM leads
+        WHERE datetime(event_date) >= datetime('now', ?) AND market = ?${min>0?' AND score >= ?':''}
+        ${after?'AND (datetime(event_date),id) > (?,?)':''}
+        ORDER BY datetime(event_date) ASC,id ASC LIMIT ?`;
+      const args=[`-${history} days`,market,...(min>0?[min]:[]),...(after?[after.date,after.id]:[]),pageSize];
+      const rows=(await env.DB.prepare(sql).bind(...args).all()).results||[];
+      for(const {feed_cursor_date,...row} of rows)candidates.push(hydrateStoredLead(row));
+      if(rows.length<pageSize)break;
+      const last=rows[rows.length-1];after={date:last.feed_cursor_date,id:last.id};
+    }
+    const matched=clusterLeads(candidates).filter(x=>x.score>=min&&x.categories?.some(c=>industries.includes(c)));
+    filtered=filtered.concat(matched).sort(rank).slice(0,max);
   }
-  const filtered=clusterLeads(candidates)
-    .filter(x=>x.score>=min&&x.categories?.some(c=>industries.includes(c)))
-    .sort((a,b)=>b.score-a.score||(Date.parse(b.date)||0)-(Date.parse(a.date)||0)||String(a.id).localeCompare(String(b.id)))
-    .slice(0,max);
   const savedRows=await env.DB.prepare('SELECT lead_id FROM saved_leads WHERE user_id=?').bind(user.id).all();const saved=new Set((savedRows.results||[]).map(x=>String(x.lead_id)));
   return {leads:filtered.map(x=>({...x,saved:saved.has(String(x.id))})),plan:effective,entitlements:ent,historyDays:history,preferences:{industries,minScore:min,markets,alertFrequency:p?.alert_frequency||ent.alert}};
 }
@@ -4921,7 +4925,7 @@ export default {
       }
       if(path==='/dashboard'&&request.method==='GET'){if(!user)return json({error:'unauthorized'},401,env);const d=await listLeadsForUser(env,user,{limit:url.searchParams.get('limit'),days:url.searchParams.get('days')});return json({...d,generatedAt:nowIso()},200,env);}
       if(path==='/preferences'&&request.method==='POST'){
-        if(!user)return json({error:'unauthorized'},401,env);const body=await request.json(),effective=userPlanActive(user),ent=PLANS[effective],industries=cleanIndustries(body.industries,ent.industryLimit),minScore=minimumScore(body.minScore),markets=cleanMarkets(body.markets,ent.marketLimit);let alert=ent.alert;if(effective==='Beta')alert='none';
+        if(!user)return json({error:'unauthorized'},401,env);const body=await request.json(),effective=userPlanActive(user),ent=PLANS[effective],industries=cleanIndustries(body.industries,ent.industryLimit),minScore=body.minScore,markets=cleanMarkets(body.markets,ent.marketLimit);if(!['number','string'].includes(typeof minScore)||String(minScore).trim()===''||!Number.isFinite(Number(minScore))||Number(minScore)<0||Number(minScore)>99)return json({error:'Choose a valid minimum score, or Any score.'},400,env);let alert=ent.alert;if(effective==='Beta')alert='none';
         await env.DB.prepare(`INSERT INTO preferences (user_id,industries,markets,min_score,alert_frequency,updated_at) VALUES (?,?,?,?,?,datetime('now')) ON CONFLICT(user_id) DO UPDATE SET industries=excluded.industries,markets=excluded.markets,min_score=excluded.min_score,alert_frequency=excluded.alert_frequency,updated_at=datetime('now')`).bind(user.id,JSON.stringify(industries),JSON.stringify(markets),minScore,alert).run();return json({ok:true,user:await publicUser(env,user)},200,env);
       }
       if(path==='/saved'&&request.method==='GET'){

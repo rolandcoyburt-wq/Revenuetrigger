@@ -16,9 +16,24 @@ const {mock,user}=require('./fixtures.cjs');
   await page.getByRole('button',{name:'Save preferences',exact:true}).click();await page.waitForSelector('#accountModal.open',{state:'hidden'});assert.equal(writes.at(-1).minScore,0);
   await page.reload();await page.waitForFunction(()=>document.querySelector('#leadList').textContent.includes('Any score'));
   // Onboarding preserves and saves all supported values, including numeric zero.
-  for(const score of [0,40,60,75,80]){
+  for(const score of [0,40,60,70,75,80]){
    current={...current,onboardingComplete:false,preferences:{...current.preferences,minScore:score}};await page.reload();await page.waitForSelector('#onboardingModal.open');assert.equal(await page.locator('#onboardingScore').inputValue(),String(score));
    await page.getByRole('button',{name:'Build my feed',exact:true}).click();await page.waitForSelector('#onboardingModal.open',{state:'hidden'});assert.equal(writes.at(-1).minScore,score);
+  }
+  for(const score of [70,0]){
+   current={...current,onboardingComplete:true,preferences:{...current.preferences,minScore:score}};
+   await page.goto('http://127.0.0.1:8765/signals?account=1');await page.waitForSelector('#accountModal.open');assert.equal(await page.locator('#prefScore').inputValue(),String(score));
+   if(score===70)assert.match(await page.locator('#prefScore option:checked').innerText(),/Current preference/);
+   await page.getByRole('button',{name:'Save preferences',exact:true}).click();await page.waitForSelector('#accountModal.open',{state:'hidden'});assert.equal(writes.at(-1).minScore,score);
+   await page.reload();await page.waitForSelector('#accountModal.open');assert.equal(await page.locator('#prefScore').inputValue(),String(score));
+  }
+  for(const onboarding of [false,true])for(const bad of ['', 'invalid', '100']){
+   current={...current,onboardingComplete:!onboarding,preferences:{...current.preferences,minScore:70}};
+   await page.goto('http://127.0.0.1:8765/signals'+(onboarding?'':'?account=1'));
+   const selector=onboarding?'#onboardingScore':'#prefScore';await page.waitForSelector(selector,{state:'visible'});
+   await page.locator(selector).evaluate((select,value)=>{select.add(new Option('Invalid test value',value));select.value=value},bad);
+   const before=writes.length;await page.getByRole('button',{name:onboarding?'Build my feed':'Save preferences',exact:true}).click();
+   assert.equal(writes.length,before);assert.equal(current.preferences.minScore,70);assert(await page.locator(onboarding?'#onboardingModal':'#accountModal').isVisible());
   }
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert(!calls.some(x=>/\/leads|\/refresh/.test(x.path)));await page.close();count++;console.log(`PASS ${plan} ${width}px: empty-state context, adjust action, Any score reload and five onboarding thresholds`);
  }}finally{await browser.close()}

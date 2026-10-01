@@ -35,7 +35,7 @@ try{
   sqlite.exec('DELETE FROM saved_leads');sqlite.prepare('INSERT INTO saved_leads VALUES (?,?)').run('qa',expected[0].id);
   const result=await core.listLeadsForUser({DB},activeUser,{limit:9999,days:999});
   assert.deepEqual(result.leads.map(x=>x.id),expected.map(x=>x.id));assert(result.leads[0].saved);assert(result.leads.length<=cap);assert.equal(result.historyDays,ent.historyDays);assert.equal(result.preferences.minScore,score);
-  const reads=queries.filter(q=>q.sql.includes('FROM leads'));assert(reads.length>=1);for(const q of reads){assert(q.sql.includes('market IN'));assert.equal(q.sql.includes('score >= ?'),score>0);assert.equal(q.args[0],`-${ent.historyDays} days`)}
+  const reads=queries.filter(q=>q.sql.includes('FROM leads'));assert(reads.length>=1);for(const q of reads){assert(q.sql.includes('market = ?'));assert.equal(q.sql.includes('score >= ?'),score>0);assert.equal(q.args[0],`-${ent.historyDays} days`)}
   if(plan==='Scout')assert(reads.length>1,'must page beyond industry mismatches');
  });
  for(const plan of ['Scout','Hunter','Territory'])await check(`${plan} result cap and history boundary`,async()=>{
@@ -47,13 +47,25 @@ try{
   d=await core.listLeadsForUser({DB},activeUser,{limit:5,days:1});assert.equal(d.leads.length,0);assert.equal(d.historyDays,1);
   d=await core.listLeadsForUser({DB},activeUser,{limit:5});assert.equal(d.leads.length,5);
  });
- for(const score of [0,40,60,75,80])await check(`preferences route persists and reloads score ${score}`,async()=>{
+ for(const score of [0,40,60,70,75,80])await check(`preferences route persists and reloads score ${score}`,async()=>{
   prefs('Territory',70);const response=await core.default.fetch(new Request('https://test.invalid/api/preferences',{method:'POST',headers:{Authorization:'Bearer test','Content-Type':'application/json'},body:JSON.stringify({industries,markets,minScore:score})}),{DB});assert.equal(response.status,200);const d=await response.json();assert.equal(d.user.preferences.minScore,score);assert.equal((await core.publicUser({DB},activeUser)).preferences.minScore,score);
+ });
+ for(const score of ['', ' ', 'invalid', null, true, -1, 100])await check(`preferences rejects invalid score ${JSON.stringify(score)} without overwrite`,async()=>{
+  prefs('Territory',70);const response=await core.default.fetch(new Request('https://test.invalid/api/preferences',{method:'POST',headers:{Authorization:'Bearer test','Content-Type':'application/json'},body:JSON.stringify({industries,markets,minScore:score})}),{DB});assert.equal(response.status,400);assert.equal((await core.publicUser({DB},activeUser)).preferences.minScore,70);
  });
  await check('Any score includes low-score record and paid entitlement truncation is preserved',async()=>{
   sqlite.exec('DELETE FROM leads');add(low);prefs('Scout',0);let d=await core.listLeadsForUser({DB},activeUser);assert.equal(d.leads.length,1);assert(d.leads[0].score<70);
   sqlite.prepare('UPDATE preferences SET markets=?,industries=?').run(JSON.stringify(markets),JSON.stringify(industries));d=await core.listLeadsForUser({DB},activeUser);assert.equal(d.preferences.markets.length,1);assert.equal(d.preferences.industries.length,1);
  });
  await check('inactive paid subscription retains Beta limits',async()=>{prefs('Territory',0);activeUser.subscription_status='canceled';const d=await core.listLeadsForUser({DB},activeUser,{limit:500,days:90});assert.equal(d.plan,'Beta');assert.equal(d.historyDays,7);assert.equal(d.preferences.markets.length,1);assert.equal(d.preferences.industries.length,1)});
+ await check('per-market paging preserves cross-page clusters and global ranking',async()=>{
+  sqlite.exec('DELETE FROM leads');prefs('Territory',0);
+  for(let i=0;i<1200;i++){const x=row('cluster'+i,i%2?'Dallas':'Fort Worth',industries,1+i%4);x.address='123 Same Project Road';if(i%3===0)x.event_date=x.event_date.replace('T',' ').replace('Z','');add(x)}
+  const raw=sqlite.prepare('SELECT * FROM leads ORDER BY id ASC').all();
+  const expected=core.clusterLeads(raw.map(core.hydrateStoredLead)).sort((a,b)=>b.score-a.score||(Date.parse(b.date)||0)-(Date.parse(a.date)||0)||String(a.id).localeCompare(String(b.id)));
+  const result=await core.listLeadsForUser({DB},activeUser);
+  assert.deepEqual(result.leads.map(x=>[x.id,x.relatedPermitCount]),expected.map(x=>[x.id,x.relatedPermitCount]));assert.equal(result.leads.length,2);
+  assert(result.leads.every(x=>!('feed_cursor_date' in x)));
+ });
  console.log(`${checks}/${checks} personalized-feed checks passed; in-memory SQLite only.`);
 }finally{globalThis.fetch=originalFetch;sqlite.close()}
