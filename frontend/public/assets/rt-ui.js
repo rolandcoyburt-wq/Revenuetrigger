@@ -1,6 +1,6 @@
 /* Presentation only: temperature, valuation and intelligence remain API-owned. */
 window.RTUI=(()=>{
- const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const esc=v=>RTFormat.normalizeDisplayText(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const tempClass=t=>({HOT:'hot',WARM:'warm',WATCH:'watch',LOW:'low'}[t]||'low');
  const badge=x=>`<span class="rt-temperature ${tempClass(x.temperature)}">${esc(x.temperature||'Unrated')}</span>`;
  const listed=x=>RTFormat.displayCompanyName(x.company)!=='Not listed';
