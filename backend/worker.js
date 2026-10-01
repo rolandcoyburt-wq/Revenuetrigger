@@ -13,6 +13,9 @@
 //   STRIPE_PRICE_SCOUT, STRIPE_PRICE_HUNTER, STRIPE_PRICE_TERRITORY
 //   DEV_AUTH_BYPASS=false
 
+import { fetchFortWorthPermits } from './markets/dfw/fort-worth.js';
+import { toLeadInput } from './markets/dfw/normalize.js';
+
 const PHX_PERMITS='https://maps.phoenix.gov/pub/rest/services/Public/Planning_Permit/MapServer/1/query';
 const TEMPE_PERMITS='https://services.arcgis.com/lQySeXwbBg53XWDi/ArcGIS/rest/services/building_permits/FeatureServer/0/query';
 const TUCSON_PRO_BASE='https://pro.tucsonaz.gov';
@@ -22,15 +25,16 @@ const MESA_PERMITS='https://data.mesaaz.gov/resource/m2kk-w2hz.json';
 const CHANDLER_ACTIVE='https://gis.chandleraz.gov/appsanonymous/rest/services/DevelopmentServices/DSActiveProjects/MapServer';
 const CHANDLER_CONSTRUCTION='https://gis.chandleraz.gov/portalserver/rest/services/EM/DevelopmentServices/MapServer/56';
 const CHANDLER_ACCELA_PERMITS='https://gis.chandleraz.gov/appsanonymous/rest/services/Tolemi/Building_Blocks/MapServer/0/query';
-const MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler'];
-const LIVE_MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler'];
+const MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler','Fort Worth'];
+const LIVE_MARKETS=['Phoenix','Tempe','Tucson','Scottsdale','Mesa','Chandler','Fort Worth'];
 const SOURCE_STATUS={
   Phoenix:{status:'live',cadence:'City feed',source:'City of Phoenix Planning & Development'},
   Tempe:{status:'live',cadence:'Published weekly',source:'City of Tempe Building Safety'},
   Tucson:{status:'live',cadence:'Hourly RevenueTrigger discovery',source:'City of Tucson Property Research Online (PRO)'},
   Scottsdale:{status:'live',cadence:'Official CSV permit report',source:'City of Scottsdale Building Permit Reports'},
   Mesa:{status:'live',cadence:'City open-data API',source:'City of Mesa Data Hub — Building Permits'},
-  Chandler:{status:'live',cadence:'Official Accela/ArcGIS permit feed + Early Pipeline',source:'City of Chandler Accela permit layer + DSActiveProjects'}
+  Chandler:{status:'live',cadence:'Official Accela/ArcGIS permit feed + Early Pipeline',source:'City of Chandler Accela permit layer + DSActiveProjects'},
+  'Fort Worth':{status:'live',cadence:'Updated hourly during business hours',source:'City of Fort Worth Development Services — Development Permits Open Data'}
 };
 const INDUSTRIES=['Commercial services','HVAC','Electrical','Plumbing','Roofing','Landscaping','Security','Signage'];
 const PLANS={
@@ -1787,6 +1791,27 @@ async function fetchChandler(days=7,limit=500){
   Object.defineProperty(out,'_meta',{value:{stageStats},enumerable:false});
   return out;
 }
+async function fetchFortWorth(days=7,limit=500){
+  const safeLimit=Math.max(1,Number(limit)||500);
+  const pageSize=Math.min(1000,Math.max(250,safeLimit));
+  const maxPages=Math.max(1,Math.min(5,Math.ceil(safeLimit/pageSize)+1));
+  const records=await fetchFortWorthPermits({
+    sinceDays:Math.max(1,Number(days)||7),
+    pageSize,
+    maxPages
+  });
+  return records
+    .map(record=>{
+      const input=toLeadInput(record);
+      return leadFrom({
+        ...input,
+        source:'City of Fort Worth Development Services — Development Permits Open Data'
+      });
+    })
+    .sort((a,b)=>b.score-a.score||new Date(b.date)-new Date(a.date))
+    .slice(0,safeLimit);
+}
+
 async function fetchMarket(market,days=7,limit=500,env=null){
   if(market==='Phoenix')return fetchPhoenix(days,limit);
   if(market==='Tempe')return fetchTempe(days,limit);
@@ -1794,6 +1819,7 @@ async function fetchMarket(market,days=7,limit=500,env=null){
   if(market==='Scottsdale')return fetchScottsdale(days,limit);
   if(market==='Mesa')return fetchMesa(days,limit);
   if(market==='Chandler')return fetchChandlerAccelaPermits(days,limit);
+  if(market==='Fort Worth')return fetchFortWorth(days,limit);
   return [];
 }
 async function persist(env,leads){
@@ -2120,7 +2146,7 @@ async function handleStripeWebhook(request,env){
   await env.DB.prepare(`INSERT INTO billing_events (event_id,type,processed_at) VALUES (?,?,datetime('now'))`).bind(evt.id,evt.type).run();return new Response('ok');
 }
 
-function marketFromSource(source=''){const s=String(source);if(s.includes('Tempe'))return 'Tempe';if(s.includes('Tucson'))return 'Tucson';if(s.includes('Scottsdale'))return 'Scottsdale';if(s.includes('Mesa'))return 'Mesa';if(s.includes('Chandler'))return 'Chandler';return 'Phoenix';}
+function marketFromSource(source=''){const s=String(source);if(s.includes('Tempe'))return 'Tempe';if(s.includes('Tucson'))return 'Tucson';if(s.includes('Scottsdale'))return 'Scottsdale';if(s.includes('Mesa'))return 'Mesa';if(s.includes('Chandler'))return 'Chandler';if(s.includes('Fort Worth')||s.includes('fort_worth'))return 'Fort Worth';return 'Phoenix';}
 function cleanMarkets(items,limit){const out=[];for(const x of Array.isArray(items)?items:[]){if(MARKETS.includes(x)&&!out.includes(x))out.push(x);if(out.length>=limit)break;}return out.length?out:['Phoenix'];}
 function userPlanActive(user){return ['active','trialing'].includes(user.subscription_status||'')&&PLANS[user.plan] ? user.plan : 'Beta';}
 function cleanIndustries(items,limit){const out=[];for(const x of Array.isArray(items)?items:[]){if(INDUSTRIES.includes(x)&&!out.includes(x))out.push(x);if(out.length>=limit)break;}return out.length?out:['Commercial services'];}
@@ -4562,7 +4588,7 @@ export default {
         if(requested.length===1&&LIVE_MARKETS.includes(requested[0])&&!filtered.length){
           try{filtered=clusterLeads(await fetchMarket(requested[0],days,limit,env));}catch{}
         }
-        return json({leads:filtered.slice(0,limit),markets,source:'Arizona municipal public permit data',generatedAt:nowIso()},200,env);
+        return json({leads:filtered.slice(0,limit),markets,source:'Municipal public permit data',generatedAt:nowIso()},200,env);
       }
       if(path==='/refresh'&&request.method==='POST'){
         const token=(request.headers.get('authorization')||'').replace(/^Bearer\s+/i,'');if(!env.ADMIN_TOKEN||token!==env.ADMIN_TOKEN)return json({error:'unauthorized'},401,env);const result=await refresh(env,7);return json({ok:true,count:result.leads.length,markets:result.markets},200,env);
