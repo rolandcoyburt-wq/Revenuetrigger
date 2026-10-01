@@ -25,8 +25,8 @@ STRIPE_PRICE_TERRITORY = "price_1UIfKRQtkZRdtmROuFOtSulQ"
 crons = ["17 * * * *"]
 
 [previews.vars]
-ALLOWED_ORIGIN = "https://redesign-signal-command-v7-signalhound-phoenix.rolandcoyburt.workers.dev"
-FRONTEND_URL = "https://redesign-signal-command-v7-signalhound-phoenix.rolandcoyburt.workers.dev"
+ALLOWED_ORIGIN = "https://integration-frontend-fort-worth-v1-signalhound-phoenix.rolandcoyburt.workers.dev"
+FRONTEND_URL = "https://integration-frontend-fort-worth-v1-signalhound-phoenix.rolandcoyburt.workers.dev"
 DEV_AUTH_BYPASS = "false"
 
 # Empty sender disables email delivery in the preview.
