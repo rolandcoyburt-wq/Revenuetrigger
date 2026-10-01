@@ -261,7 +261,7 @@ function xmlTextFromInlineString(cellXml) {
 
 function parseRelationships(xml = '') {
   const byId = new Map();
-  for (const m of String(xml).matchAll(/<Relationship\b[^>]*\/>/gi)) {
+  for (const m of String(xml).matchAll(/<Relationship\b[^>]*>/gi)) {
     const attrs = parseAttributes(m[0]);
     if (attrs.Id && attrs.Target) byId.set(attrs.Id, attrs.Target);
   }
@@ -320,9 +320,9 @@ export async function parseDallasNowXlsx(arrayBuffer) {
   }
   const workbookXml = decoder.decode(entries.get('xl/workbook.xml'));
   const workbookRelationships = parseRelationships(decoder.decode(entries.get('xl/_rels/workbook.xml.rels')));
-  const sheetDeclared = [...workbookXml.matchAll(/<sheet\b[^>]*\/>/g)].some(m => {
+  const sheetDeclared = [...workbookXml.matchAll(/<sheet\b[^>]*>/g)].some(m => {
     const target = workbookRelationships.get(parseAttributes(m[0])['r:id']);
-    return target === 'worksheets/sheet1.xml' || target === '/xl/worksheets/sheet1.xml';
+    return target && new URL(target, 'https://xlsx.invalid/xl/workbook.xml').href === 'https://xlsx.invalid/xl/worksheets/sheet1.xml';
   });
   if (!sheetDeclared) throw new Error('DallasNow XLSX worksheet relationship missing');
   validateXml(sheetXml, 'worksheet');
