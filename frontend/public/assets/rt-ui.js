@@ -42,7 +42,7 @@ window.RTUI=(()=>{
   let notice=requestError?'The feed request contains an unsupported market. Check the market selection or configuration.':{fresh:'',stale:'Stored opportunities are shown. Some stored market data may be delayed; verify timing before acting.',partial:'Available stored opportunities are shown. Some stored market data may be delayed or missing.',empty:'No stored opportunities are available for the selected markets and time window.',unavailable:'Current opportunities are temporarily unavailable. Please try again shortly.'}[state];
   if(!rows.length&&['partial','stale'].includes(state))notice='Some stored market data may be delayed or missing. No stored opportunities are available in this window.';
   if(['partial','stale'].includes(state)&&markets.length)notice+=' Stored data: '+markets.map(x=>`${x.market} (${x.state})`).join(', ')+'.';
-  return {state,rows,label,notice,requestError,freshness:{thresholdMinutes:data?.freshness?.thresholdMinutes,markets}};
+  return {state,rows,label,notice,requestError,publicPreview:Boolean(data?.publicPreview),counts:data?.counts||{},freshness:{thresholdMinutes:data?.freshness?.thresholdMinutes,markets}};
  }
  async function readFeed(query){
   try{const response=await fetch(RTConfig.apiBase+'/feed?'+query);return feedState(await response.json(),response.status)}catch{return feedState(null)}
