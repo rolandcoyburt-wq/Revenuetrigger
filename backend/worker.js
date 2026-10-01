@@ -1919,6 +1919,23 @@ function feedOverallState(marketStates=[]){
   return 'partial';
 }
 
+function publicOpportunityTeaser(x={}){
+  return {
+    id:x.id,
+    market:x.market||marketFromSource(x.source)||'',
+    name:x.name||'Commercial activity',
+    address:x.market?x.market:'Market available after sign in',
+    date:x.date||x.event_date||null,
+    score:Number(x.score||0),
+    temperature:x.temperature||temperatureForScore(Number(x.score||0)),
+    value:Number(x.value||0),
+    categories:Array.isArray(x.categories)?x.categories.slice(0,4):[],
+    permitStatus:x.permitStatus||x.permit_status||null,
+    company:null,
+    publicPreview:true
+  };
+}
+
 async function readStoredFeed(env,{days=7,limit=120,markets=LIVE_MARKETS}={}){
   if(!env.DB)throw new Error('D1 binding unavailable');
 
@@ -4300,6 +4317,7 @@ export default {
       }
       if(path==='/sources'&&request.method==='GET')return json({markets:SOURCE_STATUS,liveMarkets:LIVE_MARKETS,plannedMarkets:MARKETS.filter(m=>!LIVE_MARKETS.includes(m)),generatedAt:nowIso()},200,env);
       if(path==='/pipeline'&&request.method==='GET'){
+        const pipelineUser=await authUser(request,env);
         const market=(url.searchParams.get('market')||'Chandler').trim();
         if(market!=='Chandler')return json({error:'pipeline market not supported'},400,env);
 
@@ -4676,12 +4694,15 @@ export default {
             count:(contractorResult.rows||[]).length,
             error:contractorResult.error||null
           },
-          pipeline:rows
+          pipeline:pipelineUser?rows:rows.slice(0,3).map(publicOpportunityTeaser),
+          publicPreview:!pipelineUser,
+          publicAvailable:rows.length
         },200,env);
       }
       if(path==='/feed'&&request.method==='GET'){
         const days=feedInt(url.searchParams.get('days'),7,1,30);
-        const limit=feedInt(url.searchParams.get('limit'),120,1,200);
+        const requestedLimit=feedInt(url.searchParams.get('limit'),8,1,200);
+        const publicLimit=Math.min(requestedLimit,8);
         const parsedMarkets=feedMarkets(url.searchParams.has('markets')?url.searchParams.get('markets'):null);
         if(!parsedMarkets.ok){
           return feedJson({
@@ -4693,15 +4714,32 @@ export default {
           },400,env);
         }
         try{
-          const data=await readStoredFeed(env,{days,limit,markets:parsedMarkets.markets});
-          return feedJson(data,200,env);
+          // /feed is the public proof layer. Read a wider stored pool so we can tell
+          // visitors how much activity exists, but only return a small redacted sample.
+          // Signed-in customers receive their full personalized feed from /dashboard.
+          const data=await readStoredFeed(env,{days,limit:Math.max(120,publicLimit),markets:parsedMarkets.markets});
+          const available=Number(data?.counts?.clusteredAvailable||data?.leads?.length||0);
+          const leads=(data.leads||[]).slice(0,publicLimit).map(publicOpportunityTeaser);
+          return feedJson({
+            ...data,
+            leads,
+            publicPreview:true,
+            query:{days,limit:publicLimit,markets:parsedMarkets.markets},
+            counts:{
+              ...(data.counts||{}),
+              returned:leads.length,
+              publicReturned:leads.length,
+              publicLimit,
+              available
+            }
+          },200,env);
         }catch(e){
           return feedJson({
             ok:false,
             state:'unavailable',
             leads:[],
             markets:parsedMarkets.markets,
-            query:{days,limit,markets:parsedMarkets.markets},
+            query:{days,limit:publicLimit,markets:parsedMarkets.markets},
             error:'stored_feed_unavailable',
             message:'Stored opportunity data is temporarily unavailable.',
             generatedAt:nowIso()
