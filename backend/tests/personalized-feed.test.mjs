@@ -8,8 +8,8 @@ const sqlite=new DatabaseSync(':memory:');
 sqlite.exec(`CREATE TABLE leads(id TEXT PRIMARY KEY,name TEXT,address TEXT,event_date TEXT,company TEXT,scope TEXT,score INTEGER,categories TEXT,value INTEGER,temperature TEXT,permit TEXT,permit_status TEXT,official_value REAL,source TEXT,market TEXT,updated_at TEXT,source_provenance TEXT);
 CREATE TABLE preferences(user_id TEXT PRIMARY KEY,industries TEXT,markets TEXT,min_score INTEGER,alert_frequency TEXT,updated_at TEXT);
 CREATE TABLE saved_leads(user_id TEXT,lead_id TEXT);`);
-let activeUser,queries=[];
-const DB={prepare(sql){return {args:[],bind(...args){this.args=args;return this},async first(){if(sql.includes('FROM sessions'))return activeUser;return sqlite.prepare(sql).get(...this.args)||null},async all(){queries.push({sql,args:this.args});return {results:sqlite.prepare(sql).all(...this.args)}},async run(){if(sql.includes('UPDATE sessions'))return {success:true};return sqlite.prepare(sql).run(...this.args)}}}};
+let activeUser,queries=[],referenceNow=null;
+const DB={prepare(sql){return {args:[],bind(...args){this.args=args;return this},async first(){if(sql.includes('FROM sessions'))return activeUser;return sqlite.prepare(sql).get(...this.args)||null},async all(){queries.push({sql,args:this.args});const frozen=referenceNow?sql.replace("datetime('now', ?)",`datetime('${referenceNow}', ?)`):sql;return {results:sqlite.prepare(frozen).all(...this.args)}},async run(){if(sql.includes('UPDATE sessions'))return {success:true};return sqlite.prepare(sql).run(...this.args)}}}};
 const markets=['Phoenix','Tempe','Mesa','Chandler','Dallas','Fort Worth'];
 const industries=['Commercial services','HVAC','Electrical','Plumbing','Roofing','Landscaping','Security','Signage'];
 const insert=sqlite.prepare('INSERT INTO leads VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
@@ -66,6 +66,27 @@ try{
   const result=await core.listLeadsForUser({DB},activeUser);
   assert.deepEqual(result.leads.map(x=>[x.id,x.relatedPermitCount]),expected.map(x=>[x.id,x.relatedPermitCount]));assert.equal(result.leads.length,2);
   assert(result.leads.every(x=>!('feed_cursor_date' in x)));
+ });
+ for(const plan of ['Scout','Hunter','Territory'])for(const score of [0,40,60,75,80])await check(`${plan}/${score} exhaustive reference: exact history, equal-date pages, clusters, sparse industries and cap`,async()=>{
+  sqlite.exec('DELETE FROM leads');prefs(plan,score);
+  referenceNow=sqlite.prepare("SELECT datetime('now') AS t").get().t;
+  const now=Date.parse(referenceNow.replace(' ','T')+'Z'),days=core.PLANS[plan].historyDays,cap=plan==='Scout'?80:plan==='Hunter'?250:500;
+  const selected=markets.slice(0,core.PLANS[plan].marketLimit),chosen=industries.slice(0,core.PLANS[plan].industryLimit);
+  const fixedDate=new Date(now-86400000).toISOString();
+  for(let i=0;i<3000;i++){const x=row('unrelated'+i,'Tucson',industries,1,99);x.event_date=fixedDate;add(x)}
+  for(let i=0;i<1200;i++){const x=row('sparse'+i,'Phoenix',i%100===0?chosen:[]);x.event_date=fixedDate;add(x)}
+  for(let i=0;i<cap+20;i++){const x=row('eligible'+i,selected[i%selected.length],chosen);x.event_date=fixedDate;add(x)}
+  // Duplicate project records straddle equal-date keyset pages; unrelated markets stay distinct.
+  for(let i=0;i<1100;i++){const x=row('group'+i,selected[i%selected.length],chosen);x.address='111 Shared Project Road';x.event_date=i%2?fixedDate:fixedDate.replace('T',' ').replace('Z','');add(x)}
+  for(const delta of [-1000,0,1000]){const x=row('boundary'+(delta+1000),'Phoenix',chosen);x.event_date=new Date(now-days*86400000+delta).toISOString();add(x)}
+  const all=sqlite.prepare("SELECT * FROM leads WHERE datetime(event_date)>=datetime(?,?) ORDER BY id ASC").all(referenceNow,`-${days} days`);
+  assert(!all.some(x=>x.id==='boundary0'));assert(all.some(x=>x.id==='boundary1000'));assert(all.some(x=>x.id==='boundary2000'));
+  const expected=core.clusterLeads(all.filter(x=>selected.includes(x.market)&&(score===0||x.score>=score)).map(core.hydrateStoredLead))
+   .filter(x=>x.score>=score&&x.categories.some(c=>chosen.includes(c)))
+   .sort((a,b)=>b.score-a.score||(Date.parse(b.date)||0)-(Date.parse(a.date)||0)||String(a.id).localeCompare(String(b.id))).slice(0,cap);
+  const result=await core.listLeadsForUser({DB},activeUser);
+  assert.deepEqual(result.leads.map(x=>x.id),expected.map(x=>x.id));assert.equal(result.leads.length,cap);assert.equal(result.historyDays,days);
+  assert(queries.filter(q=>q.sql.includes('FROM leads')).length>1);referenceNow=null;
  });
  console.log(`${checks}/${checks} personalized-feed checks passed; in-memory SQLite only.`);
 }finally{globalThis.fetch=originalFetch;sqlite.close()}
