@@ -167,7 +167,7 @@ function openLead(id){
     ["Score",x.score+' / 100'],['Data confidence',conf?conf+'%':'—'],['Temperature',x.temperature||'—'],
     ['Estimated service opportunity',approxMoney(x.value)],['Official permit valuation',x.officialPermitValue?money(x.officialPermitValue):'Not published'],
     ['Market',x.market||'Phoenix'],['Permit',x.permit||'—'],['Permit status',x.permitStatus||x.permit_status||'—'],
-    ['Address',x.address||((x.market||'Phoenix')+', AZ')],['Company on permit',displayCompanyName(x.company)],['Detected',new Date(x.date).toLocaleString()],
+    ['Address',RTFormat.displayAddress(x.address||((x.market||'Phoenix')+', AZ'))],['Company on permit',displayCompanyName(x.company)],['Detected',new Date(x.date).toLocaleString()],
     ['Seller fit',fitText],['Source',x.source||'Municipal public permit data'],['Last checked',checked]
   ].map(([a,b])=>`<div class="detail"><small>${esc(a)}</small><strong>${esc(b)}</strong></div>`).join('');
 
@@ -188,10 +188,10 @@ function openLead(id){
     <div class="action-card"><small>Buying window</small><strong>${esc(ai.buyingWindow?.label||'—')}</strong><span class="action-reason">${esc(ai.buyingWindow?.detail||'')}</span></div>
     <div class="action-card"><small>Momentum</small><strong>${esc(ai.momentum?.label||'—')}</strong><span class="action-reason">${esc(ai.velocity?.label||'')} ${esc(ai.velocity?.detail||'')}</span></div>
   </div>`;
-  const whyNow=ai.whyNow?`<div class="action-callout"><b>WHY NOW</b><span class="action-reason">${esc(ai.whyNow)}</span></div>`:'';
-  const nextAction=ai.nextBestAction?`<div class="action-callout"><b>RECOMMENDED ACTION — ${esc(ai.nextBestAction.action)}</b><span class="action-reason">${esc(ai.nextBestAction.reason)}</span></div>`:'';
+  const whyNow=RTUI.whyNow(x);
+  const nextAction=ai.nextBestAction?`<div class="action-callout"><b>RECOMMENDED ACTION — ${esc(RTFormat.displayLabel(ai.nextBestAction.action))}</b><span class="action-reason">${esc(RTFormat.intelligenceText(ai.nextBestAction.reason,x))}</span></div>`:'';
 
-  $('#mWhy').innerHTML=`<strong>Full permit description:</strong><br>${esc(x.scope||'Recent permit activity suggests an upcoming spend event.')}<br>${actionGrid}${whyNow}${nextAction}<br>${lines?`<strong>Score breakdown</strong><br>${lines}`:''}${confidence}${lifecycle}${cluster}<br><span style="color:#8fa59b">Action Intelligence is a RevenueTrigger inference from observed public activity, not a guarantee of vendor selection or project timing.</span>`;
+  $('#mWhy').innerHTML=`<strong>Full permit description:</strong><br>${esc(x.scope||'Recent permit activity suggests an upcoming spend event.')}<br>${actionGrid}${whyNow}${nextAction}<br>${lines?`<strong>Score breakdown</strong><br>${lines}`:''}${confidence}${lifecycle}${cluster}<br><span style="color:#8fa59b">Action Intelligence is a Revenue Trigger inference from observed public activity, not a guarantee of vendor selection or project timing.</span>`;
   $('#mSave').style.display=user?'inline-block':'none';$('#mSave').textContent=x.saved?'★ Saved':'☆ Save opportunity';
   currentFeedback={relevance:null,outcome:null};renderLeadFeedback();openModal('leadModal');loadLeadFeedback()
 }
@@ -215,7 +215,7 @@ async function loadChanges(){
         msg.textContent=`${count} new ${count===1?'opportunity':'opportunities'} since yesterday — sign in to see the details.`;
         $('#changedMoves').innerHTML='<div class="changed-locked-preview" aria-hidden="true"><span></span><span></span></div><button class="changed-signin" type="button" onclick="openSignin()">Sign in to view changes →</button>';
       }else{
-        msg.textContent='No new WATCH+ opportunities since yesterday. Sign in to personalize what RevenueTrigger watches for you.';
+        msg.textContent='No new WATCH+ opportunities since yesterday. Sign in to personalize what Revenue Trigger watches for you.';
       }
     }catch{
       msg.textContent='Sign in to see the activity that deserves your attention today.';
@@ -391,7 +391,7 @@ async function loadPipeline(){
     if(!r.ok||d.ok===false||d.sourceStatus==='unavailable'){
       pipelineRows=[];
       if(status)status.textContent='Chandler source temporarily unavailable';
-      if(list)list.innerHTML=`<div class="pipeline-empty pipeline-source-alert">${esc(d.message||'The City of Chandler Early Pipeline source is temporarily unavailable. RevenueTrigger will not substitute live permit records for pre-construction signals.')}</div>`;
+      if(list)list.innerHTML=`<div class="pipeline-empty pipeline-source-alert">${esc(d.message||'The City of Chandler Early Pipeline source is temporarily unavailable. Revenue Trigger will not substitute live permit records for pre-construction signals.')}</div>`;
       return;
     }
     pipelineRows=d.pipeline||[];pipelineSourceStatus=d.sourceStatus||'live';

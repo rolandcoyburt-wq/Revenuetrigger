@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#020806">
-<title>Competitor Intelligence | RevenueTrigger</title>
-<meta name="description" content="Search contractor and company activity tied to public permit data across RevenueTrigger markets.">
+<title>Competitor Intelligence | Revenue Trigger</title>
+<meta name="description" content="Search contractor and company activity tied to public permit data across Revenue Trigger markets.">
 <link rel="icon" type="image/svg+xml" href="/assets/revenuetrigger-icon.svg?v=site-green">
 
 <style>
@@ -520,7 +520,7 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
         <span class="hero-line hero-line-2"><em>active</em> in</span>
         <span class="hero-line hero-line-3">your market<span class="rt-green-period">.</span></span>
       </h1>
-      <p>Search contractors and companies tied to public permit activity, compare recent project activity, and see where competitors are showing up across RevenueTrigger markets.</p>
+      <p>Search contractors and companies tied to public permit activity, compare recent project activity, and see where competitors are showing up across Revenue Trigger markets.</p>
       <div class="hero-actions">
         <a class="btn btn-primary" href="#competitor-tool">Explore competitor activity ↗</a>
         <a class="btn btn-secondary" href="/signals">Back to opportunities</a>
@@ -569,8 +569,8 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
         </select>
         <button class="btn btn-primary" id="competitorRun">Search competitors</button>
       </div>
-      <div class="competitor-note" id="competitorNote">Sign in to explore contractor activity across RevenueTrigger markets.</div>
-      <div class="competitor-list" id="competitorList"><div class="competitor-empty">Competitor Intelligence is available to signed-in RevenueTrigger users.</div></div>
+      <div class="competitor-note" id="competitorNote">Sign in to explore contractor activity across Revenue Trigger markets.</div>
+      <div class="competitor-list" id="competitorList"><div class="competitor-empty">Competitor Intelligence is available to signed-in Revenue Trigger users.</div></div>
       <div class="competitor-more" id="competitorMore">
         <button class="btn btn-secondary" id="competitorLoadMore">Load more competitors</button>
         <div class="competitor-countline" id="competitorCountline"></div>
@@ -583,7 +583,7 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
 <section class="rt-final"><div class="wrap"><h2>The next opportunity<br>starts with a signal.</h2><a class="rt-button green" href="/signals">See opportunities <span aria-hidden="true">↗</span></a></div></section>
 </main>
 
-<footer><div class="wrap" style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap"><span>RevenueTrigger</span><span>Public-data opportunity intelligence</span></div></footer>
+<footer><div class="wrap" style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap"><span>Revenue Trigger</span><span>Public-data opportunity intelligence</span></div></footer>
 
 <div class="modal" id="competitorProfileModal">
   <div class="modal-card" style="width:min(860px,100%);max-height:92vh;overflow:auto">
@@ -597,7 +597,7 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
 
 <div class="modal" id="signinModal">
   <div class="modal-card">
-    <div class="modal-top"><div><span class="eyebrow">Passwordless access</span><h2 style="margin:12px 0 0">Sign in to RevenueTrigger</h2></div><button class="close" onclick="closeModal('signinModal')">×</button></div>
+    <div class="modal-top"><div><span class="eyebrow">Passwordless access</span><h2 style="margin:12px 0 0">Sign in to Revenue Trigger</h2></div><button class="close" onclick="closeModal('signinModal')">×</button></div>
     <p style="color:#98aaa2">We’ll email you a secure one-time link. No password required.</p>
     <form id="signinForm"><div class="formrow"><label>Email</label><input id="signinEmail" required type="email" placeholder="you@company.com"></div><button class="btn btn-primary" style="width:100%;margin-top:14px">Send sign-in link</button></form>
     <div class="notice" id="signinNotice" style="display:none"></div>
@@ -785,7 +785,7 @@ async function loadRelationshipIntelligence(company){
 }
 function renderCompetitors(){
   const el=$('#competitorList'); if(!el)return;
-  if(!user){el.innerHTML='<div class="competitor-empty">Sign in to explore contractor activity across RevenueTrigger markets.</div>';return}
+  if(!user){el.innerHTML='<div class="competitor-empty">Sign in to explore contractor activity across Revenue Trigger markets.</div>';return}
   if(!competitorData.length){el.innerHTML='<div class="competitor-empty">No matching contractor activity found for these filters.</div>';return}
   el.innerHTML=competitorData.map((c,i)=>`
   <div class="competitor-row" id="competitorRow${i}">
