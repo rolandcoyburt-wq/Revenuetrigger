@@ -518,7 +518,7 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
       <h1 class="competitor-hero-title">
         <span class="hero-line hero-line-1">See who is</span>
         <span class="hero-line hero-line-2"><em>active</em> in</span>
-        <span class="hero-line hero-line-3">your market.</span>
+        <span class="hero-line hero-line-3">your market<span class="rt-green-period">.</span></span>
       </h1>
       <p>Search contractors and companies tied to public permit activity, compare recent project activity, and see where competitors are showing up across RevenueTrigger markets.</p>
       <div class="hero-actions">
@@ -532,25 +532,12 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
       <div class="console-head">
         <div class="console-head-title">
           <img class="console-head-logo" src="/assets/revenuetrigger-logo.svg?v=site-green" alt="">
-          <span>MARKET ACTIVITY RADAR</span>
+          <span>MARKET INTELLIGENCE</span>
           <span class="console-head-light" aria-hidden="true"></span>
         </div>
-        <span class="console-live"><span class="pulse"></span>LIVE DATA</span>
+        <span class="console-live"><span class="pulse"></span>EXPLORE MARKETS</span>
       </div>
-      <div class="radar" id="radar">
-        <div class="cross-h"></div><div class="cross-v"></div>
-        <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
-        <div class="sweep"></div>
-        <div class="center-mark" id="competitorRadarCenter"><img src="/assets/revenuetrigger-logo.svg?v=site-green" alt="RevenueTrigger"></div>
-        <button class="node n1" type="button" data-market="Phoenix" data-label="PHOENIX" aria-label="Filter competitors to Phoenix"></button>
-        <button class="node n2" type="button" data-market="Tempe" data-label="TEMPE" aria-label="Filter competitors to Tempe"></button>
-        <button class="node n3" type="button" data-market="Chandler" data-label="CHANDLER" aria-label="Filter competitors to Chandler"></button>
-        <button class="node n4" type="button" data-market="Scottsdale" data-label="SCOTTSDALE" aria-label="Filter competitors to Scottsdale"></button>
-        <div class="radar-topo radar-topo-top" aria-hidden="true">33.4484° N<br>112.0740° W</div>
-        <div class="radar-topo radar-topo-bottom" aria-hidden="true">RT / ARIZONA<br>MARKET NET 04</div>
-        <span class="radar-bottom-light" aria-hidden="true"></span>
-        <span class="radar-interact-hint" id="competitorRadarHint">SELECT A MARKET TO FILTER</span>
-      </div>
+<div class="radar rt-market-board" id="radar"><div class="rt-board-label">Explore the market footprint <span>AZ + TX</span></div><button class="node rt-market-row" type="button" data-market="Phoenix" data-label="PHOENIX" aria-label="Filter competitors to Phoenix" style="--row:0"><span class="rt-market-number">01</span><span>Phoenix</span><span class="rt-market-trace" aria-hidden="true"></span><span aria-hidden="true">↗</span></button><button class="node rt-market-row" type="button" data-market="Tempe" data-label="TEMPE" aria-label="Filter competitors to Tempe" style="--row:1"><span class="rt-market-number">02</span><span>Tempe</span><span class="rt-market-trace" aria-hidden="true"></span><span aria-hidden="true">↗</span></button><button class="node rt-market-row" type="button" data-market="Tucson" data-label="TUCSON" aria-label="Filter competitors to Tucson" style="--row:2"><span class="rt-market-number">03</span><span>Tucson</span><span class="rt-market-trace" aria-hidden="true"></span><span aria-hidden="true">↗</span></button><button class="node rt-market-row" type="button" data-market="Scottsdale" data-label="SCOTTSDALE" aria-label="Filter competitors to Scottsdale" style="--row:3"><span class="rt-market-number">04</span><span>Scottsdale</span><span class="rt-market-trace" aria-hidden="true"></span><span aria-hidden="true">↗</span></button><button class="node rt-market-row" type="button" data-market="Mesa" data-label="MESA" aria-label="Filter competitors to Mesa" style="--row:4"><span class="rt-market-number">05</span><span>Mesa</span><span class="rt-market-trace" aria-hidden="true"></span><span aria-hidden="true">↗</span></button><button class="node rt-market-row" type="button" data-market="Chandler" data-label="CHANDLER" aria-label="Filter competitors to Chandler" style="--row:5"><span class="rt-market-number">06</span><span>Chandler</span><span class="rt-market-trace" aria-hidden="true"></span><span aria-hidden="true">↗</span></button><button class="node rt-market-row" type="button" data-market="Fort Worth" data-label="FORT WORTH" aria-label="Filter competitors to Fort Worth" style="--row:6"><span class="rt-market-number">07</span><span>Fort Worth</span><span class="rt-market-trace" aria-hidden="true"></span><span aria-hidden="true">↗</span></button><span class="radar-interact-hint" id="competitorRadarHint">SELECT A MARKET TO FILTER</span></div>
       <div class="console-metrics">
         <div class="metric"><small>Companies found</small><strong class="accent" id="heroCompanies">—</strong></div>
         <div class="metric"><small>Markets</small><strong id="heroMarkets">6</strong></div>
@@ -593,6 +580,7 @@ html[data-theme="light"] .intel-console .metric small{color:#6f857a !important}
   </div>
 </section>
 <section class="section light-band" id="pricing"><div class="wrap"><div class="section-head"><div><span class="eyebrow">Plans</span><h2>Pay for speed and relevance.</h2></div><p>Choose a plan based on how quickly you want opportunities delivered and how much history you need.</p></div><div class="pricing"><div class="price"><h3>Scout</h3><div class="money">$49 <small>/mo</small></div><ul><li>1 industry · 1 market</li><li>Weekly opportunity digest</li><li>7-day history</li><li>Saved opportunities</li></ul><button class="btn btn-secondary" onclick="buyPlan('Scout')">Choose Scout</button></div><div class="price featured"><span class="badge">BEST VALUE</span><h3>Hunter</h3><div class="money">$149 <small>/mo</small></div><ul><li>Up to 3 industries · 3 markets</li><li>Daily email digest</li><li>30-day history</li><li>Saved opportunities</li><li>CSV export</li></ul><button class="btn btn-primary" onclick="buyPlan('Hunter')">Choose Hunter</button></div><div class="price"><h3>Territory</h3><div class="money">$499 <small>/mo</small></div><ul><li>All live industries · up to 6 selected markets</li><li>Near-real-time high-intent alerts</li><li>90-day history</li><li>CSV export</li><li>Priority expansion features</li></ul><button class="btn btn-secondary" onclick="buyPlan('Territory')">Choose Territory</button></div></div><div class="cta"><div><h2>Start with a free account.</h2><p>Use passwordless sign-in, personalize your industry, save opportunities, then upgrade when you want automated delivery and deeper history.</p></div><form class="capture" id="capture"><input required type="email" id="email" placeholder="you@company.com"/><button>Send sign-in link</button></form></div></div></section>
+<section class="rt-final"><div class="wrap"><h2>The next opportunity<br>starts with a signal.</h2><a class="rt-button green" href="/signals">See opportunities <span aria-hidden="true">↗</span></a></div></section>
 </main>
 
 <footer><div class="wrap" style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap"><span>RevenueTrigger</span><span>Public-data opportunity intelligence</span></div></footer>
@@ -882,34 +870,6 @@ $$('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModa
 const consoleEl=$('#intelConsole');
 const competitorRadarCenter=$('#competitorRadarCenter');
 const competitorNodes=$$('.radar .node');
-const canParallax=window.matchMedia('(hover:hover) and (pointer:fine)').matches &&
-  !window.matchMedia('(prefers-reduced-motion:reduce)').matches;
-
-if(canParallax){
-  consoleEl.addEventListener('pointermove',e=>{
-    const r=consoleEl.getBoundingClientRect();
-    const xp=Math.max(0,Math.min(100,((e.clientX-r.left)/r.width)*100));
-    const yp=Math.max(0,Math.min(100,((e.clientY-r.top)/r.height)*100));
-    consoleEl.style.setProperty('--px',xp+'%');
-    consoleEl.style.setProperty('--py',yp+'%');
-    const nx=xp/100-.5,ny=yp/100-.5;
-    consoleEl.style.setProperty('--tilt-x',(nx*2.2).toFixed(2)+'deg');
-    consoleEl.style.setProperty('--tilt-y',(-ny*1.7).toFixed(2)+'deg');
-    if(competitorRadarCenter){
-      competitorRadarCenter.style.transform=`translate(calc(-50% + ${(xp-50)*.075}px),calc(-50% + ${(yp-50)*.075}px))`;
-    }
-  },{passive:true});
-  consoleEl.addEventListener('pointerleave',()=>{
-    consoleEl.style.setProperty('--px','50%');
-    consoleEl.style.setProperty('--py','45%');
-    consoleEl.style.setProperty('--tilt-x','0deg');
-    consoleEl.style.setProperty('--tilt-y','0deg');
-    if(competitorRadarCenter)competitorRadarCenter.style.transform='translate(-50%,-50%)';
-  });
-}else{
-  consoleEl.style.transform='none';
-}
-
 function previewCompetitorMarket(node){
   competitorNodes.forEach(n=>n.classList.toggle('selected',n===node));
   const market=node?.dataset?.market||'';
@@ -938,17 +898,6 @@ competitorNodes.forEach(node=>{
 });
 
 updateHeroMetrics();
-
-/* gently reposition radar nodes while keeping them interactive */
-let tick=0;
-setInterval(()=>{
-  tick++;
-  competitorNodes.forEach((n,i)=>{
-    const a=(tick*.42+i*1.45),rad=22+(i%2)*9;
-    n.style.left=(50+Math.cos(a)*rad)+'%';
-    n.style.top=(50+Math.sin(a)*rad*.72)+'%';
-  });
-},1900);
 
 (async()=>{const hp=new URLSearchParams(location.hash.replace(/^#/,''));const magic=hp.get('magic');if(magic){try{await verifyMagic(magic)}catch(e){$('#competitorNote').textContent=e.message}}else{const signed=await loadMe();if(signed){await loadWatchlist();resetCompetitorPagination();loadCompetitors()}else renderWatchlist()}})();
 

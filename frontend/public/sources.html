@@ -1122,7 +1122,7 @@ html[data-theme="light"] .source-flow-console:before{background:radial-gradient(
     <div class="source-flow-console" id="sourceFlowConsole" aria-label="Interactive RevenueTrigger source ingestion visualization">
       <div class="flow-head">
         <div class="flow-head-title"><img src="/assets/revenuetrigger-logo.svg?v=site-green" alt=""><span>SOURCE INGESTION</span></div>
-        <span class="flow-live">LIVE NETWORK</span>
+        <span class="flow-live">SOURCE NETWORK</span>
       </div>
       <div class="source-flow-stage">
         <div class="flow-sources" id="flowSources">
@@ -1134,10 +1134,8 @@ html[data-theme="light"] .source-flow-console:before{background:radial-gradient(
           <button class="flow-source" type="button" data-city="CHANDLER" data-feed="Live permits + early pipeline"><span>CHANDLER</span><small>PERMITS</small><i class="flow-source-dot"></i></button>
           <button class="flow-source" type="button" data-city="FORT WORTH" data-feed="Development permits"><span>FORT WORTH</span><small>PERMITS</small><i class="flow-source-dot"></i></button>
         </div>
-        <div class="flow-processor">
-          <span class="flow-bus"></span>
-          <div class="flow-core"><img src="/assets/revenuetrigger-logo.svg?v=site-green" alt="RevenueTrigger"></div>
-          <span class="flow-core-label">NORMALIZE / SCORE / MATCH</span>
+        <div class="flow-processor rt-process-track" aria-label="Source processing stages">
+          <span><b>01</b> Ingest</span><i aria-hidden="true">→</i><span><b>02</b> Normalize</span><i aria-hidden="true">→</i><span><b>03</b> Score</span>
         </div>
         <div class="flow-output">
           <small>Selected source</small>
@@ -1146,7 +1144,7 @@ html[data-theme="light"] .source-flow-console:before{background:radial-gradient(
           <div class="flow-output-score"><span>PIPELINE</span><b>LIVE</b></div>
         </div>
       </div>
-      <div class="flow-foot"><span class="flow-foot-left"><i></i>6 source streams connected</span><span>INGEST → NORMALIZE → SCORE</span></div>
+      <div class="flow-foot"><span class="flow-foot-left"><i></i>7 source streams connected</span><span>INGEST → NORMALIZE → SCORE</span></div>
     </div>
   </div>
 </section>
@@ -1166,6 +1164,7 @@ html[data-theme="light"] .source-flow-console:before{background:radial-gradient(
   </div>
 </section>
 <section class="section sources-page-price rt-home-plans" id="pricing"><div class="wrap"><div class="section-head"><div><span class="eyebrow">Plans</span><h2>Pay for speed and relevance.</h2></div><p>Choose a plan based on how quickly you want opportunities delivered and how much history you need.</p></div><div class="pricing"><div class="price"><h3>Scout</h3><div class="money">$49 <small>/mo</small></div><ul><li>1 industry · 1 market</li><li>Weekly opportunity digest</li><li>7-day history</li><li>Saved opportunities</li></ul><button class="btn btn-secondary" onclick="buyPlan('Scout')">Choose Scout</button></div><div class="price featured"><span class="badge">BEST VALUE</span><h3>Hunter</h3><div class="money">$149 <small>/mo</small></div><ul><li>Up to 3 industries · 3 markets</li><li>Daily email digest</li><li>30-day history</li><li>Saved opportunities</li><li>CSV export</li></ul><button class="btn btn-primary" onclick="buyPlan('Hunter')">Choose Hunter</button></div><div class="price"><h3>Territory</h3><div class="money">$499 <small>/mo</small></div><ul><li>All live industries · up to 6 selected markets</li><li>Near-real-time high-intent alerts</li><li>90-day history</li><li>CSV export</li><li>Priority expansion features</li></ul><button class="btn btn-secondary" onclick="buyPlan('Territory')">Choose Territory</button></div></div><div class="cta"><div><h2>Start with a free account.</h2><p>Use passwordless sign-in, personalize your industry, save opportunities, then upgrade when you want automated delivery and deeper history.</p></div><form class="capture" id="capture"><input required type="email" id="email" placeholder="you@company.com"/><button>Send sign-in link</button></form></div></div></section>
+<section class="rt-final"><div class="wrap"><h2>The next opportunity<br>starts with a signal.</h2><a class="rt-button green" href="/signals">See opportunities <span aria-hidden="true">↗</span></a></div></section>
 </main>
 <footer class="wrap"><div>© 2026 RevenueTrigger • Arizona + Fort Worth</div><div>Public-data intelligence • Opportunity values are directional estimates</div></footer>
 <div class="modal" id="signinModal"><div class="modal-card small"><div class="modal-top"><div><img class="modal-brand" src="/assets/revenuetrigger-icon.svg?v=site-green" alt=""><br><span class="eyebrow">Passwordless access</span><h2 style="margin:12px 0 0">Sign in to RevenueTrigger</h2></div><button class="close" onclick="closeModal('signinModal')">×</button></div><p style="color:#98aaa2">We’ll email you a secure one-time link. No password required.</p><form id="signinForm"><div class="formrow"><label>Email</label><input id="signinEmail" required type="email" placeholder="you@company.com"></div><button class="btn btn-primary" style="width:100%;margin-top:14px">Send sign-in link</button></form><div class="notice" id="signinNotice" style="display:none"></div></div></div>

@@ -87,3 +87,42 @@ html body #pricing.rt-home-plans .price.featured .btn-primary{background:var(--g
  html body #pricing .pricing .price{transition:none!important}
  html body #pricing .pricing .price.scroll-active{transform:none!important}
 }
+
+/* Shared closing invitation. */
+body .rt-final{background:var(--graphite);padding:62px 0;color:white}
+body .rt-final .wrap{display:flex;align-items:center;justify-content:space-between;gap:35px}
+body .rt-final h2{color:white!important;font-size:42px;margin:0;line-height:1.1;max-width:650px}
+body .rt-final .rt-button{display:inline-flex;align-items:center;justify-content:space-between;gap:32px;padding:16px 22px;background:var(--green);color:#102016;font-size:13px;font-weight:750;white-space:nowrap}
+html body .competitor-hero-title{font-family:inherit!important;font-size:clamp(45px,4.8vw,68px)!important;line-height:1.02!important;letter-spacing:-.055em!important;font-weight:800!important;font-style:normal!important}
+html body .competitor-hero-title .hero-line{display:block!important;font:inherit!important;letter-spacing:inherit!important}
+html body .competitor-hero-title em,html body .rt-green-period{color:#078642!important;font-style:normal!important;font-weight:inherit!important}
+html body .sources-coverage{border-bottom:0!important}
+html body .sources-page-price{border-top:0!important}
+html body:has(.competitor-hero-title) #pricing .btn-secondary{background:#fff!important;color:var(--graphite)!important;border-color:#fff!important}
+/* Paper panels and restrained linear motion replace the radar treatment. */
+html body #intelConsole,html body #sourceFlowConsole{border:1px solid var(--rt-line)!important;border-radius:0!important;box-shadow:8px 8px 0 #cfd0c9!important;background:var(--paper)!important;transform:none!important}
+html body #intelConsole:before,html body #intelConsole:after,html body #sourceFlowConsole:before,html body #sourceFlowConsole:after{display:none!important}
+html body .rt-market-board{height:auto!important;min-height:0!important;padding:20px!important;overflow:hidden;background:var(--paper)!important;display:block!important;aspect-ratio:auto!important}
+html body .rt-market-board:before,html body .rt-market-board:after{display:none!important}
+.rt-board-label{display:flex;justify-content:space-between;gap:12px;font:600 10px/1.5 ui-monospace,monospace;text-transform:uppercase;color:var(--rt-muted);margin-bottom:16px}
+html body .rt-market-board .rt-market-row{position:relative!important;inset:auto!important;transform:none!important;width:100%!important;height:auto!important;border-radius:0!important;display:grid!important;grid-template-columns:24px 1fr 70px 16px;align-items:center;gap:12px;padding:13px 10px!important;border:0!important;border-top:1px solid var(--rt-line)!important;background:transparent!important;color:var(--graphite)!important;box-shadow:none!important;font-family:inherit;font-size:13px;font-weight:600;line-height:1.4;text-align:left;animation:none!important}
+html body .rt-market-row:before,html body .rt-market-row:after{display:none!important}
+html body .rt-market-board .rt-market-row:hover,html body .rt-market-board .rt-market-row.selected{background:#e0eedc!important;color:#087a3a!important}
+.rt-market-number{font:500 10px ui-monospace,monospace;color:var(--rt-muted)}
+.rt-market-trace{height:3px;background:#dce2d8;overflow:hidden;position:relative}
+.rt-market-trace:after{content:'';position:absolute;inset:0;background:var(--green);transform:translateX(-100%);animation:rt-market-trace 5s ease-in-out infinite;animation-delay:calc(var(--row)*.35s)}
+@keyframes rt-market-trace{0%,15%{transform:translateX(-100%)}45%,65%{transform:translateX(0)}95%,100%{transform:translateX(100%)}}
+html body .rt-market-board .radar-interact-hint{display:block;position:static!important;transform:none!important;margin-top:16px;font-size:9px!important}
+html body #sourceFlowConsole .source-flow-stage{display:flex!important;flex-direction:column;gap:20px;padding:24px!important;min-height:0!important;height:auto!important}
+html body #sourceFlowConsole .flow-sources{display:grid!important;grid-template-columns:1fr 1fr;gap:8px;width:100%!important}
+html body #sourceFlowConsole .flow-source{position:relative!important;width:100%!important;min-height:54px!important;padding:12px!important;border-radius:0!important;transform:none!important}
+html body #sourceFlowConsole .flow-source:before,html body #sourceFlowConsole .flow-source:after{display:none!important}
+html body #sourceFlowConsole .rt-process-track{position:relative!important;display:flex!important;align-items:center;justify-content:space-between;gap:8px;width:100%!important;height:auto!important;min-height:0!important;padding:18px 0!important;border-block:1px solid var(--rt-line)}
+.rt-process-track span{font:600 10px/1.5 ui-monospace,monospace;text-transform:uppercase;color:var(--graphite)}
+.rt-process-track b{display:block;color:var(--green-dark);margin-bottom:4px}
+.rt-process-track i{color:var(--green-dark);font-style:normal;animation:rt-process-pulse 2.4s ease-in-out infinite}.rt-process-track i:nth-of-type(2){animation-delay:1.2s}
+@keyframes rt-process-pulse{0%,100%{opacity:.25;transform:translateX(-3px)}50%{opacity:1;transform:translateX(3px)}}
+html body #sourceFlowConsole .flow-output{position:relative!important;inset:auto!important;width:100%!important;border-radius:0!important;padding:18px!important;min-height:0!important}
+html body #sourceFlowConsole .flow-output:before,html body #sourceFlowConsole .flow-output:after{display:none!important}
+@media(max-width:700px){body .rt-final{padding:42px 0}body .rt-final .wrap{flex-direction:column;align-items:flex-start;gap:24px}body .rt-final h2{font-size:34px}html body #sourceFlowConsole .source-flow-stage{padding:16px!important}html body .rt-market-board{padding:16px!important}}
+@media(prefers-reduced-motion:reduce){.rt-market-trace:after,.rt-process-track i{animation:none!important}}
